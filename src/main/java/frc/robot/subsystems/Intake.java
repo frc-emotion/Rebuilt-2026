@@ -1,6 +1,8 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
@@ -8,7 +10,11 @@ import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Telemetry;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Seconds;
+
+import javax.swing.text.Position;
+
 import frc.robot.Constants.IntakeConstants;
 //diameter ball wheel 2 inch diamter 
 //diamter conveyer bell 1.125
@@ -16,6 +22,8 @@ import frc.robot.Constants.IntakeConstants;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -32,12 +40,17 @@ public class Intake extends SubsystemBase {
     private final DutyCycleOut rollerController = new DutyCycleOut(0);
 
     private final StatusSignal<AngularVelocity> intakeVelocity;
-    private final StatusSignal<Current> intakeCurrent; 
+    private final StatusSignal<Current> intakeCurrent;
     private final StatusSignal<Voltage> intakeVoltage;
+    private final StatusSignal<Angle> intakePosition;
+
 
     private final StatusSignal<AngularVelocity> rollerVelocity;
     private final StatusSignal<Current> rollerCurrent;
     private final StatusSignal<Voltage> rollerVoltage;
+
+    private final MotionMagicVoltage intakeMotionRequest;
+    private final MotionMagicVelocityVoltage rollerMotionRequest;
 
     public Intake(){
         intakeMotor = new TalonFX(IntakeConstants.intakeMotorID);
@@ -50,6 +63,7 @@ public class Intake extends SubsystemBase {
         intakeVelocity = intakeMotor.getVelocity();
         intakeCurrent = intakeMotor.getSupplyCurrent();
         intakeVoltage = intakeMotor.getMotorVoltage();
+        intakePosition=  intakeMotor.getPosition(); 
 
 
         rollerVelocity = rollerMotor.getVelocity();
@@ -63,6 +77,9 @@ public class Intake extends SubsystemBase {
         rollerVelocity.setUpdateFrequency(50);
         rollerVoltage.setUpdateFrequency(50);
         rollerCurrent.setUpdateFrequency(50);
+
+        intakeMotionRequest = new MotionMagicVoltage(0);
+        rollerMotionRequest = new MotionMagicVelocityVoltage(0);
 
 
     }
@@ -78,54 +95,24 @@ public class Intake extends SubsystemBase {
     }
     
     private void configureIntakeMotor(){
-        TalonFXConfiguration config = new TalonFXConfiguration();
-        
-        config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
-        config.OpenLoopRamps.DutyCycleOpenLoopRampPeriod = 0.25;
-        config.OpenLoopRamps.VoltageOpenLoopRampPeriod = 0.25;
-
-        intakeMotor.getConfigurator().apply(config);
+        intakeMotor.getConfigurator().apply(IntakeConstants.INTAKE_CONFIG);
 
     }
 
     private void configureRollerMotor(){
-        TalonFXConfiguration config = new TalonFXConfiguration();
-        config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-        config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
 
-        config.OpenLoopRamps.DutyCycleOpenLoopRampPeriod = 0.25;
-        config.OpenLoopRamps.VoltageOpenLoopRampPeriod = 0.25;
-
-        rollerMotor.getConfigurator().apply(config);
+        rollerMotor.getConfigurator().apply(IntakeConstants.ROLLER_CONFIG);
     }
 
-    public void setIntakeSpeed(double speed){
-        // speed needs to be given in [-1,1]
-        intakeMotor.setControl(intakeController.withOutput(speed));
+    public void setIntakeAngle(Angle setpoint){
+        //passing in angle as degrees
+        intakeMotor.setControl(intakeMotionRequest.withPosition(setpoint).withSlot(0));
     }
 
     public void setRollerSpeed(double speed){
         //speed needs to be given in [-1,1]
-        rollerMotor.setControl(rollerController.withOutput(speed));
+        rollerMotor.setControl(rollerMotionRequest.withVelocity(speed));
     }
 
-    public boolean getCurrentSpike(){
-
-        return (intakeMotor.getSupplyCurrent().getValueAsDouble() > IntakeConstants.IntakeCurrentSpike); 
-    }
-
-    // public void runIntake(double intakeSpeed, double rollerSpeed){
-    //     setIntakeSpeed(intakeSpeed);
-    //     setRollerSpeed(rollerSpeed);
-    // }
-
-    public void stopIntake(){
-        setIntakeSpeed(0);
-    }
-
-    public void stopRoller(){
-        setRollerSpeed(0);
-    }
 }

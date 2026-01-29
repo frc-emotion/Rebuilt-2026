@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -12,6 +13,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IndexerConstants;
+import frc.robot.Constants.IndexerConstants.IndexerType;
 
 public class Indexer extends SubsystemBase {
     private final TalonFX horizontalIndexerMotor;
@@ -35,6 +37,10 @@ public class Indexer extends SubsystemBase {
     private final StatusSignal<Current> upwardIndexerMotorCurrent; 
     private final StatusSignal<Voltage> upwardIndexerMotorVoltage;
 
+    private final MotionMagicVelocityVoltage horizontalMotionController;
+    private final MotionMagicVelocityVoltage verticalMotionController;
+    private final MotionMagicVelocityVoltage upwardMotionController;
+
     public Indexer(){
         horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID);
         verticalIndexerMotor  = new TalonFX(IndexerConstants.verticalIndexerMotorID);
@@ -43,6 +49,10 @@ public class Indexer extends SubsystemBase {
         configureHorizontalIndexerMotor();
         configureVerticalIndexerMotor();
         configureUpwardIndexerMotor(); 
+
+        horizontalMotionController = new MotionMagicVelocityVoltage(0);
+        verticalMotionController = new MotionMagicVelocityVoltage(0);
+        upwardMotionController = new MotionMagicVelocityVoltage(0);
 
         horizontalIndexerMotorVelocity = horizontalIndexerMotor.getVelocity();
         horizontalIndexerMotorCurrent = horizontalIndexerMotor.getSupplyCurrent();
@@ -90,58 +100,27 @@ public class Indexer extends SubsystemBase {
 
 
     private void configureHorizontalIndexerMotor() {
-        TalonFXConfiguration config = new TalonFXConfiguration();
-        config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-        config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        config.OpenLoopRamps.DutyCycleOpenLoopRampPeriod = 0.25;
-        config.OpenLoopRamps.VoltageOpenLoopRampPeriod = 0.25;
-
-        horizontalIndexerMotor.getConfigurator().apply(config);
+        horizontalIndexerMotor.getConfigurator().apply(IndexerConstants.HORIZONTAL_INDEXER_CONFIG);
     }
 
     private void configureVerticalIndexerMotor() {
-        TalonFXConfiguration config = new TalonFXConfiguration();
-        config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-        config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        config.OpenLoopRamps.DutyCycleOpenLoopRampPeriod = 0.25;
-        config.OpenLoopRamps.VoltageOpenLoopRampPeriod = 0.25;
-
-        verticalIndexerMotor.getConfigurator().apply(config);
+        verticalIndexerMotor.getConfigurator().apply(IndexerConstants.VERTICAL_INDEXER_CONFIG);
     }
 
     private void configureUpwardIndexerMotor() {
-        TalonFXConfiguration config = new TalonFXConfiguration();
-        config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-        config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        config.OpenLoopRamps.DutyCycleOpenLoopRampPeriod = 0.25;
-        config.OpenLoopRamps.VoltageOpenLoopRampPeriod = 0.25;
-
-        upwardIndexerMotor.getConfigurator().apply(config);
-
-
-
-    }
-
-    public void setHorizontalIndexerSpeed(double speed){
-        horizontalIndexerMotor.setControl(horizontalIndexerMotorController.withOutput(speed));
-
+        upwardIndexerMotor.getConfigurator().apply(IndexerConstants.UPWARD_INDEXER_CONFIG);
     }
 
 
-    public void setVerticalIndexerSpeed(double speed){
-        verticalIndexerMotor.setControl(verticalIndexerMotorController.withOutput(speed));
-
-    }
-
-    public void setUpwardIndexerSpeed(double speed){
-        upwardIndexerMotor.setControl(upwardIndexerMotorController.withOutput(speed));
-
-    }
-
-    public void stop(){
-        setHorizontalIndexerSpeed(0);
-        setVerticalIndexerSpeed(0);
-        setUpwardIndexerSpeed(0);
+    public void setIndexerSpeed(double speed, IndexerType indexer){
+        switch(indexer){
+            case VERTICAL:
+                verticalMotionController.withVelocity(speed);
+            case HORIZONTAL:
+                horizontalMotionController.withVelocity(speed);
+            case UPWARD:
+                upwardMotionController.withVelocity(speed);
+        }
     }
 }
 
