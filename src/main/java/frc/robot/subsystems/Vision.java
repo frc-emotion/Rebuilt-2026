@@ -10,6 +10,7 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -17,24 +18,86 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import frc.robot.Constants.VisionConstants;
 
 /**
  * Vision subsystem that manages multiple PhotonVision cameras for AprilTag
- * detection
- * and robot pose estimation.
+ * detection and robot pose estimation.
+ * 
+ * <p>
+ * Telemetry is automatically logged via Epilogue annotations.
  *
  * Based on PhotonVision documentation:
  * https://docs.photonvision.org/en/v2026.0.1-beta/docs/programming/photonlib/robot-pose-estimator.html
  */
+@Logged
 public class Vision extends SubsystemBase {
 
-    // Telemetry throttling - update SmartDashboard every N cycles (10 = 5Hz at 50Hz
-    // loop)
-    private static final int TELEMETRY_UPDATE_INTERVAL = 10;
+    // ==================
+    // EPILOGUE TELEMETRY FIELDS - These are automatically logged each cycle
+    // ==================
+
+    /** Right camera's estimated robot pose (null if no valid estimate) */
+    @Logged
+    private Pose3d estimatedPoseRight = new Pose3d();
+
+    /** Left camera's estimated robot pose (null if no valid estimate) */
+    @Logged
+    private Pose3d estimatedPoseLeft = new Pose3d();
+
+    /** Timestamp of right camera's pose estimate (FPGA time in seconds) */
+    @Logged
+    private double poseTimestampRight = 0.0;
+
+    /** Timestamp of left camera's pose estimate (FPGA time in seconds) */
+    @Logged
+    private double poseTimestampLeft = 0.0;
+
+    /** Number of AprilTags seen by right camera */
+    @Logged
+    private int numTargetsRight = 0;
+
+    /** Number of AprilTags seen by left camera */
+    @Logged
+    private int numTargetsLeft = 0;
+
+    /** Standard deviations [x, y, theta] for right camera estimate */
+    @Logged
+    private double[] stdDevsRightArray = new double[] { 0.5, 0.5, 0.5 };
+
+    /** Standard deviations [x, y, theta] for left camera estimate */
+    @Logged
+    private double[] stdDevsLeftArray = new double[] { 0.5, 0.5, 0.5 };
+
+    /** Right camera connection status */
+    @Logged
+    private boolean rightCameraConnected = false;
+
+    /** Left camera connection status */
+    @Logged
+    private boolean leftCameraConnected = false;
+
+    /** ID of the best visible AprilTag (-1 if none) */
+    @Logged
+    private int bestTargetId = -1;
+
+    /** Distance to best target in meters (0 if none) */
+    @Logged
+    private double bestTargetDistance = 0.0;
+
+    /** Pose ambiguity of best target (0-1, lower is better) */
+    @Logged
+    private double bestTargetAmbiguity = 1.0;
+
+    /** Whether vision pose updates are enabled */
+    @Logged
+    private boolean visionEnabled = true;
+
+    /** Whether any target is currently visible on any camera */
+    @Logged
+    private boolean hasAnyTargets = false;
 
     // Cameras
     private final PhotonCamera cameraRight;
@@ -60,9 +123,6 @@ public class Vision extends SubsystemBase {
     private int periodicCallCount = 0;
     private int rightResultCount = 0;
     private int leftResultCount = 0;
-
-    // Vision enable/disable flag for testing
-    private boolean visionEnabled = true;
 
     /**
      * Creates a new Vision subsystem with two cameras.
@@ -106,9 +166,64 @@ public class Vision extends SubsystemBase {
         updateCameraRight();
         updateCameraLeft();
 
-        // Log telemetry at reduced rate to avoid loop overruns
-        if (periodicCallCount % TELEMETRY_UPDATE_INTERVAL == 0) {
-            logTelemetry();
+        // Update Epilogue telemetry fields (logged automatically each cycle)
+        updateTelemetryFields();
+    }
+
+    /**
+     * Updates the telemetry fields that Epilogue logs automatically.
+     */
+    private void updateTelemetryFields() {
+        // Camera connection status
+        rightCameraConnected = cameraRight.isConnected();
+        leftCameraConnected = cameraLeft.isConnected();
+
+        // Right camera pose and targets
+        if (latestEstimateRight.isPresent()) {
+            EstimatedRobotPose est = latestEstimateRight.get();
+            estimatedPoseRight = est.estimatedPose;
+            poseTimestampRight = est.timestampSeconds;
+            numTargetsRight = est.targetsUsed.size();
+            stdDevsRightArray = new double[] {
+                    currentStdDevsRight.get(0, 0),
+                    currentStdDevsRight.get(1, 0),
+                    currentStdDevsRight.get(2, 0)
+            };
+        } else {
+            estimatedPoseRight = new Pose3d();
+            poseTimestampRight = 0.0;
+            numTargetsRight = 0;
+        }
+
+        // Left camera pose and targets
+        if (latestEstimateLeft.isPresent()) {
+            EstimatedRobotPose est = latestEstimateLeft.get();
+            estimatedPoseLeft = est.estimatedPose;
+            poseTimestampLeft = est.timestampSeconds;
+            numTargetsLeft = est.targetsUsed.size();
+            stdDevsLeftArray = new double[] {
+                    currentStdDevsLeft.get(0, 0),
+                    currentStdDevsLeft.get(1, 0),
+                    currentStdDevsLeft.get(2, 0)
+            };
+        } else {
+            estimatedPoseLeft = new Pose3d();
+            poseTimestampLeft = 0.0;
+            numTargetsLeft = 0;
+        }
+
+        // Best target info
+        hasAnyTargets = hasTargets();
+        Optional<PhotonTrackedTarget> best = getBestTarget();
+        if (best.isPresent()) {
+            PhotonTrackedTarget target = best.get();
+            bestTargetId = target.getFiducialId();
+            bestTargetDistance = target.getBestCameraToTarget().getTranslation().getNorm();
+            bestTargetAmbiguity = target.getPoseAmbiguity();
+        } else {
+            bestTargetId = -1;
+            bestTargetDistance = 0.0;
+            bestTargetAmbiguity = 1.0;
         }
     }
 
@@ -485,59 +600,6 @@ public class Vision extends SubsystemBase {
     public void setDriverMode(boolean enabled) {
         cameraRight.setDriverMode(enabled);
         cameraLeft.setDriverMode(enabled);
-    }
-
-    /**
-     * Logs essential vision telemetry to SmartDashboard (throttled).
-     */
-    private void logTelemetry() {
-        SmartDashboard.putBoolean("Vision/Enabled", visionEnabled);
-
-        // Right camera status
-        boolean rightConnected = cameraRight.isConnected();
-        boolean rightHasTargets = latestResultRight != null && latestResultRight.hasTargets();
-        SmartDashboard.putBoolean("Vision/Right/Connected", rightConnected);
-        SmartDashboard.putBoolean("Vision/Right/HasTargets", rightHasTargets);
-
-        if (rightHasTargets) {
-            SmartDashboard.putNumber("Vision/Right/NumTargets", latestResultRight.getTargets().size());
-            SmartDashboard.putNumber("Vision/Right/BestYaw", latestResultRight.getBestTarget().getYaw());
-        }
-
-        // Left camera status
-        boolean leftConnected = cameraLeft.isConnected();
-        boolean leftHasTargets = latestResultLeft != null && latestResultLeft.hasTargets();
-        SmartDashboard.putBoolean("Vision/Left/Connected", leftConnected);
-        SmartDashboard.putBoolean("Vision/Left/HasTargets", leftHasTargets);
-
-        if (leftHasTargets) {
-            SmartDashboard.putNumber("Vision/Left/NumTargets", latestResultLeft.getTargets().size());
-            SmartDashboard.putNumber("Vision/Left/BestYaw", latestResultLeft.getBestTarget().getYaw());
-        }
-
-        // Overall best target
-        Optional<PhotonTrackedTarget> best = getBestTarget();
-        SmartDashboard.putBoolean("Vision/HasTarget", best.isPresent());
-        if (best.isPresent()) {
-            SmartDashboard.putNumber("Vision/BestTarget/ID", best.get().getFiducialId());
-            SmartDashboard.putNumber("Vision/BestTarget/Yaw", best.get().getYaw());
-            SmartDashboard.putNumber("Vision/BestTarget/Pitch", best.get().getPitch());
-        }
-
-        // Pose estimates
-        latestEstimateRight.ifPresent(est -> {
-            Pose2d pose = est.estimatedPose.toPose2d();
-            SmartDashboard.putNumber("Vision/Right/EstX", pose.getX());
-            SmartDashboard.putNumber("Vision/Right/EstY", pose.getY());
-            SmartDashboard.putNumber("Vision/Right/EstRot", pose.getRotation().getDegrees());
-        });
-
-        latestEstimateLeft.ifPresent(est -> {
-            Pose2d pose = est.estimatedPose.toPose2d();
-            SmartDashboard.putNumber("Vision/Left/EstX", pose.getX());
-            SmartDashboard.putNumber("Vision/Left/EstY", pose.getY());
-            SmartDashboard.putNumber("Vision/Left/EstRot", pose.getRotation().getDegrees());
-        });
     }
 
     // ==================

@@ -1,13 +1,11 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
@@ -15,40 +13,49 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
 
+/**
+ * Indexer subsystem with automatic telemetry via Epilogue.
+ * 
+ * <p>
+ * All three TalonFX motors are automatically logged with health data.
+ */
+@Logged
 public class Indexer extends SubsystemBase {
+    @Logged
     private final TalonFX horizontalIndexerMotor;
-    private final TalonFX verticalIndexerMotor; 
-    private final TalonFX upwardIndexerMotor; 
-
+    @Logged
+    private final TalonFX verticalIndexerMotor;
+    @Logged
+    private final TalonFX upwardIndexerMotor;
 
     private final DutyCycleOut horizontalIndexerMotorController = new DutyCycleOut(0);
-    private final DutyCycleOut verticalIndexerMotorController  = new DutyCycleOut(0);
+    private final DutyCycleOut verticalIndexerMotorController = new DutyCycleOut(0);
     private final DutyCycleOut upwardIndexerMotorController = new DutyCycleOut(0);
 
     private final StatusSignal<AngularVelocity> horizontalIndexerMotorVelocity;
-    private final StatusSignal<Current> horizontalIndexerMotorCurrent; 
+    private final StatusSignal<Current> horizontalIndexerMotorCurrent;
     private final StatusSignal<Voltage> horizontalIndexerMotorVoltage;
-    
+
     private final StatusSignal<AngularVelocity> verticalIndexerMotorVelocity;
-    private final StatusSignal<Current> verticalIndexerMotorCurrent; 
+    private final StatusSignal<Current> verticalIndexerMotorCurrent;
     private final StatusSignal<Voltage> verticalIndexerMotorVoltage;
 
     private final StatusSignal<AngularVelocity> upwardIndexerMotorVelocity;
-    private final StatusSignal<Current> upwardIndexerMotorCurrent; 
+    private final StatusSignal<Current> upwardIndexerMotorCurrent;
     private final StatusSignal<Voltage> upwardIndexerMotorVoltage;
 
     private final MotionMagicVelocityVoltage horizontalMotionController;
     private final MotionMagicVelocityVoltage verticalMotionController;
     private final MotionMagicVelocityVoltage upwardMotionController;
 
-    public Indexer(){
+    public Indexer() {
         horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID);
-        verticalIndexerMotor  = new TalonFX(IndexerConstants.verticalIndexerMotorID);
+        verticalIndexerMotor = new TalonFX(IndexerConstants.verticalIndexerMotorID);
         upwardIndexerMotor = new TalonFX(IndexerConstants.upwardIndexerMotorID);
 
         configureHorizontalIndexerMotor();
         configureVerticalIndexerMotor();
-        configureUpwardIndexerMotor(); 
+        configureUpwardIndexerMotor();
 
         horizontalMotionController = new MotionMagicVelocityVoltage(0);
         verticalMotionController = new MotionMagicVelocityVoltage(0);
@@ -66,7 +73,6 @@ public class Indexer extends SubsystemBase {
         upwardIndexerMotorCurrent = upwardIndexerMotor.getSupplyCurrent();
         upwardIndexerMotorVoltage = upwardIndexerMotor.getMotorVoltage();
 
-
         horizontalIndexerMotorVelocity.setUpdateFrequency(50);
         horizontalIndexerMotorCurrent.setUpdateFrequency(50);
         horizontalIndexerMotorVoltage.setUpdateFrequency(50);
@@ -79,12 +85,9 @@ public class Indexer extends SubsystemBase {
         upwardIndexerMotorCurrent.setUpdateFrequency(50);
         upwardIndexerMotorVoltage.setUpdateFrequency(50);
 
-
     }
 
-    
-
-    public void periodic(){
+    public void periodic() {
         horizontalIndexerMotorVelocity.refresh();
         horizontalIndexerMotorCurrent.refresh();
         horizontalIndexerMotorVoltage.refresh();
@@ -98,7 +101,6 @@ public class Indexer extends SubsystemBase {
         upwardIndexerMotorVoltage.refresh();
     }
 
-
     private void configureHorizontalIndexerMotor() {
         horizontalIndexerMotor.getConfigurator().apply(IndexerConstants.HORIZONTAL_INDEXER_CONFIG);
     }
@@ -111,9 +113,8 @@ public class Indexer extends SubsystemBase {
         upwardIndexerMotor.getConfigurator().apply(IndexerConstants.UPWARD_INDEXER_CONFIG);
     }
 
-
-    public void setIndexerSpeed(double speed, IndexerType indexer){
-        switch(indexer){
+    public void setIndexerSpeed(double speed, IndexerType indexer) {
+        switch (indexer) {
             case VERTICAL:
                 verticalMotionController.withVelocity(speed);
             case HORIZONTAL:
@@ -122,6 +123,20 @@ public class Indexer extends SubsystemBase {
                 upwardMotionController.withVelocity(speed);
         }
     }
+
+    // ==================
+    // MOTOR ACCESSORS (for FaultMonitor registration)
+    // ==================
+
+    public TalonFX getHorizontalMotor() {
+        return horizontalIndexerMotor;
+    }
+
+    public TalonFX getVerticalMotor() {
+        return verticalIndexerMotor;
+    }
+
+    public TalonFX getUpwardMotor() {
+        return upwardIndexerMotor;
+    }
 }
-
-

@@ -1,48 +1,36 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.units.Units;
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.hardware.TalonFX;
+
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Telemetry;
-
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Seconds;
-
-import javax.swing.text.Position;
-
 import frc.robot.Constants.IntakeConstants;
-//diameter ball wheel 2 inch diamter 
-//diamter conveyer bell 1.125
 
-import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.controls.VoltageOut;
-import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.NeutralModeValue;
-
-//gear reduction 1:1 wheels 
+/**
+ * Intake subsystem with automatic telemetry via Epilogue.
+ * 
+ * <p>
+ * The @Logged annotation on TalonFX motors enables automatic logging of
+ * motor health data (current, voltage, temperature) via TalonFXLogger.
+ */
+@Logged
 public class Intake extends SubsystemBase {
-    //Config for Hopper
+    // Motors marked @Logged will have health data auto-logged via TalonFXLogger
+    @Logged
     private final TalonFX intakeMotor;
+    @Logged
     private final TalonFX rollerMotor;
-
-
-    private final DutyCycleOut intakeController = new DutyCycleOut(0);
-    private final DutyCycleOut rollerController = new DutyCycleOut(0);
 
     private final StatusSignal<AngularVelocity> intakeVelocity;
     private final StatusSignal<Current> intakeCurrent;
     private final StatusSignal<Voltage> intakeVoltage;
-    private final StatusSignal<Angle> intakePosition;
 
 
     private final StatusSignal<AngularVelocity> rollerVelocity;
@@ -52,19 +40,17 @@ public class Intake extends SubsystemBase {
     private final MotionMagicVoltage intakeMotionRequest;
     private final MotionMagicVelocityVoltage rollerMotionRequest;
 
-    public Intake(){
+    public Intake() {
         intakeMotor = new TalonFX(IntakeConstants.intakeMotorID);
         rollerMotor = new TalonFX(IntakeConstants.rollerMotorID);
 
         configureIntakeMotor();
         configureRollerMotor();
 
-        //Intialize status signals
+        // Intialize status signals
         intakeVelocity = intakeMotor.getVelocity();
         intakeCurrent = intakeMotor.getSupplyCurrent();
         intakeVoltage = intakeMotor.getMotorVoltage();
-        intakePosition=  intakeMotor.getPosition(); 
-
 
         rollerVelocity = rollerMotor.getVelocity();
         rollerCurrent = rollerMotor.getSupplyCurrent();
@@ -73,7 +59,7 @@ public class Intake extends SubsystemBase {
         intakeVelocity.setUpdateFrequency(50); // 50 Hz
         intakeVoltage.setUpdateFrequency(50);
         intakeCurrent.setUpdateFrequency(50);
-        
+
         rollerVelocity.setUpdateFrequency(50);
         rollerVoltage.setUpdateFrequency(50);
         rollerCurrent.setUpdateFrequency(50);
@@ -84,35 +70,48 @@ public class Intake extends SubsystemBase {
 
     }
 
-    public void periodic(){
+    public void periodic() {
         intakeVelocity.refresh();
         intakeVoltage.refresh();
         intakeCurrent.refresh();
-        
+
         rollerVelocity.refresh();
         rollerVoltage.refresh();
         rollerCurrent.refresh();
     }
-    
-    private void configureIntakeMotor(){
+
+    private void configureIntakeMotor() {
 
         intakeMotor.getConfigurator().apply(IntakeConstants.INTAKE_CONFIG);
 
     }
 
-    private void configureRollerMotor(){
+    private void configureRollerMotor() {
 
         rollerMotor.getConfigurator().apply(IntakeConstants.ROLLER_CONFIG);
     }
 
-    public void setIntakeAngle(Angle setpoint){
-        //passing in angle as degrees
+
+    
+    public void setIntakeAngle(Angle setpoint) {
+        // passing in angle as degrees
         intakeMotor.setControl(intakeMotionRequest.withPosition(setpoint).withSlot(0));
     }
 
-    public void setRollerSpeed(double speed){
-        //speed needs to be given in [-1,1]
+    public void setRollerSpeed(double speed) {
+        // speed needs to be given in [-1,1]
         rollerMotor.setControl(rollerMotionRequest.withVelocity(speed));
     }
 
+    // ==================
+    // MOTOR ACCESSORS (for FaultMonitor registration)
+    // ==================
+
+    public TalonFX getIntakeMotor() {
+        return intakeMotor;
+    }
+
+    public TalonFX getRollerMotor() {
+        return rollerMotor;
+    }
 }

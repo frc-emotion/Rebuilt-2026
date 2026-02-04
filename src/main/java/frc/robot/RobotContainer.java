@@ -7,6 +7,7 @@ package frc.robot;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Rotation2d;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
@@ -16,39 +17,92 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Vision;
-import frc.robot.commands.AimAtRightCamera;
+import frc.robot.Constants.CANID;
 import frc.robot.commands.AimAtLeftCamera;
+import frc.robot.commands.AimAtRightCamera;
+import frc.robot.generated.TunerConstants;
+import frc.robot.logging.FaultMonitor;
+import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Indexer;
+import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Vision;
 
+/**
+ * Container for robot subsystems and commands.
+ * 
+ * <p>
+ * All subsystems are instantiated here and automatically logged via Epilogue.
+ */
+@Logged
 public class RobotContainer {
-        private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired
-                                                                                            // top
-                                                                                            // speed
-        private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per
-                                                                                          // second
-                                                                                          // max angular velocity
+        private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+        private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
 
         /* Setting up bindings for necessary control of the swerve drive platform */
         private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-                        .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
-                        .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive
-                                                                                 // motors
+                        .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1)
+                        .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
         private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
         private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
         private final CommandXboxController joystick = new CommandXboxController(0);
 
+        // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
+        // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-
-        // Vision subsystem for AprilTag detection and pose estimation
         public final Vision vision = new Vision();
+        // public final Intake intake = new Intake();
+        // public final Indexer indexer = new Indexer();
+        // public final Turret turret = new Turret();
 
-        private final Telemetry logger = new Telemetry(MaxSpeed, drivetrain);
+
+
+        public final Intake intake = null; // Disabled: no hardware connected
+        public final Indexer indexer = null; // Disabled: no hardware connected
+        public final Turret turret = null; // Disabled: no hardware connected
+
+        // ===== LOGGING & MONITORING =====
+        private final Telemetry logger = new Telemetry(MaxSpeed);
+        @Logged
+        public final FaultMonitor faultMonitor = new FaultMonitor();
 
         public RobotContainer() {
                 configureBindings();
+                registerMotorsForFaultMonitoring();
+        }
+
+        /**
+         * Registers all motors with the FaultMonitor for fault detection.
+         * Null-safe - skips subsystems that are disabled.
+         */
+        private void registerMotorsForFaultMonitoring() {
+                // Swerve drive motors (always enabled)
+                for (int i = 0; i < 4; i++) {
+                        var module = drivetrain.getModule(i);
+                        faultMonitor.register(CANID.SWERVE_IDS[i][0], module.getDriveMotor());
+                        faultMonitor.register(CANID.SWERVE_IDS[i][1], module.getSteerMotor());
+                }
+
+                // Intake motors (if enabled)
+                if (intake != null) {
+                        faultMonitor.register(CANID.INTAKE_MOTOR, intake.getIntakeMotor());
+                        faultMonitor.register(CANID.ROLLER_MOTOR, intake.getRollerMotor());
+                }
+
+                // Indexer motors (if enabled)
+                if (indexer != null) {
+                        faultMonitor.register(CANID.HORIZONTAL_INDEXER, indexer.getHorizontalMotor());
+                        faultMonitor.register(CANID.VERTICAL_INDEXER, indexer.getVerticalMotor());
+                        faultMonitor.register(CANID.UPWARD_INDEXER, indexer.getUpwardMotor());
+                }
+
+                // Turret motors (if enabled)
+                if (turret != null) {
+                        faultMonitor.register(CANID.SHOOTER_WHEEL, turret.getShooterMotor());
+                        faultMonitor.register(CANID.TURRET_ROTATION, turret.getTurretMotor());
+                        faultMonitor.register(CANID.TURRET_ANGLE, turret.getHoodMotor());
+                }
         }
 
         private void configureBindings() {
