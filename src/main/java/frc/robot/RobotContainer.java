@@ -27,6 +27,8 @@ import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
+import frc.robot.subsystems.ClimbSubsystem;
+import frc.robot.commands.climb.ClimbSequenceCommand;
 
 /**
  * Container for robot subsystems and commands.
@@ -52,6 +54,7 @@ public class RobotContainer {
         // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
         public final Vision vision = new Vision();
+        public final ClimbSubsystem climb = new ClimbSubsystem();
         // public final Intake intake = new Intake();
         // public final Indexer indexer = new Indexer();
         // public final Turret turret = new Turret();
