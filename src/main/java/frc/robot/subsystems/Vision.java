@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
@@ -15,7 +16,10 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -102,41 +106,52 @@ public class Vision extends SubsystemBase {
     // Cameras
     private final PhotonCamera cameraRight;
     private final PhotonCamera cameraLeft;
+    private final PhotonCamera cameraTurret;
 
     // Pose estimators for each camera
     private final PhotonPoseEstimator poseEstimatorRight;
     private final PhotonPoseEstimator poseEstimatorLeft;
+    private final PhotonPoseEstimator poseEstimatorTurret;
 
     // Latest results cache
     private PhotonPipelineResult latestResultRight;
     private PhotonPipelineResult latestResultLeft;
+    private PhotonPipelineResult latestResultTurret;
 
     // Latest estimated poses
     private Optional<EstimatedRobotPose> latestEstimateRight = Optional.empty();
     private Optional<EstimatedRobotPose> latestEstimateLeft = Optional.empty();
+    private Optional<EstimatedRobotPose> latestEstimateTurret = Optional.empty();
 
     // Standard deviations for the latest estimates
     private Matrix<N3, N1> currentStdDevsRight = VisionConstants.SINGLE_TAG_STD_DEVS;
     private Matrix<N3, N1> currentStdDevsLeft = VisionConstants.SINGLE_TAG_STD_DEVS;
+    private Matrix<N3, N1> currentStdDevsTurret = VisionConstants.SINGLE_TAG_STD_DEVS;
+
+    // Turret angle supplier for dynamic camera transform
+    private Supplier<Rotation2d> turretAngleSupplier = () -> new Rotation2d();
 
     // Diagnostic counters
     private int periodicCallCount = 0;
     private int rightResultCount = 0;
     private int leftResultCount = 0;
+    private int turretResultCount = 0;
 
     /**
-     * Creates a new Vision subsystem with two cameras.
+     * Creates a new Vision subsystem with three cameras (2 drivebase + 1 turret).
      */
     public Vision() {
         // Initialize cameras with names matching PhotonVision UI
         cameraRight = new PhotonCamera(VisionConstants.CAMERA_NAME_RIGHT);
         cameraLeft = new PhotonCamera(VisionConstants.CAMERA_NAME_LEFT);
+        cameraTurret = new PhotonCamera(VisionConstants.CAMERA_NAME_TURRET);
 
         // Check for valid field layout before creating pose estimators
         if (VisionConstants.TAG_LAYOUT == null) {
             System.err.println("WARNING: AprilTag field layout is null! Vision pose estimation will be disabled.");
             poseEstimatorRight = null;
             poseEstimatorLeft = null;
+            poseEstimatorTurret = null;
             return;
         }
 
@@ -152,19 +167,30 @@ public class Vision extends SubsystemBase {
                 PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
                 VisionConstants.ROBOT_TO_CAM_LEFT);
 
+        // Turret camera uses dynamic transform - start with forward-facing
+        poseEstimatorTurret = new PhotonPoseEstimator(
+                VisionConstants.TAG_LAYOUT,
+                PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+                calculateTurretCameraTransform(new Rotation2d()));
+
         // Set fallback strategy for when only one tag is visible
         poseEstimatorRight.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
         poseEstimatorLeft.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
+        poseEstimatorTurret.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
     }
 
     @Override
     public void periodic() {
         periodicCallCount++;
 
-        // Process all unread results from both cameras (always runs - this is the
+        // Update turret camera transform BEFORE processing results
+        updateTurretCameraTransform();
+
+        // Process all unread results from all cameras (always runs - this is the
         // critical path)
         updateCameraRight();
         updateCameraLeft();
+        updateCameraTurret();
 
         // Update Epilogue telemetry fields (logged automatically each cycle)
         updateTelemetryFields();
@@ -339,6 +365,169 @@ public class Vision extends SubsystemBase {
                 }
             }
         }
+    }
+
+    // ==================
+    // TURRET CAMERA METHODS
+    // ==================
+
+    /**
+     * Updates pose estimates from the turret camera.
+     * Similar to left/right cameras but uses dynamic transform.
+     */
+    private void updateCameraTurret() {
+        latestEstimateTurret = Optional.empty();
+
+        // Skip if pose estimator wasn't initialized (no field layout)
+        if (poseEstimatorTurret == null) {
+            return;
+        }
+
+        var results = cameraTurret.getAllUnreadResults();
+        turretResultCount += results.size();
+
+        for (PhotonPipelineResult result : results) {
+            latestResultTurret = result;
+
+            // Skip if no targets
+            if (!result.hasTargets()) {
+                continue;
+            }
+
+            // Update the pose estimator with this result
+            Optional<EstimatedRobotPose> estimate = poseEstimatorTurret.update(result);
+
+            if (estimate.isPresent()) {
+                // Validate the estimate before accepting
+                boolean valid = isValidEstimate(estimate.get(), result.getTargets());
+
+                if (valid) {
+                    latestEstimateTurret = estimate;
+                    currentStdDevsTurret = calculateStdDevs(estimate.get(), result.getTargets());
+                }
+            } else {
+                // FALLBACK: If estimator fails but we have a tag in the layout, calculate
+                // manually
+                PhotonTrackedTarget bestTarget = result.getBestTarget();
+                int tagId = bestTarget.getFiducialId();
+                var tagPoseOpt = VisionConstants.TAG_LAYOUT.getTagPose(tagId);
+
+                if (tagPoseOpt.isPresent()) {
+                    Transform3d camToTarget = bestTarget.getBestCameraToTarget();
+                    Pose3d tagPose = tagPoseOpt.get();
+                    Pose3d cameraPose = tagPose.transformBy(camToTarget.inverse());
+                    // Use current turret camera transform
+                    Transform3d currentTurretTransform = calculateTurretCameraTransform(turretAngleSupplier.get());
+                    Pose3d robotPose = cameraPose.transformBy(currentTurretTransform.inverse());
+
+                    latestEstimateTurret = Optional.of(new EstimatedRobotPose(
+                            robotPose,
+                            result.getTimestampSeconds(),
+                            result.getTargets(),
+                            PoseStrategy.LOWEST_AMBIGUITY));
+                    currentStdDevsTurret = VisionConstants.SINGLE_TAG_STD_DEVS;
+                }
+            }
+        }
+    }
+
+    /**
+     * Calculate the dynamic turret camera transform based on current turret angle.
+     * 
+     * <p>
+     * The turret camera position changes relative to robot center as the turret
+     * rotates:
+     * 
+     * <pre>
+     * Robot_to_TurretCam = Robot_to_TurretPivot ⊕ TurretRotation ⊕ TurretPivot_to_Camera
+     * </pre>
+     * 
+     * @param turretAngle Current turret angle from encoder (0 = turret forward
+     *                    matches robot forward)
+     * @return Transform3d from robot center to turret camera
+     */
+    private Transform3d calculateTurretCameraTransform(Rotation2d turretAngle) {
+        // Get static transforms from constants
+        Transform3d robotToTurretPivot = VisionConstants.ROBOT_TO_TURRET_PIVOT;
+        Transform3d turretPivotToCam = VisionConstants.TURRET_PIVOT_TO_CAM;
+
+        // Create rotation transform for current turret angle (rotation around Z axis)
+        Transform3d turretRotation = new Transform3d(
+                new Translation3d(),
+                new Rotation3d(0, 0, turretAngle.getRadians()));
+
+        // Compose the transforms: robot → pivot → rotation → camera
+        return robotToTurretPivot.plus(turretRotation).plus(turretPivotToCam);
+    }
+
+    /**
+     * Updates the turret camera pose estimator with the current turret angle.
+     * Call this BEFORE processing turret camera results each cycle.
+     */
+    private void updateTurretCameraTransform() {
+        if (poseEstimatorTurret != null) {
+            Rotation2d currentTurretAngle = turretAngleSupplier.get();
+            Transform3d newTransform = calculateTurretCameraTransform(currentTurretAngle);
+            poseEstimatorTurret.setRobotToCameraTransform(newTransform);
+        }
+    }
+
+    /**
+     * Sets the supplier for the current turret angle.
+     * Call this from RobotContainer to link the Vision subsystem to the Turret.
+     * 
+     * @param supplier Supplier that returns current turret angle (0 = forward)
+     */
+    public void setTurretAngleSupplier(Supplier<Rotation2d> supplier) {
+        this.turretAngleSupplier = supplier;
+    }
+
+    /**
+     * Gets the yaw to target using the TURRET camera as the alignment reference.
+     * 
+     * @return yaw in degrees from turret camera's perspective (positive = target is
+     *         to camera's left)
+     */
+    public double getTurretCameraTargetYaw() {
+        if (latestResultTurret != null && latestResultTurret.hasTargets()) {
+            return latestResultTurret.getBestTarget().getYaw();
+        }
+        return 0.0;
+    }
+
+    /**
+     * Gets the best target from the TURRET camera specifically.
+     * Use this for turret aiming commands.
+     */
+    public Optional<PhotonTrackedTarget> getTurretCameraBestTarget() {
+        if (latestResultTurret != null && latestResultTurret.hasTargets()) {
+            return Optional.of(latestResultTurret.getBestTarget());
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Checks if the TURRET camera currently sees any targets.
+     */
+    public boolean turretCameraHasTargets() {
+        return latestResultTurret != null && latestResultTurret.hasTargets();
+    }
+
+    /**
+     * Gets the latest estimated pose from the turret camera.
+     */
+    public Optional<EstimatedRobotPose> getEstimatedPoseTurret() {
+        if (!visionEnabled) {
+            return Optional.empty();
+        }
+        return latestEstimateTurret;
+    }
+
+    /**
+     * Gets the standard deviations for the turret camera's latest estimate.
+     */
+    public Matrix<N3, N1> getStdDevsTurret() {
+        return currentStdDevsTurret;
     }
 
     /**

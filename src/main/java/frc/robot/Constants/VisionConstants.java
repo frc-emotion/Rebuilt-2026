@@ -9,6 +9,7 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -102,6 +103,126 @@ public final class VisionConstants {
                     Units.degreesToRadians(-30), // Pitch: -30° (tilted up from horizontal)
                     Units.degreesToRadians(40) // Yaw: +40° (angled toward left)
             ));
+
+    // ==================
+    // TURRET CAMERA CONFIGURATION
+    // ==================
+    // The turret camera moves with the turret rotation, requiring dynamic transform
+    // computation
+
+    /** Name of the turret-mounted camera - must match PhotonVision UI */
+    public static final String CAMERA_NAME_TURRET = "turret_cam";
+
+    /**
+     * Static transform from robot center to turret pivot point.
+     * This is where the turret rotation axis is located.
+     * 
+     * TODO: Update these values to match your robot's turret mounting position
+     * Position: X (forward), Y (left), Z (up) from robot center
+     */
+    public static final Transform3d ROBOT_TO_TURRET_PIVOT = new Transform3d(
+            new Translation3d(
+                    Units.inchesToMeters(0.0), // X: turret is at robot center (adjust as needed)
+                    Units.inchesToMeters(0.0), // Y: turret is centered (adjust as needed)
+                    Units.inchesToMeters(12.0) // Z: turret pivot height above floor
+            ),
+            new Rotation3d(0, 0, 0) // No rotation at pivot point
+    );
+
+    /**
+     * Static transform from turret pivot to camera.
+     * This is the camera's position relative to the turret's rotation point.
+     * This transform rotates WITH the turret.
+     * 
+     * TODO: Update these values to match your camera mounting on the turret
+     */
+    public static final Transform3d TURRET_PIVOT_TO_CAM = new Transform3d(
+            new Translation3d(
+                    Units.inchesToMeters(6.0), // X: camera is forward of pivot
+                    Units.inchesToMeters(0.0), // Y: camera is centered on turret
+                    Units.inchesToMeters(4.0) // Z: camera is above pivot point
+            ),
+            new Rotation3d(
+                    0, // Roll: 0°
+                    Units.degreesToRadians(-15), // Pitch: tilted up slightly to see hub
+                    0 // Yaw: 0° (points forward along turret)
+            ));
+
+    /** Height of the turret camera lens from the floor in meters */
+    public static final double CAM_TURRET_HEIGHT_METERS = Units.inchesToMeters(16.0);
+
+    // ==================
+    // HUB TARGETING CONFIGURATION
+    // ==================
+    // The turret aims at the hub center, NOT the AprilTag center.
+    // This automatically handles position-based offset for scoring.
+
+    /**
+     * Red alliance hub center position (field coordinates in meters).
+     * Calculated from average of hub AprilTag positions in FRC2026_WELDED.json
+     * Tags 2-5 and 8-11 surround the red hub.
+     */
+    public static final Translation2d RED_HUB_CENTER = new Translation2d(
+            11.92, // X: average of hub tag X positions
+            4.035 // Y: average of hub tag Y positions (field center)
+    );
+
+    /**
+     * Blue alliance hub center position (field coordinates in meters).
+     * Calculated from average of hub AprilTag positions in FRC2026_WELDED.json
+     * Tags 18-21 and 24-27 surround the blue hub.
+     */
+    public static final Translation2d BLUE_HUB_CENTER = new Translation2d(
+            4.63, // X: average of hub tag X positions
+            4.035 // Y: average of hub tag Y positions (field center)
+    );
+
+    /** Hub funnel top height from floor (for trajectory calculations) */
+    public static final double HUB_SCORING_HEIGHT_METERS = Units.inchesToMeters(72.0);
+
+    /** Hub AprilTag height from floor */
+    public static final double HUB_TAG_HEIGHT_METERS = 1.12395; // ~44.25 inches
+
+    /**
+     * AprilTag IDs mounted on the Red alliance hub.
+     * These are used for turret targeting validation.
+     */
+    public static final int[] RED_HUB_TAG_IDS = { 2, 3, 4, 5, 8, 9, 10, 11 };
+
+    /**
+     * AprilTag IDs mounted on the Blue alliance hub.
+     * These are used for turret targeting validation.
+     */
+    public static final int[] BLUE_HUB_TAG_IDS = { 18, 19, 20, 21, 24, 25, 26, 27 };
+
+    /**
+     * Checks if a tag ID belongs to the red hub.
+     */
+    public static boolean isRedHubTag(int tagId) {
+        for (int id : RED_HUB_TAG_IDS) {
+            if (id == tagId)
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Checks if a tag ID belongs to the blue hub.
+     */
+    public static boolean isBlueHubTag(int tagId) {
+        for (int id : BLUE_HUB_TAG_IDS) {
+            if (id == tagId)
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Checks if a tag ID belongs to any hub.
+     */
+    public static boolean isHubTag(int tagId) {
+        return isRedHubTag(tagId) || isBlueHubTag(tagId);
+    }
 
     // ==================
     // STANDARD DEVIATIONS
