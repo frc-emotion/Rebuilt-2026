@@ -6,7 +6,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
 public final class ClimbConstants {
-    // TODO: Update these IDs based on CAN map
+    // IDs - Defined locally here to match subsystem style, mirrored in CANID for documentation
     public static final int CLIMB_LEADER_ID = 40;
     public static final int CLIMB_FOLLOWER_ID = 41;
 
@@ -35,7 +35,7 @@ public final class ClimbConstants {
         CLIMB_CONFIG.CurrentLimits.SupplyCurrentLimit = 60.0;
 
         // Feedback
-        CLIMB_CONFIG.Feedback.SensorToMechanismRatio = 1.0; // We handle gear ratio in logic or here. Keeping 1.0 for raw motor control is often easier.
+        CLIMB_CONFIG.Feedback.SensorToMechanismRatio = 1.0; 
 
         // Soft Limits (Safety)
         CLIMB_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitThreshold = MAX_HEIGHT_ROTATIONS;
@@ -45,12 +45,12 @@ public final class ClimbConstants {
 
         // Motion Magic PID Slots
         // Slot 0: Position Control
-        CLIMB_CONFIG.Slot0.kP = 40.0; // Needs tuning
+        CLIMB_CONFIG.Slot0.kP = 40.0; 
         CLIMB_CONFIG.Slot0.kI = 0.0;
         CLIMB_CONFIG.Slot0.kD = 2.0;
-        CLIMB_CONFIG.Slot0.kV = 0.12; // Feedforward for velocity
-        CLIMB_CONFIG.Slot0.kG = 0.5;  // Gravity feedforward (hold the robot weight)
-        CLIMB_CONFIG.Slot0.GravityType = GravityTypeValue.Elevator_Static; // Constant force downward
+        CLIMB_CONFIG.Slot0.kV = 0.12; 
+        CLIMB_CONFIG.Slot0.kG = 0.5;  
+        CLIMB_CONFIG.Slot0.GravityType = GravityTypeValue.Elevator_Static; 
 
         // Motion Magic constraints
         CLIMB_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 80.0; // RPS

@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.epilogue.Logged;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -11,6 +12,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ClimbConstants;
 
+@Logged
 public class ClimbSubsystem extends SubsystemBase {
     
     private final TalonFX leaderMotor;
@@ -86,6 +88,13 @@ public class ClimbSubsystem extends SubsystemBase {
      */
     public boolean atSetpoint(double targetRotations, double tolerance) {
         return Math.abs(leaderPosition.getValueAsDouble() - targetRotations) < tolerance;
+    }
+
+    /**
+     * Stop the motors
+     */
+    public void stop() {
+        leaderMotor.setControl(voltageRequest.withOutput(0));
     }
 
     public TalonFX getLeaderMotor() {

@@ -106,6 +106,12 @@ public class RobotContainer {
                         faultMonitor.register(CANID.TURRET_ROTATION, turret.getTurretMotor());
                         faultMonitor.register(CANID.TURRET_ANGLE, turret.getHoodMotor());
                 }
+
+                // Climb motors (always enabled since it's instantiated)
+                if (climb != null) {
+                        faultMonitor.register(CANID.CLIMB_LEADER, climb.getLeaderMotor());
+                        faultMonitor.register(CANID.CLIMB_FOLLOWER, climb.getFollowerMotor());
+                }
         }
 
         private void configureBindings() {
@@ -146,6 +152,18 @@ public class RobotContainer {
                 // LEFT TRIGGER: Aim at AprilTag using FRONT LEFT camera (aaranc)
                 joystick.leftTrigger().whileTrue(
                                 new AimAtLeftCamera(drivetrain, vision));
+
+                // CLIMB CONTROLS
+                // Start Button: Toggles the full automated sequence
+                joystick.start().toggleOnTrue(new ClimbSequenceCommand(climb));
+
+                // D-Pad Manual Override (Safety)
+                // Up/Down applies raw voltage to move hooks manually
+                joystick.povUp().whileTrue(Commands.run(() -> climb.setVoltage(6.0), climb));
+                joystick.povDown().whileTrue(Commands.run(() -> climb.setVoltage(-6.0), climb));
+
+                // Stop when no manual input (Command composition handles this, but good to be explicit)
+                joystick.povCenter().onTrue(Commands.runOnce(() -> climb.stop(), climb));
 
                 // Run SysId routines when holding back/start and X/Y.
                 // Note that each routine should be run exactly once in a single log.
