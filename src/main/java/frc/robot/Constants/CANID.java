@@ -55,7 +55,13 @@ public enum CANID {
     // ==================
     SHOOTER_WHEEL(1001, "Shooter Wheel"),
     TURRET_ROTATION(1002, "Turret Rotation"),
-    TURRET_ANGLE(1003, "Turret Angle");
+    TURRET_ANGLE(1003, "Turret Angle"),
+
+    // ==================
+    // CLIMB SUBSYSTEM
+    // ==================
+    CLIMB_LEADER(31, "Climb Leader"),
+    CLIMB_FOLLOWER(32, "Climb Follower");
 
     private final int id;
     private final String name;
