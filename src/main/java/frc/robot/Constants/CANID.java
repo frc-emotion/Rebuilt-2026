@@ -60,8 +60,8 @@ public enum CANID {
     // ==================
     // CLIMB SUBSYSTEM
     // ==================
-    CLIMB_LEADER(31, "Climb Leader"),
-    CLIMB_FOLLOWER(32, "Climb Follower");
+    CLIMB_LEADER(40, "Climb Leader"),
+    CLIMB_FOLLOWER(41, "Climb Follower");
 
     private final int id;
     private final String name;
