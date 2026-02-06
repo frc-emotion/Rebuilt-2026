@@ -26,6 +26,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.commands.climb.ClimbSequenceCommand;
@@ -59,11 +60,10 @@ public class RobotContainer {
         // public final Indexer indexer = new Indexer();
         // public final Turret turret = new Turret();
 
-
-
         public final Intake intake = null; // Disabled: no hardware connected
         public final Indexer indexer = null; // Disabled: no hardware connected
         public final Turret turret = null; // Disabled: no hardware connected
+        public final Climb climb = new Climb();
 
         // ===== LOGGING & MONITORING =====
         private final Telemetry logger = new Telemetry(MaxSpeed);
@@ -171,6 +171,10 @@ public class RobotContainer {
                 joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
                 joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
                 joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+
+                // Climb controls
+                joystick.y().whileTrue(climb.climbUpCommand());
+                joystick.x().whileTrue(climb.climbDownCommand());
 
                 // Reset the field-centric heading on left bumper press.
                 joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
