@@ -3,6 +3,9 @@ package frc.robot.Constants;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+
+import edu.wpi.first.units.measure.Angle;
+
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
 public final class ClimbConstants {
@@ -12,6 +15,10 @@ public final class ClimbConstants {
 
     // Mechanics
     public static final double GEAR_RATIO = 12.0; 
+
+    public static final double TOLERANCE = 0.5;
+
+    public static final double manual_kG = 0.5;
     
     // TODO: Measure how many motor rotations it takes to reach full height
     // Example: If spool is 2 inches diameter -> Circumference ~6.28 inches.
@@ -22,6 +29,20 @@ public final class ClimbConstants {
     public static final double BOTTOM_HEIGHT = 0.5; // Keep a small buffer from physical hardstop
 
     public static final TalonFXConfiguration CLIMB_CONFIG = new TalonFXConfiguration();
+
+    public static enum ClimbLevel {
+        LEVEL_1(0.0, 0.0),
+        LEVEL_2(0.0, 0.0),
+        LEVEL_3(0.0, 0.0);
+
+        public final double inner;
+        public final double outer;
+
+        ClimbLevel(double inner, double outer) {
+            this.inner = inner;
+            this.outer = outer;
+        }
+    }
 
     static {
         // Motor Configuration

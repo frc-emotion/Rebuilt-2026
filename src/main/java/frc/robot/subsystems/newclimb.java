@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.controls.Follower;
@@ -24,7 +23,7 @@ import frc.robot.Constants.ClimbConstants;
  * motor health data (current, voltage, temperature) via TalonFXLogger.
  */
 @Logged
-public class Climb extends SubsystemBase {
+public class newclimb extends SubsystemBase {
     // Motors marked @Logged will have health data auto-logged via TalonFXLogger
     @Logged
     private final TalonFX leaderMotor;
@@ -34,12 +33,7 @@ public class Climb extends SubsystemBase {
 
     private final MotionMagicVoltage leaderMotionRequest;
 
-    private final VoltageOut manualRequest;
-
-
-    private double currentSetpoint;
-
-    public Climb() {
+    public newclimb() {
         leaderMotor = new TalonFX(ClimbConstants.CLIMB_LEADER_ID);
         followerMotor = new TalonFX(ClimbConstants.CLIMB_LEADER_ID);
 
@@ -48,9 +42,6 @@ public class Climb extends SubsystemBase {
 
 
         leaderMotionRequest = new MotionMagicVoltage(0);
-
-        manualRequest = new VoltageOut(0);
-
 
 
 
@@ -73,35 +64,21 @@ public class Climb extends SubsystemBase {
 
 
     
-    public void setClimbPosition(double setpoint) {
-        currentSetpoint = setpoint;
-        // passing in position in rotations
-        leaderMotor.setControl(leaderMotionRequest.withPosition(setpoint));
+    public void setClimbPosition(Angle setpoint) {
+        // passing in angle as degrees
+        leaderMotor.setControl(leaderMotionRequest.withPosition(setpoint).withSlot(0));
     }
 
 
-    public boolean atSetpoint(){
-        return Math.abs(leaderMotor.getPosition().getValueAsDouble() - currentSetpoint) < ClimbConstants.TOLERANCE;
-    }
-
-    public void setManualVoltage(double joystickInput) {
-        double manualVolts = joystickInput * 12.0;
-        leaderMotor.setControl(manualRequest.withOutput(manualVolts + ClimbConstants.manual_kG));
-    }
-
-
+    // ==================
     // MOTOR ACCESSORS (for FaultMonitor registration)
+    // ==================
 
     public TalonFX getLeaderMotor() {
         return leaderMotor;
     }
 
-    public TalonFX getFollowerMotor() {
+    public TalonFX getfollowerMotor() {
         return followerMotor;
-    }
-
-    public void stop(){
-        leaderMotor.stopMotor();
-        followerMotor.stopMotor();
     }
 }

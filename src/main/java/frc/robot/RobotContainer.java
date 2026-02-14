@@ -28,8 +28,7 @@ import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.Vision;
-import frc.robot.subsystems.ClimbSubsystem;
-import frc.robot.commands.climb.ClimbSequenceCommand;
+import frc.robot.subsystems.Climb;
 
 /**
  * Container for robot subsystems and commands.
@@ -55,7 +54,7 @@ public class RobotContainer {
         // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
         public final Vision vision = new Vision();
-        public final ClimbSubsystem climb = new ClimbSubsystem();
+        // public final Climb climb = new Climb();
         // public final Intake intake = new Intake();
         // public final Indexer indexer = new Indexer();
         // public final Turret turret = new Turret();
@@ -153,17 +152,7 @@ public class RobotContainer {
                 joystick.leftTrigger().whileTrue(
                                 new AimAtLeftCamera(drivetrain, vision));
 
-                // CLIMB CONTROLS
-                // Start Button: Toggles the full automated sequence
-                joystick.start().toggleOnTrue(new ClimbSequenceCommand(climb));
 
-                // D-Pad Manual Override (Safety)
-                // Up/Down applies raw voltage to move hooks manually
-                joystick.povUp().whileTrue(Commands.run(() -> climb.setVoltage(6.0), climb));
-                joystick.povDown().whileTrue(Commands.run(() -> climb.setVoltage(-6.0), climb));
-
-                // Stop when no manual input (Command composition handles this, but good to be explicit)
-                joystick.povCenter().onTrue(Commands.runOnce(() -> climb.stop(), climb));
 
                 // Run SysId routines when holding back/start and X/Y.
                 // Note that each routine should be run exactly once in a single log.
@@ -171,10 +160,6 @@ public class RobotContainer {
                 joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
                 joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
                 joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-
-                // Climb controls
-                joystick.y().whileTrue(climb.climbUpCommand());
-                joystick.x().whileTrue(climb.climbDownCommand());
 
                 // Reset the field-centric heading on left bumper press.
                 joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));

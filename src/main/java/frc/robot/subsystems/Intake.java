@@ -12,6 +12,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IntakeConstants;
+import static edu.wpi.first.units.Units.*;
 
 /**
  * Intake subsystem with automatic telemetry via Epilogue.
@@ -40,6 +41,8 @@ public class Intake extends SubsystemBase {
     private final MotionMagicVoltage intakeMotionRequest;
     private final MotionMagicVelocityVoltage rollerMotionRequest;
 
+    private Angle currentSetpoint = Degrees.of(0);
+
     public Intake() {
         intakeMotor = new TalonFX(IntakeConstants.intakeMotorID);
         rollerMotor = new TalonFX(IntakeConstants.rollerMotorID);
@@ -64,7 +67,7 @@ public class Intake extends SubsystemBase {
         rollerVoltage.setUpdateFrequency(50);
         rollerCurrent.setUpdateFrequency(50);
 
-        intakeMotionRequest = new MotionMagicVoltage(0);
+        intakeMotionRequest = new MotionMagicVoltage(currentSetpoint);
         rollerMotionRequest = new MotionMagicVelocityVoltage(0);
 
 
@@ -94,13 +97,21 @@ public class Intake extends SubsystemBase {
 
     
     public void setIntakeAngle(Angle setpoint) {
+
         // passing in angle as degrees
-        intakeMotor.setControl(intakeMotionRequest.withPosition(setpoint).withSlot(0));
+        currentSetpoint = setpoint;
+        intakeMotor.setControl(intakeMotionRequest.withPosition(setpoint));
     }
 
     public void setRollerSpeed(double speed) {
         // speed needs to be given in [-1,1]
         rollerMotor.setControl(rollerMotionRequest.withVelocity(speed));
+    }
+
+    public boolean atSetpoint(){
+
+        return Math.abs(rollerMotor.getPosition().getValueAsDouble() * 360.0 - currentSetpoint.in(Degrees)) < IntakeConstants.TOLERANCE.in(Degrees);
+
     }
 
     // ==================

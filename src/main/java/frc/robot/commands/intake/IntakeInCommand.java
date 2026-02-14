@@ -30,7 +30,7 @@ public class IntakeInCommand extends Command{
 
     @Override
     public boolean isFinished(){
-        return true;
+        return m_intakeSubsystem.atSetpoint();
     
     }
 

@@ -16,6 +16,9 @@ public final class IntakeConstants {
     public static final Angle INTAKE_IN_ANGLE = Degrees.of(0);
     public static final Angle INTAKE_OUT_ANGLE = Degrees.of(85);
 
+    public static final Angle TOLERANCE = Degrees.of(0.5);
+
+
     public static final TalonFXConfiguration INTAKE_CONFIG = new TalonFXConfiguration();
 
     static{
