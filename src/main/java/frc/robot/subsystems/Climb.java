@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -39,9 +40,9 @@ public class Climb extends SubsystemBase {
 
     private double currentSetpoint;
 
-    public Climb() {
-        leaderMotor = new TalonFX(ClimbConstants.CLIMB_LEADER_ID);
-        followerMotor = new TalonFX(ClimbConstants.CLIMB_LEADER_ID);
+    public Climb(CANBus canBus) {
+        leaderMotor = new TalonFX(ClimbConstants.CLIMB_LEADER_ID, canBus);
+        followerMotor = new TalonFX(ClimbConstants.CLIMB_LEADER_ID, canBus);
 
         configureLeaderMotor();
         configureFollowerMotor();

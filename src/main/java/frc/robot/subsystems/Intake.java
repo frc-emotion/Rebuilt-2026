@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -43,9 +44,9 @@ public class Intake extends SubsystemBase {
 
     private Angle currentSetpoint = Degrees.of(0);
 
-    public Intake() {
-        intakeMotor = new TalonFX(IntakeConstants.intakeMotorID);
-        rollerMotor = new TalonFX(IntakeConstants.rollerMotorID);
+    public Intake(CANBus canBus) {
+        intakeMotor = new TalonFX(IntakeConstants.intakeMotorID, canBus);
+        rollerMotor = new TalonFX(IntakeConstants.rollerMotorID, canBus);
 
         configureIntakeMotor();
         configureRollerMotor();

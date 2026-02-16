@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -51,11 +52,11 @@ public class Turret extends SubsystemBase {
     private final MotionMagicVoltage turretMotionRequest;
     private final MotionMagicVoltage hoodMotionRequest;
 
-    public Turret() {
-        shooterMotor = new TalonFX(TurretConstants.shooterMotorID);
-        hoodMotor = new TalonFX(TurretConstants.hoodMotorID);
-        turretMotor = new TalonFX(TurretConstants.turretMotorID);
-        turretEncoder = new CANcoder(TurretConstants.turretEncoderID);
+    public Turret(CANBus canBus) {
+        shooterMotor = new TalonFX(TurretConstants.shooterMotorID, canBus);
+        hoodMotor = new TalonFX(TurretConstants.hoodMotorID, canBus);
+        turretMotor = new TalonFX(TurretConstants.turretMotorID, canBus);
+        turretEncoder = new CANcoder(TurretConstants.turretEncoderID, canBus);
 
         configureShooterMotor();
         configureHoodMotor();

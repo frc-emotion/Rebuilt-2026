@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -50,19 +51,22 @@ public class RobotContainer {
 
         private final CommandXboxController joystick = new CommandXboxController(0);
 
+        private final CANBus mechansimBus = new CANBus("mechanisms");
+
         // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
         // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
         public final Vision vision = new Vision();
-        // public final Climb climb = new Climb();
-        // public final Intake intake = new Intake();
-        // public final Indexer indexer = new Indexer();
-        // public final Turret turret = new Turret();
+        // public final Climb climb = new Climb(mechansimBus);
+        // public final Intake intake = new Intake(mechansimBus);
+        // public final Indexer indexer = new Indexer(mechansimBus);
+        // public final Turret turret = new Turret(mechansimBus);
+
 
         public final Intake intake = null; // Disabled: no hardware connected
         public final Indexer indexer = null; // Disabled: no hardware connected
         public final Turret turret = null; // Disabled: no hardware connected
-        public final Climb climb = new Climb();
+        public final Climb climb = null;
 
         // ===== LOGGING & MONITORING =====
         private final Telemetry logger = new Telemetry(MaxSpeed);

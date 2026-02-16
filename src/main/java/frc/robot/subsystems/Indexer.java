@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
@@ -48,10 +49,10 @@ public class Indexer extends SubsystemBase {
     private final MotionMagicVelocityVoltage verticalMotionController;
     private final MotionMagicVelocityVoltage upwardMotionController;
 
-    public Indexer() {
-        horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID);
-        verticalIndexerMotor = new TalonFX(IndexerConstants.verticalIndexerMotorID);
-        upwardIndexerMotor = new TalonFX(IndexerConstants.upwardIndexerMotorID);
+    public Indexer(CANBus canBus) {
+        horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID, canBus);
+        verticalIndexerMotor = new TalonFX(IndexerConstants.verticalIndexerMotorID, canBus);
+        upwardIndexerMotor = new TalonFX(IndexerConstants.upwardIndexerMotorID, canBus);
 
         configureHorizontalIndexerMotor();
         configureVerticalIndexerMotor();
