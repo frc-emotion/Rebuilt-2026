@@ -35,6 +35,7 @@ public class Turret extends SubsystemBase {
     private final TalonFX turretMotor;
 
     private final CANcoder turretEncoder;
+    private final CANcoder hoodEncoder; 
 
     private final StatusSignal<AngularVelocity> turretVelocity;
     private final StatusSignal<Current> turretCurrent;
@@ -56,17 +57,20 @@ public class Turret extends SubsystemBase {
     private double shooterCurrentSetpoint;
     private Angle hoodCurrentSetpoint;
     private Angle turretCurrentSetpoint;    
-    
+
     public Turret(CANBus canBus) {
         shooterMotor = new TalonFX(TurretConstants.shooterMotorID, canBus);
         hoodMotor = new TalonFX(TurretConstants.hoodMotorID, canBus);
         turretMotor = new TalonFX(TurretConstants.turretMotorID, canBus);
         turretEncoder = new CANcoder(TurretConstants.turretEncoderID, canBus);
+        hoodEncoder = new CANcoder(TurretConstants.hoodEncoderID, canBus); 
 
         configureShooterMotor();
+        configureHoodEncoder(); 
         configureHoodMotor();
         configureTurretEncoder();
         configureTurretMotor();
+        
 
         // Cache status signals for telemetry
         turretVelocity = turretMotor.getVelocity();
@@ -108,6 +112,9 @@ public class Turret extends SubsystemBase {
 
     private void configureHoodMotor() {
         hoodMotor.getConfigurator().apply(TurretConstants.HOOD_CONFIG);
+    }
+    private void configureHoodEncoder(){
+        
     }
 
     private void configureShooterMotor() {

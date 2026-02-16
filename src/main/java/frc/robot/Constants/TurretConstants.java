@@ -12,9 +12,13 @@ public final class TurretConstants {
     public static final int turretMotorID = 1002;
     public static final int hoodMotorID = 1003;
     public static final int turretEncoderID = 1004;
+    public static final int hoodEncoderID = 1005; 
 
     public static final double TURRET_ENCODER_OFFSET = 0.0; 
     public static final double TURRET_GEAR_RATIO = 1.0;
+
+    public static final double HOOD_ENCODER_OFFSET = 0.0;
+    public static final double HOOD_GEAR_RATIO = 1.0;
 
     public static final double shooterTolerance = 0.5; 
     public static final double turretTolerance = 0.05; 
@@ -66,6 +70,12 @@ public final class TurretConstants {
         HOOD_CONFIG.Slot0.kP = 25;
         HOOD_CONFIG.Slot0.kI = 0.0;
         HOOD_CONFIG.Slot0.kD = 0.00;
+
+
+        HOOD_CONFIG.Feedback.FeedbackRemoteSensorID = hoodEncoderID;
+        HOOD_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+        HOOD_CONFIG.Feedback.SensorToMechanismRatio = TURRET_GEAR_RATIO;
+        HOOD_CONFIG.Feedback.RotorToSensorRatio = 1.0; 
     }
 
     public static CANcoderConfiguration TURRET_ENCODER_CONFIG = new CANcoderConfiguration(); 
@@ -74,5 +84,12 @@ public final class TurretConstants {
 
         TURRET_ENCODER_CONFIG.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         TURRET_ENCODER_CONFIG.MagnetSensor.MagnetOffset = TURRET_ENCODER_OFFSET; 
+    }
+
+    public static CANcoderConfiguration HOOD_ENCODER_CONFIG = new CANcoderConfiguration();
+
+    static{
+        HOOD_ENCODER_CONFIG.MagnetSensor.SensorDirection  = SensorDirectionValue.Clockwise_Positive; 
+        HOOD_ENCODER_CONFIG.MagnetSensor.MagnetOffset = HOOD_ENCODER_OFFSET;
     }
 }
