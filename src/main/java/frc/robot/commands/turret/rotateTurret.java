@@ -5,11 +5,11 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Turret; 
 
-public class moveHood extends Command{
+public class rotateTurret extends Command{
     Turret m_turretSubsystem; 
     Angle setpoint; 
 
-    public moveHood(Turret turretSubsystem , Angle setpoint){
+    public rotateTurret(Turret turretSubsystem , Angle setpoint){
         this.m_turretSubsystem = turretSubsystem;
         addRequirements(m_turretSubsystem);
         this.setpoint = setpoint;
@@ -23,11 +23,11 @@ public class moveHood extends Command{
 
     @Override
     public void execute(){
-        m_turretSubsystem.setHoodAngle(setpoint);
+        m_turretSubsystem.moveTurret(setpoint);
     }
 
     @Override
     public boolean isFinished(){
-        return m_turretSubsystem.atHoodSetpoint();
+        return m_turretSubsystem.atTurretSetpoint();
     }
 }

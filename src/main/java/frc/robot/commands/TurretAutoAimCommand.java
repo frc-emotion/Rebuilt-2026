@@ -3,8 +3,9 @@ package frc.robot.commands;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import static edu.wpi.first.units.Units.Rotations;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.Command;
-
 import frc.robot.Constants.VisionConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Turret;
@@ -161,26 +162,26 @@ public class TurretAutoAimCommand extends Command {
      * </ol>
      */
     private void aimUsingPose(Pose2d robotPose) {
-        // Calculate all aiming parameters from robot position
-        AimingParameters params = calculator.calculate(robotPose);
+    // Calculate all aiming parameters from robot position
+    AimingParameters params = calculator.calculate(robotPose);
 
-        // Update telemetry
-        distanceToHubMeters = params.distanceToHub();
-        targetTurretAngleDeg = params.turretAngle().getDegrees();
-        turretErrorDeg = turret.getTurretAngle().minus(params.turretAngle()).getDegrees();
+    // Update telemetry
+    distanceToHubMeters = params.distanceToHub();
+    targetTurretAngleDeg = params.turretAngle().getDegrees();
+    turretErrorDeg = turret.getTurretPosition().minus(params.turretAngle()).getDegrees();
 
-        // Only command turret if parameters are valid (reasonable distance)
-        if (params.isValid()) {
-            // TURRET ROTATION: Point at hub center
-            turret.setTurretAngle(params.turretAngle());
+    // Only command turret if parameters are valid (reasonable distance)
+    if (params.isValid()) {
+        // TURRET ROTATION: Point at hub center
+        turret.moveTurret(Rotations.of(params.turretAngle().getRotations()));
 
-            // HOOD ANGLE: Adjust for distance
-            turret.setHoodAngle(params.hoodAngle());
+        // HOOD ANGLE: Adjust for distance
+        turret.setHoodAngle(Rotations.of(params.hoodAngle().getRotations()));
 
-            // FLYWHEEL: Speed for distance
-            turret.setShooterRPM(params.flywheelRPM());
-        }
+        // FLYWHEEL: Speed for distance (assuming RPM needs conversion)
+        turret.setShooterSpeed(params.flywheelRPM() / 60.0); // Convert RPM to RPS
     }
+}
 
     /**
      * FALLBACK MODE: Aim turret by visually centering on AprilTag.
@@ -212,9 +213,12 @@ public class TurretAutoAimCommand extends Command {
 
                 // Proportional adjustment (negative because positive yaw = target is left)
                 Rotation2d adjustment = Rotation2d.fromDegrees(-yawErrorDeg * VISION_SERVO_KP);
+                Angle currentPosition = turret.getTurretMotor().getPosition().getValue();
+                Angle newSetpoint = currentPosition.plus(Rotations.of(adjustment.getRotations()));
+            
 
                 // Rotate turret to center the tag
-                turret.adjustTurretAngle(adjustment);
+                turret.moveTurret(newSetpoint);
 
                 // Update telemetry
                 turretErrorDeg = yawErrorDeg;

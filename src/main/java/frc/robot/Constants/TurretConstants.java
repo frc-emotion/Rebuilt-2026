@@ -16,6 +16,10 @@ public final class TurretConstants {
     public static final double TURRET_ENCODER_OFFSET = 0.0; 
     public static final double TURRET_GEAR_RATIO = 1.0;
 
+    public static final double shooterTolerance = 0.5; 
+    public static final double turretTolerance = 0.05; 
+    public static final double hoodTolerance = 0.02;
+
     public static TalonFXConfiguration SHOOTER_CONFIG = new TalonFXConfiguration();
     
     static{

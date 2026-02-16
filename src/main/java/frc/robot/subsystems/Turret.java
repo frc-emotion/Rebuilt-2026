@@ -9,6 +9,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Rotation2d;
+import static edu.wpi.first.units.Units.Rotations;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -52,6 +53,10 @@ public class Turret extends SubsystemBase {
     private final MotionMagicVoltage turretMotionRequest;
     private final MotionMagicVoltage hoodMotionRequest;
 
+    private double shooterCurrentSetpoint;
+    private Angle hoodCurrentSetpoint;
+    private Angle turretCurrentSetpoint;    
+    
     public Turret(CANBus canBus) {
         shooterMotor = new TalonFX(TurretConstants.shooterMotorID, canBus);
         hoodMotor = new TalonFX(TurretConstants.hoodMotorID, canBus);
@@ -114,17 +119,36 @@ public class Turret extends SubsystemBase {
         turretEncoder.getConfigurator().apply(TurretConstants.TURRET_ENCODER_CONFIG);
     }
 
-    public void setAngle(Angle setpoint) {
+    public void setHoodAngle(Angle setpoint) {
+        hoodCurrentSetpoint = setpoint;
         hoodMotor.setControl(hoodMotionRequest.withPosition(setpoint));
     }
 
-    public void moveTurrent(Angle setpoint) {
+    public void moveTurret(Angle setpoint) {
+        turretCurrentSetpoint = setpoint; 
         turretMotor.setControl(turretMotionRequest.withPosition(setpoint));
     }
 
     public void setShooterSpeed(double speed) {
+        shooterCurrentSetpoint = speed;
         shooterMotor.setControl(shooterMotionRequest.withAcceleration(speed));
     }
+
+    public boolean atShooterSetpoint(){
+        return  (shooterMotor.getVelocity().getValueAsDouble() - shooterCurrentSetpoint) < TurretConstants.shooterTolerance;
+    }
+
+    public boolean atTurretSetpoint() {
+    return Math.abs(turretMotor.getPosition().getValueAsDouble() - turretCurrentSetpoint.in(Rotations)) < TurretConstants.turretTolerance;
+}
+
+    public boolean atHoodSetpoint() {
+        return Math.abs(hoodMotor.getPosition().getValueAsDouble() - hoodCurrentSetpoint.in(Rotations)) < TurretConstants.hoodTolerance;
+    }
+
+    public Rotation2d getTurretPosition() {
+       return Rotation2d.fromRotations(turretMotor.getPosition().getValueAsDouble());
+   }
 
     // ==================
     // MOTOR ACCESSORS (for FaultMonitor registration)
@@ -142,75 +166,7 @@ public class Turret extends SubsystemBase {
         return hoodMotor;
     }
 
-    // ==================
-    // TURRET AIMING METHODS (for vision-based targeting)
-    // ==================
-
-    /**
-     * Gets the current turret angle from the encoder.
-     * 
-     * @return Current turret rotation (0 = turret forward matches robot forward)
-     */
-    public Rotation2d getTurretAngle() {
-        turretPosition.refresh();
-        return Rotation2d.fromRotations(turretPosition.getValueAsDouble());
-    }
-
-    /**
-     * Sets the turret to a specific angle using motion magic.
-     * 
-     * @param angle Target angle (0 = turret forward matches robot forward)
-     */
-    public void setTurretAngle(Rotation2d angle) {
-        turretMotor.setControl(turretMotionRequest.withPosition(angle.getRotations()));
-    }
-
-    /**
-     * Adjusts the turret by a relative amount (for vision servo control).
-     * 
-     * @param adjustment Amount to adjust from current position
-     */
-    public void adjustTurretAngle(Rotation2d adjustment) {
-        Rotation2d currentAngle = getTurretAngle();
-        Rotation2d newAngle = currentAngle.plus(adjustment);
-        setTurretAngle(newAngle);
-    }
-
-    /**
-     * Sets the hood angle using motion magic.
-     * 
-     * @param angle Target hood angle
-     */
-    public void setHoodAngle(Rotation2d angle) {
-        hoodMotor.setControl(hoodMotionRequest.withPosition(angle.getRotations()));
-    }
-
-    /**
-     * Sets the shooter flywheel to a target RPM.
-     * 
-     * @param rpm Target rotations per minute
-     */
-    public void setShooterRPM(double rpm) {
-        // Convert RPM to rotations per second for the velocity controller
-        double rps = rpm / 60.0;
-        shooterMotor.setControl(shooterMotionRequest.withVelocity(rps));
-    }
-
-    /**
-     * Checks if the turret is at the target angle within a tolerance.
-     * 
-     * @param targetAngle      Target to check against
-     * @param toleranceDegrees Acceptable error in degrees
-     * @return true if at target
-     */
-    public boolean isAtTurretAngle(Rotation2d targetAngle, double toleranceDegrees) {
-        Rotation2d error = getTurretAngle().minus(targetAngle);
-        return Math.abs(error.getDegrees()) <= toleranceDegrees;
-    }
-
-    /**
-     * Stops all turret motors (for emergency stop or disable).
-     */
+    
     public void stopAll() {
         turretMotor.stopMotor();
         hoodMotor.stopMotor();
