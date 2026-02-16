@@ -1,11 +1,14 @@
 package frc.robot.Constants;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 
 import edu.wpi.first.units.measure.Angle;
 
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
 public final class ClimbConstants {
@@ -13,20 +16,16 @@ public final class ClimbConstants {
     public static final int CLIMB_LEADER_ID = 40;
     public static final int CLIMB_FOLLOWER_ID = 41;
 
+    public static final double CLIMB_GEAR_RATIO = 1.0;
+
+    public static final int CLIMB_ENCODER_ID = 67;
+
     // Mechanics
     public static final double GEAR_RATIO = 12.0; 
 
     public static final double TOLERANCE = 0.5;
 
     public static final double manual_kG = 0.5;
-    
-    // TODO: Measure how many motor rotations it takes to reach full height
-    // Example: If spool is 2 inches diameter -> Circumference ~6.28 inches.
-    // If max height is 25 inches -> ~4 spool turns.
-    // With 12:1 gear ratio -> 4 * 12 = 48 motor rotations.
-    public static final double MAX_HEIGHT_ROTATIONS = 50.0; 
-    public static final double THREE_QUARTER_HEIGHT = MAX_HEIGHT_ROTATIONS * 0.75;
-    public static final double BOTTOM_HEIGHT = 0.5; // Keep a small buffer from physical hardstop
 
     public static final TalonFXConfiguration CLIMB_CONFIG = new TalonFXConfiguration();
 
@@ -43,6 +42,8 @@ public final class ClimbConstants {
             this.outer = outer;
         }
     }
+
+    public static final double MAX_HEIGHT_ROTATIONS = 1000;
 
     static {
         // Motor Configuration
@@ -77,5 +78,20 @@ public final class ClimbConstants {
         CLIMB_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 80.0; // RPS
         CLIMB_CONFIG.MotionMagic.MotionMagicAcceleration = 160.0; // RPS^2
         CLIMB_CONFIG.MotionMagic.MotionMagicJerk = 1600.0; // Smoothing
+
+        CLIMB_CONFIG.Feedback.FeedbackRemoteSensorID = CLIMB_ENCODER_ID;
+        CLIMB_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+        CLIMB_CONFIG.Feedback.SensorToMechanismRatio = CLIMB_GEAR_RATIO;
+        CLIMB_CONFIG.Feedback.RotorToSensorRatio = 1.0;
+    }
+
+    public static CANcoderConfiguration CLIMB_ENCODER_CONFIG = new CANcoderConfiguration(); 
+
+    public static double CLIMB_ENCODER_OFFSET = 0;
+
+    static {
+
+        CLIMB_ENCODER_CONFIG.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
+        CLIMB_ENCODER_CONFIG.MagnetSensor.MagnetOffset = CLIMB_ENCODER_OFFSET;
     }
 }

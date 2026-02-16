@@ -5,6 +5,7 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.controls.Follower;
@@ -16,6 +17,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ClimbConstants;
+import frc.robot.Constants.TurretConstants;
 
 /**
  * Intake subsystem with automatic telemetry via Epilogue.
@@ -31,7 +33,8 @@ public class Climb extends SubsystemBase {
     private final TalonFX leaderMotor;
     @Logged
     private final TalonFX followerMotor;
-
+    
+    private final CANcoder climbEncoder;
 
     private final MotionMagicVoltage leaderMotionRequest;
 
@@ -42,10 +45,14 @@ public class Climb extends SubsystemBase {
 
     public Climb(CANBus canBus) {
         leaderMotor = new TalonFX(ClimbConstants.CLIMB_LEADER_ID, canBus);
-        followerMotor = new TalonFX(ClimbConstants.CLIMB_LEADER_ID, canBus);
+        followerMotor = new TalonFX(ClimbConstants.CLIMB_FOLLOWER_ID, canBus);
+
+        climbEncoder = new CANcoder(ClimbConstants.CLIMB_ENCODER_ID, canBus);
+
 
         configureLeaderMotor();
         configureFollowerMotor();
+        configureClimbEncoder();
 
 
         leaderMotionRequest = new MotionMagicVoltage(0);
@@ -69,7 +76,11 @@ public class Climb extends SubsystemBase {
     private void configureFollowerMotor() {
 
         followerMotor.getConfigurator().apply(ClimbConstants.CLIMB_CONFIG);
-        followerMotor.setControl(new Follower(leaderMotor.getDeviceID(), MotorAlignmentValue.Aligned));
+        followerMotor.setControl(new Follower(leaderMotor.getDeviceID(), MotorAlignmentValue.Opposed));
+    }
+
+    private void configureClimbEncoder() {
+        climbEncoder.getConfigurator().apply(ClimbConstants.CLIMB_ENCODER_CONFIG);
     }
 
 
