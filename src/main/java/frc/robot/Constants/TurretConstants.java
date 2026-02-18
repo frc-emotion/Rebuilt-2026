@@ -24,6 +24,8 @@ public final class TurretConstants {
     public static final double turretTolerance = 0.05;
     public static final double hoodTolerance = 0.02;
 
+    public static final double MAX_SHOOTER_RPS = 80.0; 
+
     public static TalonFXConfiguration SHOOTER_CONFIG = new TalonFXConfiguration();
 
     static {

@@ -3,31 +3,25 @@ package frc.robot.commands.turret;
 import static edu.wpi.first.units.Units.Degrees;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.Turret; 
+import frc.robot.subsystems.Hood;
 
-public class moveHood extends Command{
-    Turret m_turretSubsystem; 
-    Angle setpoint; 
+public class moveHood extends Command {
+    Hood m_hoodSubsystem;
+    Angle setpoint;
 
-    public moveHood(Turret turretSubsystem , Angle setpoint){
-        this.m_turretSubsystem = turretSubsystem;
-        addRequirements(m_turretSubsystem);
+    public moveHood(Hood hoodSubsystem, Angle setpoint) {
+        this.m_hoodSubsystem = hoodSubsystem;
         this.setpoint = setpoint;
-
+        addRequirements(m_hoodSubsystem);
     }
 
     @Override
-    public void initialize(){
-        setpoint = Degrees.of(0);
+    public void execute() {
+        m_hoodSubsystem.setHoodAngle(setpoint);
     }
 
     @Override
-    public void execute(){
-        m_turretSubsystem.setHoodAngle(setpoint);
-    }
-
-    @Override
-    public boolean isFinished(){
-        return m_turretSubsystem.atHoodSetpoint();
+    public boolean isFinished() {
+        return m_hoodSubsystem.atHoodSetpoint();
     }
 }

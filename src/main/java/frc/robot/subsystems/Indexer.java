@@ -4,6 +4,7 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
@@ -29,10 +30,6 @@ public class Indexer extends SubsystemBase {
     @Logged
     private final TalonFX upwardIndexerMotor;
 
-    private final DutyCycleOut horizontalIndexerMotorController = new DutyCycleOut(0);
-    private final DutyCycleOut verticalIndexerMotorController = new DutyCycleOut(0);
-    private final DutyCycleOut upwardIndexerMotorController = new DutyCycleOut(0);
-
     private final StatusSignal<AngularVelocity> horizontalIndexerMotorVelocity;
     private final StatusSignal<Current> horizontalIndexerMotorCurrent;
     private final StatusSignal<Voltage> horizontalIndexerMotorVoltage;
@@ -45,9 +42,9 @@ public class Indexer extends SubsystemBase {
     private final StatusSignal<Current> upwardIndexerMotorCurrent;
     private final StatusSignal<Voltage> upwardIndexerMotorVoltage;
 
-    private final MotionMagicVelocityVoltage horizontalMotionController;
-    private final MotionMagicVelocityVoltage verticalMotionController;
-    private final MotionMagicVelocityVoltage upwardMotionController;
+    private final VelocityVoltage horizontalMotionController;
+    private final VelocityVoltage verticalMotionController;
+    private final VelocityVoltage upwardMotionController;
 
     public Indexer(CANBus canBus) {
         horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID, canBus);
@@ -58,9 +55,9 @@ public class Indexer extends SubsystemBase {
         configureVerticalIndexerMotor();
         configureUpwardIndexerMotor();
 
-        horizontalMotionController = new MotionMagicVelocityVoltage(0);
-        verticalMotionController = new MotionMagicVelocityVoltage(0);
-        upwardMotionController = new MotionMagicVelocityVoltage(0);
+        horizontalMotionController = new VelocityVoltage(0);
+        verticalMotionController = new VelocityVoltage(0);
+        upwardMotionController = new VelocityVoltage(0);
 
         horizontalIndexerMotorVelocity = horizontalIndexerMotor.getVelocity();
         horizontalIndexerMotorCurrent = horizontalIndexerMotor.getSupplyCurrent();

@@ -11,9 +11,8 @@ public class rotateTurret extends Command{
 
     public rotateTurret(Turret turretSubsystem , Angle setpoint){
         this.m_turretSubsystem = turretSubsystem;
-        addRequirements(m_turretSubsystem);
         this.setpoint = setpoint;
-
+        addRequirements(m_turretSubsystem);
     }
 
     @Override
