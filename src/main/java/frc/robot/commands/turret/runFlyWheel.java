@@ -2,30 +2,30 @@ package frc.robot.commands.turret;
 
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Shooter;
 
-public class runFlyWheel extends Command{
-    Turret m_turretSubsystem; 
-    double speed; 
+public class runFlyWheel extends Command {
+    Shooter m_shooterSubsystem;
+    double speed;
 
-    public runFlyWheel(Turret turretSubsystem , double speed){
-        this.m_turretSubsystem = turretSubsystem;
+    public runFlyWheel(Shooter shooterSubsystem, double speed) {
+        this.m_shooterSubsystem = shooterSubsystem;
         this.speed = speed;
-        addRequirements(m_turretSubsystem);
+        addRequirements(m_shooterSubsystem);
     }
 
     @Override
-    public void initialize(){
+    public void initialize() {
         speed = 0.0;
     }
 
     @Override
-    public void execute(){
-        m_turretSubsystem.setShooterSpeed(RotationsPerSecond.of(speed));
+    public void execute() {
+        m_shooterSubsystem.setShooterSpeed(RotationsPerSecond.of(speed));
     }
 
     @Override
-    public boolean isFinished(){
-        return m_turretSubsystem.atShooterSetpoint();
+    public boolean isFinished() {
+        return m_shooterSubsystem.atShooterSetpoint();
     }
 }

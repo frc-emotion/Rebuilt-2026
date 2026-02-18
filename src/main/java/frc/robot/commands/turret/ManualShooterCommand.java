@@ -5,23 +5,23 @@ import java.util.function.DoubleSupplier;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.TurretConstants;
-import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Shooter;
 
 public class ManualShooterCommand extends Command {
 
-    Turret m_turretSubsystem;
+    Shooter m_shooterSubsystem;
     DoubleSupplier trigger;
 
-    public ManualShooterCommand(Turret turretSubsystem, DoubleSupplier trigger) {
-        this.m_turretSubsystem = turretSubsystem;
+    public ManualShooterCommand(Shooter shooterSubsystem, DoubleSupplier trigger) {
+        this.m_shooterSubsystem = shooterSubsystem;
         this.trigger = trigger;
-        addRequirements(m_turretSubsystem);
+        addRequirements(m_shooterSubsystem);
     }
 
     @Override
     public void execute() {
         double speed = trigger.getAsDouble() * TurretConstants.MAX_SHOOTER_RPS;
-        m_turretSubsystem.setShooterSpeed(RotationsPerSecond.of(speed));
+        m_shooterSubsystem.setShooterSpeed(RotationsPerSecond.of(speed));
     }
 
     @Override

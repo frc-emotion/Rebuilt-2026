@@ -32,6 +32,8 @@ import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Hood;
+import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
 
@@ -66,12 +68,15 @@ public class RobotContainer {
         public final Intake intake = new Intake(mechansimBus);
         public final Indexer indexer = new Indexer(mechansimBus);
         public final Turret turret = new Turret(mechansimBus);
+        public final Hood hood = new Hood(mechansimBus);
+        public final Shooter shooter = new Shooter(mechansimBus);
 
-
-        //public final Intake intake = null; // Disabled: no hardware connected
-        //public final Indexer indexer = null; // Disabled: no hardware connected
-        //public final Turret turret = null; // Disabled: no hardware connected
-        //public final Climb climb = null;
+        // public final Intake intake = null; // Disabled: no hardware connected
+        // public final Indexer indexer = null; // Disabled: no hardware connected
+        // public final Turret turret = null; // Disabled: no hardware connected
+        // public final Hood hood = null; // Disabled: no hardware connected
+        // public final Shooter shooter = null; // Disabled: no hardware connected
+        // public final Climb climb = null;
 
         // ===== LOGGING & MONITORING =====
         private final Telemetry logger = new Telemetry(MaxSpeed);
@@ -108,11 +113,19 @@ public class RobotContainer {
                         faultMonitor.register(CANID.UPWARD_INDEXER, indexer.getUpwardMotor());
                 }
 
-                // Turret motors (if enabled)
+                // Turret motor (if enabled)
                 if (turret != null) {
-                        faultMonitor.register(CANID.SHOOTER_WHEEL, turret.getShooterMotor());
                         faultMonitor.register(CANID.TURRET_ROTATION, turret.getTurretMotor());
-                        faultMonitor.register(CANID.TURRET_ANGLE, turret.getHoodMotor());
+                }
+
+                // Hood motor (if enabled)
+                if (hood != null) {
+                        faultMonitor.register(CANID.TURRET_ANGLE, hood.getHoodMotor());
+                }
+
+                // Shooter motor (if enabled)
+                if (shooter != null) {
+                        faultMonitor.register(CANID.SHOOTER_WHEEL, shooter.getShooterMotor());
                 }
 
                 // Climb motors (always enabled since it's instantiated)
@@ -161,8 +174,6 @@ public class RobotContainer {
                 joystick.leftTrigger().whileTrue(
                                 new AimAtLeftCamera(drivetrain, vision));
 
-
-
                 // Run SysId routines when holding back/start and X/Y.
                 // Note that each routine should be run exactly once in a single log.
                 joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
@@ -178,10 +189,10 @@ public class RobotContainer {
                 operator.rightBumper().whileTrue(new ManualClimbCommand(climb, 6.0));
                 operator.leftBumper().whileTrue(new ManualClimbCommand(climb, -6.0));
 
-                operator.rightTrigger().whileTrue(new ParallelCommandGroup(new runIndexer(indexer), new ManualShooterCommand(turret, () -> operator.getRightTriggerAxis())));
+                operator.rightTrigger().whileTrue(new ParallelCommandGroup(new runIndexer(indexer),
+                                new ManualShooterCommand(shooter, () -> operator.getRightTriggerAxis())));
                 operator.rightStick().whileTrue(new ManualTurretCommand(turret, () -> operator.getRightX()));
 
-                
         }
 
         /**

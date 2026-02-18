@@ -9,6 +9,8 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Hood;
+import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
 import frc.robot.util.TurretAimingCalculator;
@@ -63,8 +65,14 @@ public class TurretAutoAimCommand extends Command {
     /** Vision subsystem - for fallback AprilTag targeting */
     private final Vision vision;
 
-    /** Turret subsystem - the ONLY thing we actually control */
+    /** Turret subsystem - controls turret rotation */
     private final Turret turret;
+
+    /** Hood subsystem - controls hood angle */
+    private final Hood hood;
+
+    /** Shooter subsystem - controls flywheel speed */
+    private final Shooter shooter;
 
     /** Calculator for aiming math */
     private final TurretAimingCalculator calculator;
@@ -104,20 +112,26 @@ public class TurretAutoAimCommand extends Command {
      * @param drivetrain READ-ONLY - used to get robot's field position, NOT
      *                   controlled
      * @param vision     Used for fallback AprilTag targeting
-     * @param turret     The turret we control (rotation, hood, flywheel)
+     * @param turret     The turret we control (rotation)
+     * @param hood       The hood we control (angle)
+     * @param shooter    The shooter we control (flywheel)
      */
     public TurretAutoAimCommand(
             CommandSwerveDrivetrain drivetrain,
             Vision vision,
-            Turret turret) {
+            Turret turret,
+            Hood hood,
+            Shooter shooter) {
 
         this.drivetrain = drivetrain; // READ ONLY - for position
         this.vision = vision;
         this.turret = turret;
+        this.hood = hood;
+        this.shooter = shooter;
         this.calculator = new TurretAimingCalculator();
 
-        // IMPORTANT: Only require turret - we don't control drivetrain or vision
-        addRequirements(turret);
+        // IMPORTANT: Require all three subsystems we control
+        addRequirements(turret, hood, shooter);
     }
 
     @Override
@@ -163,26 +177,26 @@ public class TurretAutoAimCommand extends Command {
      * </ol>
      */
     private void aimUsingPose(Pose2d robotPose) {
-    // Calculate all aiming parameters from robot position
-    AimingParameters params = calculator.calculate(robotPose);
+        // Calculate all aiming parameters from robot position
+        AimingParameters params = calculator.calculate(robotPose);
 
-    // Update telemetry
-    distanceToHubMeters = params.distanceToHub();
-    targetTurretAngleDeg = params.turretAngle().getDegrees();
-    turretErrorDeg = turret.getTurretPosition().minus(params.turretAngle()).getDegrees();
+        // Update telemetry
+        distanceToHubMeters = params.distanceToHub();
+        targetTurretAngleDeg = params.turretAngle().getDegrees();
+        turretErrorDeg = turret.getTurretPosition().minus(params.turretAngle()).getDegrees();
 
-    // Only command turret if parameters are valid (reasonable distance)
-    if (params.isValid()) {
-        // TURRET ROTATION: Point at hub center
-        turret.moveTurret(Rotations.of(params.turretAngle().getRotations()));
+        // Only command turret if parameters are valid (reasonable distance)
+        if (params.isValid()) {
+            // TURRET ROTATION: Point at hub center
+            turret.moveTurret(Rotations.of(params.turretAngle().getRotations()));
 
-        // HOOD ANGLE: Adjust for distance
-        turret.setHoodAngle(Rotations.of(params.hoodAngle().getRotations()));
+            // HOOD ANGLE: Adjust for distance
+            hood.setHoodAngle(Rotations.of(params.hoodAngle().getRotations()));
 
-        // FLYWHEEL: Speed for distance (assuming RPM needs conversion)
-        turret.setShooterSpeed(RotationsPerSecond.of(params.flywheelRPM() / 60.0)); // Convert RPM to RPS
+            // FLYWHEEL: Speed for distance (assuming RPM needs conversion)
+            shooter.setShooterSpeed(RotationsPerSecond.of(params.flywheelRPM() / 60.0)); // Convert RPM to RPS
+        }
     }
-}
 
     /**
      * FALLBACK MODE: Aim turret by visually centering on AprilTag.
@@ -216,7 +230,6 @@ public class TurretAutoAimCommand extends Command {
                 Rotation2d adjustment = Rotation2d.fromDegrees(-yawErrorDeg * VISION_SERVO_KP);
                 Angle currentPosition = turret.getTurretMotor().getPosition().getValue();
                 Angle newSetpoint = currentPosition.plus(Rotations.of(adjustment.getRotations()));
-            
 
                 // Rotate turret to center the tag
                 turret.moveTurret(newSetpoint);
