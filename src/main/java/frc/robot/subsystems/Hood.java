@@ -33,6 +33,8 @@ public class Hood extends SubsystemBase {
     private final StatusSignal<Voltage> hoodVoltage;
 
     private final MotionMagicVoltage hoodMotionRequest;
+    private final com.ctre.phoenix6.controls.VoltageOut hoodManualVoltageRequest = new com.ctre.phoenix6.controls.VoltageOut(
+            0);
 
     private Angle hoodCurrentSetpoint;
 
@@ -75,12 +77,15 @@ public class Hood extends SubsystemBase {
                 - hoodCurrentSetpoint.in(Rotations)) < TurretConstants.hoodTolerance;
     }
 
-    // ==================
-    // MOTOR ACCESSORS (for FaultMonitor registration)
-    // ==================
+ 
 
     public TalonFX getHoodMotor() {
         return hoodMotor;
+    }
+
+    public void setHoodManualVoltage(double joystickInput) {
+        double manualVolts = joystickInput * 12.0;
+        hoodMotor.setControl(hoodManualVoltageRequest.withOutput(manualVolts));
     }
 
     public void stop() {

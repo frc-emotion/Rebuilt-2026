@@ -26,6 +26,7 @@ import frc.robot.commands.climb.ManualClimbCommand;
 import frc.robot.commands.indexer.runIndexer;
 import frc.robot.commands.turret.ManualShooterCommand;
 import frc.robot.commands.turret.ManualTurretCommand;
+import frc.robot.commands.turret.ManualHoodCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.logging.FaultMonitor;
 import frc.robot.subsystems.Climb;
@@ -192,6 +193,10 @@ public class RobotContainer {
                 operator.rightTrigger().whileTrue(new ParallelCommandGroup(new runIndexer(indexer),
                                 new ManualShooterCommand(shooter, () -> operator.getRightTriggerAxis())));
                 operator.rightStick().whileTrue(new ManualTurretCommand(turret, () -> operator.getRightX()));
+
+                if (hood != null) {
+                        hood.setDefaultCommand(new ManualHoodCommand(hood, () -> -operator.getLeftY()));
+                }
 
         }
 
