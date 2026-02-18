@@ -16,11 +16,6 @@ public class moveHood extends Command {
     }
 
     @Override
-    public void initialize() {
-        setpoint = Degrees.of(0);
-    }
-
-    @Override
     public void execute() {
         m_hoodSubsystem.setHoodAngle(setpoint);
     }

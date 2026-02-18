@@ -14,10 +14,6 @@ public class runFlyWheel extends Command {
         addRequirements(m_shooterSubsystem);
     }
 
-    @Override
-    public void initialize() {
-        speed = 0.0;
-    }
 
     @Override
     public void execute() {
