@@ -15,21 +15,25 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.CANID;
 import frc.robot.commands.AimAtLeftCamera;
 import frc.robot.commands.AimAtRightCamera;
+import frc.robot.commands.climb.ManualClimbCommand;
+import frc.robot.commands.indexer.runIndexer;
+import frc.robot.commands.turret.ManualShooterCommand;
+import frc.robot.commands.turret.ManualTurretCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.logging.FaultMonitor;
+import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Turret;
-import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.Vision;
-import frc.robot.subsystems.Climb;
 
 /**
  * Container for robot subsystems and commands.
@@ -50,23 +54,24 @@ public class RobotContainer {
         private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
         private final CommandXboxController joystick = new CommandXboxController(0);
+        private final CommandXboxController operator = new CommandXboxController(1);
 
-        private final CANBus mechansimBus = new CANBus("mechanisms");
+        private final CANBus mechansimBus = new CANBus("Persian Canivore");
 
         // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
         // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
         public final Vision vision = new Vision();
-        // public final Climb climb = new Climb(mechansimBus);
-        // public final Intake intake = new Intake(mechansimBus);
-        // public final Indexer indexer = new Indexer(mechansimBus);
-        // public final Turret turret = new Turret(mechansimBus);
+        public final Climb climb = new Climb(mechansimBus);
+        public final Intake intake = new Intake(mechansimBus);
+        public final Indexer indexer = new Indexer(mechansimBus);
+        public final Turret turret = new Turret(mechansimBus);
 
 
-        public final Intake intake = null; // Disabled: no hardware connected
-        public final Indexer indexer = null; // Disabled: no hardware connected
-        public final Turret turret = null; // Disabled: no hardware connected
-        public final Climb climb = null;
+        //public final Intake intake = null; // Disabled: no hardware connected
+        //public final Indexer indexer = null; // Disabled: no hardware connected
+        //public final Turret turret = null; // Disabled: no hardware connected
+        //public final Climb climb = null;
 
         // ===== LOGGING & MONITORING =====
         private final Telemetry logger = new Telemetry(MaxSpeed);
@@ -169,6 +174,14 @@ public class RobotContainer {
                 joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
                 drivetrain.registerTelemetry(logger::telemeterize);
+
+                operator.rightBumper().whileTrue(new ManualClimbCommand(climb, 6.0));
+                operator.leftBumper().whileTrue(new ManualClimbCommand(climb, -6.0));
+
+                operator.rightTrigger().whileTrue(new ParallelCommandGroup(new runIndexer(indexer), new ManualShooterCommand(turret, () -> operator.getRightTriggerAxis())));
+                operator.rightStick().whileTrue(new ManualTurretCommand(turret, () -> operator.getRightX()));
+
+                
         }
 
         /**

@@ -4,6 +4,7 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.VisionConstants;
@@ -179,7 +180,7 @@ public class TurretAutoAimCommand extends Command {
         turret.setHoodAngle(Rotations.of(params.hoodAngle().getRotations()));
 
         // FLYWHEEL: Speed for distance (assuming RPM needs conversion)
-        turret.setShooterSpeed(params.flywheelRPM() / 60.0); // Convert RPM to RPS
+        turret.setShooterSpeed(RotationsPerSecond.of(params.flywheelRPM() / 60.0)); // Convert RPM to RPS
     }
 }
 

@@ -1,5 +1,6 @@
 package frc.robot.commands.turret;
 
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Turret;
 
@@ -9,9 +10,8 @@ public class runFlyWheel extends Command{
 
     public runFlyWheel(Turret turretSubsystem , double speed){
         this.m_turretSubsystem = turretSubsystem;
-        addRequirements(m_turretSubsystem);
         this.speed = speed;
-
+        addRequirements(m_turretSubsystem);
     }
 
     @Override
@@ -21,7 +21,7 @@ public class runFlyWheel extends Command{
 
     @Override
     public void execute(){
-        m_turretSubsystem.setShooterSpeed(speed);
+        m_turretSubsystem.setShooterSpeed(RotationsPerSecond.of(speed));
     }
 
     @Override

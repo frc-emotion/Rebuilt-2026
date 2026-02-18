@@ -2,20 +2,23 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Rotation2d;
 import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.TurretConstants;
+
 
 /**
  * Turret subsystem with automatic telemetry via Epilogue.
@@ -50,9 +53,10 @@ public class Turret extends SubsystemBase {
     private final StatusSignal<Current> hoodCurrent;
     private final StatusSignal<Voltage> hoodVoltage;
 
-    private final MotionMagicVelocityVoltage shooterMotionRequest;
+    private final VelocityVoltage shooterMotionRequest;
     private final MotionMagicVoltage turretMotionRequest;
     private final MotionMagicVoltage hoodMotionRequest;
+    private final VoltageOut manualTurretRequest; 
 
     private double shooterCurrentSetpoint;
     private Angle hoodCurrentSetpoint;
@@ -64,6 +68,7 @@ public class Turret extends SubsystemBase {
         turretMotor = new TalonFX(TurretConstants.turretMotorID, canBus);
         turretEncoder = new CANcoder(TurretConstants.turretEncoderID, canBus);
         hoodEncoder = new CANcoder(TurretConstants.hoodEncoderID, canBus); 
+
 
         configureShooterMotor();
         configureHoodEncoder(); 
@@ -87,9 +92,10 @@ public class Turret extends SubsystemBase {
         hoodVoltage = hoodMotor.getMotorVoltage();
 
         // Motion magic controllers
-        shooterMotionRequest = new MotionMagicVelocityVoltage(0);
+        shooterMotionRequest = new VelocityVoltage(0);
         turretMotionRequest = new MotionMagicVoltage(0);
         hoodMotionRequest = new MotionMagicVoltage(0);
+        manualTurretRequest = new VoltageOut(0); 
 
         // Set update frequencies for efficient CAN usage
         turretVelocity.setUpdateFrequency(50);
@@ -114,7 +120,7 @@ public class Turret extends SubsystemBase {
         hoodMotor.getConfigurator().apply(TurretConstants.HOOD_CONFIG);
     }
     private void configureHoodEncoder(){
-        
+        hoodEncoder.getConfigurator().apply(TurretConstants.HOOD_ENCODER_CONFIG);
     }
 
     private void configureShooterMotor() {
@@ -136,9 +142,15 @@ public class Turret extends SubsystemBase {
         turretMotor.setControl(turretMotionRequest.withPosition(setpoint));
     }
 
-    public void setShooterSpeed(double speed) {
-        shooterCurrentSetpoint = speed;
-        shooterMotor.setControl(shooterMotionRequest.withAcceleration(speed));
+    public void setTurretVoltage(double joystickInput){
+        double turretVoltage = joystickInput * 12.0; 
+        turretMotor.setControl(manualTurretRequest.withOutput(turretVoltage));
+
+    }
+
+    public void setShooterSpeed(AngularVelocity speed) {
+        shooterCurrentSetpoint = speed.in(RotationsPerSecond);
+        shooterMotor.setControl(shooterMotionRequest.withVelocity(speed.in(RotationsPerSecond)));
     }
 
     public boolean atShooterSetpoint(){

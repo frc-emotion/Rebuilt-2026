@@ -11,9 +11,8 @@ public class moveHood extends Command{
 
     public moveHood(Turret turretSubsystem , Angle setpoint){
         this.m_turretSubsystem = turretSubsystem;
-        addRequirements(m_turretSubsystem);
         this.setpoint = setpoint;
-
+        addRequirements(m_turretSubsystem);
     }
 
     @Override
