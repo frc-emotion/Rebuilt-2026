@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.CANID;
 import frc.robot.commands.AimAtLeftCamera;
 import frc.robot.commands.AimAtRightCamera;
+import frc.robot.commands.turret.ManualHoodCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.logging.FaultMonitor;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -61,7 +62,6 @@ public class RobotContainer {
         // public final Intake intake = new Intake(mechansimBus);
         // public final Indexer indexer = new Indexer(mechansimBus);
         // public final Turret turret = new Turret(mechansimBus);
-
 
         public final Intake intake = null; // Disabled: no hardware connected
         public final Indexer indexer = null; // Disabled: no hardware connected
@@ -156,8 +156,6 @@ public class RobotContainer {
                 joystick.leftTrigger().whileTrue(
                                 new AimAtLeftCamera(drivetrain, vision));
 
-
-
                 // Run SysId routines when holding back/start and X/Y.
                 // Note that each routine should be run exactly once in a single log.
                 joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
@@ -169,6 +167,11 @@ public class RobotContainer {
                 joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
                 drivetrain.registerTelemetry(logger::telemeterize);
+
+
+                if(turret != null){
+                        turret.setDefaultCommand(new ManualHoodCommand(turret, () -> -joystick.getLeftY()));
+                }
         }
 
         /**

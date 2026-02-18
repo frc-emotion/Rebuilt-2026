@@ -4,6 +4,7 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 
@@ -15,6 +16,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.ClimbConstants;
 import frc.robot.Constants.TurretConstants;
 
 /**
@@ -35,7 +37,7 @@ public class Turret extends SubsystemBase {
     private final TalonFX turretMotor;
 
     private final CANcoder turretEncoder;
-    private final CANcoder hoodEncoder; 
+    private final CANcoder hoodEncoder;
 
     private final StatusSignal<AngularVelocity> turretVelocity;
     private final StatusSignal<Current> turretCurrent;
@@ -54,23 +56,26 @@ public class Turret extends SubsystemBase {
     private final MotionMagicVoltage turretMotionRequest;
     private final MotionMagicVoltage hoodMotionRequest;
 
+    private final VoltageOut hoodManualVoltageRequest;
+
     private double shooterCurrentSetpoint;
     private Angle hoodCurrentSetpoint;
-    private Angle turretCurrentSetpoint;    
+    private Angle turretCurrentSetpoint;
 
     public Turret(CANBus canBus) {
         shooterMotor = new TalonFX(TurretConstants.shooterMotorID, canBus);
         hoodMotor = new TalonFX(TurretConstants.hoodMotorID, canBus);
         turretMotor = new TalonFX(TurretConstants.turretMotorID, canBus);
         turretEncoder = new CANcoder(TurretConstants.turretEncoderID, canBus);
-        hoodEncoder = new CANcoder(TurretConstants.hoodEncoderID, canBus); 
+        hoodEncoder = new CANcoder(TurretConstants.hoodEncoderID, canBus);
+        hoodManualVoltageRequest = new VoltageOut(0);
+
 
         configureShooterMotor();
-        configureHoodEncoder(); 
+        configureHoodEncoder();
         configureHoodMotor();
         configureTurretEncoder();
         configureTurretMotor();
-        
 
         // Cache status signals for telemetry
         turretVelocity = turretMotor.getVelocity();
@@ -113,8 +118,9 @@ public class Turret extends SubsystemBase {
     private void configureHoodMotor() {
         hoodMotor.getConfigurator().apply(TurretConstants.HOOD_CONFIG);
     }
-    private void configureHoodEncoder(){
-        
+
+    private void configureHoodEncoder() {
+
     }
 
     private void configureShooterMotor() {
@@ -131,8 +137,13 @@ public class Turret extends SubsystemBase {
         hoodMotor.setControl(hoodMotionRequest.withPosition(setpoint));
     }
 
+    public void setHoodManualVoltage(double joystickInput) {
+        double manualVolts = joystickInput * 12.0;
+        hoodMotor.setControl(hoodManualVoltageRequest.withOutput(manualVolts));
+    }
+
     public void moveTurret(Angle setpoint) {
-        turretCurrentSetpoint = setpoint; 
+        turretCurrentSetpoint = setpoint;
         turretMotor.setControl(turretMotionRequest.withPosition(setpoint));
     }
 
@@ -141,21 +152,24 @@ public class Turret extends SubsystemBase {
         shooterMotor.setControl(shooterMotionRequest.withAcceleration(speed));
     }
 
-    public boolean atShooterSetpoint(){
-        return  (shooterMotor.getVelocity().getValueAsDouble() - shooterCurrentSetpoint) < TurretConstants.shooterTolerance;
+    public boolean atShooterSetpoint() {
+        return (shooterMotor.getVelocity().getValueAsDouble()
+                - shooterCurrentSetpoint) < TurretConstants.shooterTolerance;
     }
 
     public boolean atTurretSetpoint() {
-    return Math.abs(turretMotor.getPosition().getValueAsDouble() - turretCurrentSetpoint.in(Rotations)) < TurretConstants.turretTolerance;
-}
+        return Math.abs(turretMotor.getPosition().getValueAsDouble()
+                - turretCurrentSetpoint.in(Rotations)) < TurretConstants.turretTolerance;
+    }
 
     public boolean atHoodSetpoint() {
-        return Math.abs(hoodMotor.getPosition().getValueAsDouble() - hoodCurrentSetpoint.in(Rotations)) < TurretConstants.hoodTolerance;
+        return Math.abs(hoodMotor.getPosition().getValueAsDouble()
+                - hoodCurrentSetpoint.in(Rotations)) < TurretConstants.hoodTolerance;
     }
 
     public Rotation2d getTurretPosition() {
-       return Rotation2d.fromRotations(turretMotor.getPosition().getValueAsDouble());
-   }
+        return Rotation2d.fromRotations(turretMotor.getPosition().getValueAsDouble());
+    }
 
     // ==================
     // MOTOR ACCESSORS (for FaultMonitor registration)
@@ -173,7 +187,6 @@ public class Turret extends SubsystemBase {
         return hoodMotor;
     }
 
-    
     public void stopAll() {
         turretMotor.stopMotor();
         hoodMotor.stopMotor();
