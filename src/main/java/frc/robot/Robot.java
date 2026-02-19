@@ -71,7 +71,7 @@ public class Robot extends TimedRobot {
         CommandScheduler.getInstance().run();
 
         // Update drivetrain pose estimation with vision measurements
-        m_robotContainer.updateVisionPoseEstimates();
+        // m_robotContainer.updateVisionPoseEstimates();
     }
 
     @Override

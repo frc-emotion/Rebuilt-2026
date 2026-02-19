@@ -64,8 +64,8 @@ public class RobotContainer {
         // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
         // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-        public final Vision vision = new Vision();
-        public final Climb climb = new Climb(mechansimBus);
+        // public final Vision vision = new Vision();s
+        // public final Climb climb = new Climb(mechansimBus);
         public final Intake intake = new Intake(mechansimBus);
         public final Indexer indexer = new Indexer(mechansimBus);
         public final Turret turret = new Turret(mechansimBus);
@@ -77,7 +77,8 @@ public class RobotContainer {
         // public final Turret turret = null; // Disabled: no hardware connected
         // public final Hood hood = null; // Disabled: no hardware connected
         // public final Shooter shooter = null; // Disabled: no hardware connected
-        // public final Climb climb = null;
+        public final Vision vision = null;
+        public final Climb climb = null;
 
         // ===== LOGGING & MONITORING =====
         private final Telemetry logger = new Telemetry(MaxSpeed);
@@ -109,8 +110,8 @@ public class RobotContainer {
 
                 // Indexer motors (if enabled)
                 if (indexer != null) {
-                        faultMonitor.register(CANID.HORIZONTAL_INDEXER, indexer.getHorizontalMotor());
-                        faultMonitor.register(CANID.VERTICAL_INDEXER, indexer.getVerticalMotor());
+                        // faultMonitor.register(CANID.HORIZONTAL_INDEXER, indexer.getHorizontalMotor());
+                        // faultMonitor.register(CANID.VERTICAL_INDEXER, indexer.getVerticalMotor());
                         faultMonitor.register(CANID.UPWARD_INDEXER, indexer.getUpwardMotor());
                 }
 
@@ -187,8 +188,8 @@ public class RobotContainer {
 
                 drivetrain.registerTelemetry(logger::telemeterize);
 
-                operator.rightBumper().whileTrue(new ManualClimbCommand(climb, 6.0));
-                operator.leftBumper().whileTrue(new ManualClimbCommand(climb, -6.0));
+                // operator.rightBumper().whileTrue(new ManualClimbCommand(climb, 6.0));
+                // operator.leftBumper().whileTrue(new ManualClimbCommand(climb, -6.0));
 
                 operator.rightTrigger().whileTrue(new ParallelCommandGroup(new runIndexer(indexer),
                                 new ManualShooterCommand(shooter, () -> operator.getRightTriggerAxis())));
@@ -204,22 +205,22 @@ public class RobotContainer {
          * Updates vision pose estimates and feeds them to the drivetrain.
          * Call this from Robot.periodic().
          */
-        public void updateVisionPoseEstimates() {
-                // Update drivetrain with vision measurements from both cameras
-                vision.getEstimatedPoseRight().ifPresent(estimate -> {
-                        drivetrain.addVisionMeasurement(
-                                        estimate.estimatedPose.toPose2d(),
-                                        estimate.timestampSeconds,
-                                        vision.getStdDevsRight());
-                });
+        // public void updateVisionPoseEstimates() {
+        //         // Update drivetrain with vision measurements from both cameras
+        //         vision.getEstimatedPoseRight().ifPresent(estimate -> {
+        //                 drivetrain.addVisionMeasurement(
+        //                                 estimate.estimatedPose.toPose2d(),
+        //                                 estimate.timestampSeconds,
+        //                                 vision.getStdDevsRight());
+        //         });
 
-                vision.getEstimatedPoseLeft().ifPresent(estimate -> {
-                        drivetrain.addVisionMeasurement(
-                                        estimate.estimatedPose.toPose2d(),
-                                        estimate.timestampSeconds,
-                                        vision.getStdDevsLeft());
-                });
-        }
+        //         vision.getEstimatedPoseLeft().ifPresent(estimate -> {
+        //                 drivetrain.addVisionMeasurement(
+        //                                 estimate.estimatedPose.toPose2d(),
+        //                                 estimate.timestampSeconds,
+        //                                 vision.getStdDevsLeft());
+        //         });
+        // }
 
         public Command getAutonomousCommand() {
                 // Simple drive forward auton

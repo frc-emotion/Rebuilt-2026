@@ -11,7 +11,6 @@ import edu.wpi.first.units.measure.AngularVelocity;
 public final class IntakeConstants { 
     public static final int intakeMotorID = 20; 
     public static final int rollerMotorID = 21;
-    public static final double IntakeCurrentSpike = 20;
 
     public static final Angle INTAKE_IN_ANGLE = Degrees.of(0);
     public static final Angle INTAKE_OUT_ANGLE = Degrees.of(85);

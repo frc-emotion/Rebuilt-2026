@@ -8,11 +8,11 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 
 public final class TurretConstants {
-    public static final int shooterMotorID = 1001;
-    public static final int turretMotorID = 1002;
-    public static final int hoodMotorID = 1003;
-    public static final int turretEncoderID = 1004;
-    public static final int hoodEncoderID = 1005;
+    public static final int shooterMotorID = 50;
+    public static final int turretMotorID = 51;
+    public static final int hoodMotorID = 52;
+    public static final int turretEncoderID = 53;
+    public static final int hoodEncoderID = 54;
 
     public static final double TURRET_ENCODER_OFFSET = 0.0;
     public static final double TURRET_GEAR_RATIO = 1.0;

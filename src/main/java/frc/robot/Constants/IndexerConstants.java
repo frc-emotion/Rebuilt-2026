@@ -12,9 +12,9 @@ public final class IndexerConstants {
         UPWARD
     }
 
-    public static final int horizontalIndexerMotorID = 20;
-    public static final int verticalIndexerMotorID = 21;
-    public static final int upwardIndexerMotorID = 22;
+    public static final int horizontalIndexerMotorID = 31;
+    public static final int verticalIndexerMotorID = 32;
+    public static final int upwardIndexerMotorID = 33;
 
 
     public static final TalonFXConfiguration HORIZONTAL_INDEXER_CONFIG = new TalonFXConfiguration();
