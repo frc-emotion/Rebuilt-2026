@@ -12,7 +12,7 @@ public class ManualTurretCommand extends Command {
     Turret m_turretSubsystem; 
     public ManualTurretCommand(Turret turretSubsystem, DoubleSupplier x){
         this.x = x;
-        this.m_turretSubsystem = m_turretSubsystem; 
+        this.m_turretSubsystem = turretSubsystem; 
         addRequirements(m_turretSubsystem);
     }
 
