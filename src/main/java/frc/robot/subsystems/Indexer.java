@@ -115,12 +115,12 @@ public class Indexer extends SubsystemBase {
         switch (indexer) {
             case VERTICAL:
                 return;
-                // verticalMotionController.withVelocity(speed);
+                // verticalIndexerMotor.setControl(verticalMotionController.withVelocity(speed));
             case HORIZONTAL:
                 return;
-                // horizontalMotionController.withVelocity(speed);
+                // horizontalIndexerMotor.setControl(horizontalMotionController.withVelocity(speed));
             case UPWARD:
-                upwardMotionController.withVelocity(speed);
+                upwardIndexerMotor.setControl(upwardMotionController.withVelocity(speed));
         }
     }
 

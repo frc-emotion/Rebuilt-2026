@@ -11,6 +11,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 public final class IntakeConstants { 
     public static final int intakeMotorID = 20; 
     public static final int rollerMotorID = 21;
+    public static final double IntakeCurrentSpike = 20;
 
     public static final Angle INTAKE_IN_ANGLE = Degrees.of(0);
     public static final Angle INTAKE_OUT_ANGLE = Degrees.of(85);
@@ -41,13 +42,13 @@ public final class IntakeConstants {
         ROLLER_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         ROLLER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Coast;
 
-        INTAKE_CONFIG.Slot0.kG = 0; // Volts to overcome gravity
-        INTAKE_CONFIG.Slot0.kS = 0; // Volts to overcome static friction
-        INTAKE_CONFIG.Slot0.kV = 0.0; // Volts for a velocity target of 1 rps
-        INTAKE_CONFIG.Slot0.kA = 0.0; // Volts for an acceleration of 1 rps/s
-        INTAKE_CONFIG.Slot0.kP = 25;
-        INTAKE_CONFIG.Slot0.kI = 0.0;
-        INTAKE_CONFIG.Slot0.kD = 0.00;
+        ROLLER_CONFIG.Slot0.kG = 0; // Volts to overcome gravity
+        ROLLER_CONFIG.Slot0.kS = 0; // Volts to overcome static friction
+        ROLLER_CONFIG.Slot0.kV = 0.0; // Volts for a velocity target of 1 rps
+        ROLLER_CONFIG.Slot0.kA = 0.0; // Volts for an acceleration of 1 rps/s
+        ROLLER_CONFIG.Slot0.kP = 25;
+        ROLLER_CONFIG.Slot0.kI = 0.0;
+        ROLLER_CONFIG.Slot0.kD = 0.00;
 
 
     }

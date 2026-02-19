@@ -14,6 +14,7 @@ public final class TurretConstants {
     public static final int turretEncoderID = 53;
     public static final int hoodEncoderID = 54;
 
+    
     public static final double TURRET_ENCODER_OFFSET = 0.0;
     public static final double TURRET_GEAR_RATIO = 1.0;
 
