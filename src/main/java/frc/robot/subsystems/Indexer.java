@@ -86,6 +86,7 @@ public class Indexer extends SubsystemBase {
 
     }
 
+    @Override
     public void periodic() {
         // horizontalIndexerMotorVelocity.refresh();
         // horizontalIndexerMotorCurrent.refresh();

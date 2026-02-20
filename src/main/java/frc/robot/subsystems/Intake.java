@@ -75,6 +75,7 @@ public class Intake extends SubsystemBase {
 
     }
 
+    @Override
     public void periodic() {
         intakeVelocity.refresh();
         intakeVoltage.refresh();

@@ -44,18 +44,19 @@ public enum CANID {
 
     // ==================
     // INDEXER SUBSYSTEM
-    // Note: IDs 20-22 may conflict with Intake - verify hardware assignments!
     // ==================
-    HORIZONTAL_INDEXER(20, "Horizontal Indexer"),
-    VERTICAL_INDEXER(21, "Vertical Indexer"),
-    UPWARD_INDEXER(22, "Upward Indexer"),
+    HORIZONTAL_INDEXER(31, "Horizontal Indexer"),
+    VERTICAL_INDEXER(32, "Vertical Indexer"),
+    UPWARD_INDEXER(33, "Upward Indexer"),
 
     // ==================
     // TURRET SUBSYSTEM
     // ==================
-    SHOOTER_WHEEL(1001, "Shooter Wheel"),
-    TURRET_ROTATION(1002, "Turret Rotation"),
-    TURRET_ANGLE(1003, "Turret Angle"),
+    SHOOTER_WHEEL(50, "Shooter Wheel"),
+    TURRET_ROTATION(51, "Turret Rotation"),
+    TURRET_ANGLE(52, "Turret Angle"),
+    TURRET_ENCODER(53, "Turret Encoder"),
+    HOOD_ENCODER(54, "Hood Encoder"),
 
     // ==================
     // CLIMB SUBSYSTEM

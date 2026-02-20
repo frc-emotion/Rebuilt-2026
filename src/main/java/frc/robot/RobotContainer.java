@@ -59,7 +59,7 @@ public class RobotContainer {
         private final CommandXboxController joystick = new CommandXboxController(0);
         private final CommandXboxController operator = new CommandXboxController(1);
 
-        private final CANBus mechansimBus = new CANBus("Persian  Canivore");
+        private final CANBus mechansimBus = new CANBus("Persian CANivore");
 
         // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
         // Set to null to disable subsystems that don't have hardware connected
