@@ -67,17 +67,17 @@ public final class ClimbConstants {
 
         // Motion Magic PID Slots
         // Slot 0: Position Control
-        CLIMB_CONFIG.Slot0.kP = 40.0; 
+        CLIMB_CONFIG.Slot0.kP = 0.1; 
         CLIMB_CONFIG.Slot0.kI = 0.0;
-        CLIMB_CONFIG.Slot0.kD = 2.0;
-        CLIMB_CONFIG.Slot0.kV = 0.12; 
+        CLIMB_CONFIG.Slot0.kD = 0.0;
+        CLIMB_CONFIG.Slot0.kV = 0.0; 
         CLIMB_CONFIG.Slot0.kG = 0.5;  
         CLIMB_CONFIG.Slot0.GravityType = GravityTypeValue.Elevator_Static; 
 
         // Motion Magic constraints
-        CLIMB_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 80.0; // RPS
-        CLIMB_CONFIG.MotionMagic.MotionMagicAcceleration = 160.0; // RPS^2
-        CLIMB_CONFIG.MotionMagic.MotionMagicJerk = 1600.0; // Smoothing
+        // CLIMB_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 80.0; // RPS
+        // CLIMB_CONFIG.MotionMagic.MotionMagicAcceleration = 160.0; // RPS^2
+        // CLIMB_CONFIG.MotionMagic.MotionMagicJerk = 1600.0; // Smoothing
 
         CLIMB_CONFIG.Feedback.FeedbackRemoteSensorID = CLIMB_ENCODER_ID;
         CLIMB_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;

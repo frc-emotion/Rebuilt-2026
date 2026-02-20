@@ -199,7 +199,7 @@ public class RobotContainer {
                 }
 
                 if (hood != null) {
-                        hood.setDefaultCommand(new ManualHoodCommand(hood, () -> -operator.getLeftY()));
+                        hood.setDefaultCommand(new ManualHoodCommand(hood, () -> operator.getLeftY()));
                 }
 
         }

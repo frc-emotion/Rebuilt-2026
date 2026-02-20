@@ -29,7 +29,7 @@ public final class IndexerConstants {
         HORIZONTAL_INDEXER_CONFIG.Slot0.kS = 0; // Volts to overcome static friction
         HORIZONTAL_INDEXER_CONFIG.Slot0.kV = 0.0; // Volts for a velocity target of 1 rps
         HORIZONTAL_INDEXER_CONFIG.Slot0.kA = 0.0; // Volts for an acceleration of 1 rps/s
-        HORIZONTAL_INDEXER_CONFIG.Slot0.kP = 25;
+        HORIZONTAL_INDEXER_CONFIG.Slot0.kP = 0.1;
         HORIZONTAL_INDEXER_CONFIG.Slot0.kI = 0.0;
         HORIZONTAL_INDEXER_CONFIG.Slot0.kD = 0.00;
         
@@ -49,7 +49,7 @@ public final class IndexerConstants {
         VERTICAL_INDEXER_CONFIG.Slot0.kS = 0; // Volts to overcome static friction
         VERTICAL_INDEXER_CONFIG.Slot0.kV = 0.0; // Volts for a velocity target of 1 rps
         VERTICAL_INDEXER_CONFIG.Slot0.kA = 0.0; // Volts for an acceleration of 1 rps/s
-        VERTICAL_INDEXER_CONFIG.Slot0.kP = 25;
+        VERTICAL_INDEXER_CONFIG.Slot0.kP = 0.1;
         VERTICAL_INDEXER_CONFIG.Slot0.kI = 0.0;
         VERTICAL_INDEXER_CONFIG.Slot0.kD = 0.00;
         
@@ -57,7 +57,7 @@ public final class IndexerConstants {
 
     public static final TalonFXConfiguration UPWARD_INDEXER_CONFIG = new TalonFXConfiguration();
 
-    public static final double UPWARD_INDEXER_SPEED = 30;
+    public static final double UPWARD_INDEXER_SPEED = 100;
 
     static{
         UPWARD_INDEXER_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
@@ -67,7 +67,7 @@ public final class IndexerConstants {
         UPWARD_INDEXER_CONFIG.Slot0.kS = 0; // Volts to overcome static friction
         UPWARD_INDEXER_CONFIG.Slot0.kV = 0.0; // Volts for a velocity target of 1 rps
         UPWARD_INDEXER_CONFIG.Slot0.kA = 0.0; // Volts for an acceleration of 1 rps/s
-        UPWARD_INDEXER_CONFIG.Slot0.kP = 25;
+        UPWARD_INDEXER_CONFIG.Slot0.kP = 0.1;
         UPWARD_INDEXER_CONFIG.Slot0.kI = 0.0;
         UPWARD_INDEXER_CONFIG.Slot0.kD = 0.00;
         

@@ -19,10 +19,10 @@ public class ManualHoodCommand extends Command {
     @Override
     public void execute() {
         // Get the value from the joystick supplier
-        double input = m_joystickInput.getAsDouble();
+        double input = MathUtil.applyDeadband(m_joystickInput.getAsDouble(), 0.01);
 
         // Clamp power to 30% for safety
-        double clampedInput = MathUtil.clamp(input, -0.3, 0.3);
+        double clampedInput = MathUtil.clamp(input, -0.7, 0.7);
 
         // Send it to the subsystem
         m_hood.setHoodManualVoltage(clampedInput);
@@ -31,5 +31,10 @@ public class ManualHoodCommand extends Command {
     @Override
     public boolean isFinished() {
         return false;
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        m_hood.stop();
     }
 }

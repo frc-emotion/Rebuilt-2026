@@ -20,7 +20,7 @@ public class ManualShooterCommand extends Command {
 
     @Override
     public void execute() {
-        double speed = 0.0; //trigger.getAsDouble() * TurretConstants.MAX_SHOOTER_RPS;
+        double speed = trigger.getAsDouble() * TurretConstants.MAX_SHOOTER_RPS;
         m_shooterSubsystem.setShooterSpeed(RotationsPerSecond.of(speed));
     }
 

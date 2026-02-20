@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -52,8 +53,14 @@ public class Shooter extends SubsystemBase {
     }
 
     private void configureShooterMotor() {
-        shooterMotor.getConfigurator().apply(TurretConstants.SHOOTER_CONFIG);
-
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = shooterMotor.getConfigurator().apply(TurretConstants.SHOOTER_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply shooter motor configs: " + status.toString());
+        }
     }
 
     public void setShooterSpeed(AngularVelocity speed) {

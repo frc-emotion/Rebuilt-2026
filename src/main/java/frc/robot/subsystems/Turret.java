@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -66,11 +67,25 @@ public class Turret extends SubsystemBase {
     }
 
     private void configureTurretMotor() {
-        turretMotor.getConfigurator().apply(TurretConstants.TURRET_CONFIG);
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = turretMotor.getConfigurator().apply(TurretConstants.TURRET_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply turret motor configs: " + status.toString());
+        }
     }
 
     private void configureTurretEncoder() {
-        turretEncoder.getConfigurator().apply(TurretConstants.TURRET_ENCODER_CONFIG);
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = turretEncoder.getConfigurator().apply(TurretConstants.TURRET_ENCODER_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply turret encoder configs: " + status.toString());
+        }
     }
 
     public void moveTurret(Angle setpoint) {
@@ -79,7 +94,7 @@ public class Turret extends SubsystemBase {
     }
 
     public void setTurretVoltage(double joystickInput) {
-        double turretVoltage = joystickInput * 12.0;
+        double turretVoltage = joystickInput * 1.00;
         turretMotor.setControl(manualTurretRequest.withOutput(turretVoltage));
 
     }

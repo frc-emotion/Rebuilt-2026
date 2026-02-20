@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -85,14 +86,25 @@ public class Intake extends SubsystemBase {
     }
 
     private void configureIntakeMotor() {
-
-        intakeMotor.getConfigurator().apply(IntakeConstants.INTAKE_CONFIG);
-
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = intakeMotor.getConfigurator().apply(IntakeConstants.INTAKE_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply intake motor configs: " + status.toString());
+        }
     }
 
     private void configureRollerMotor() {
-
-        rollerMotor.getConfigurator().apply(IntakeConstants.ROLLER_CONFIG);
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = rollerMotor.getConfigurator().apply(IntakeConstants.ROLLER_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply roller motor configs: " + status.toString());
+        }
     }
 
 

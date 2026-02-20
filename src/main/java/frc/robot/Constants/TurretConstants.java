@@ -25,18 +25,18 @@ public final class TurretConstants {
     public static final double turretTolerance = 0.05;
     public static final double hoodTolerance = 0.02;
 
-    public static final double MAX_SHOOTER_RPS = 10; 
+    public static final double MAX_SHOOTER_RPS = 100; 
 
     public static TalonFXConfiguration SHOOTER_CONFIG = new TalonFXConfiguration();
 
     static {
-        SHOOTER_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        SHOOTER_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         SHOOTER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         SHOOTER_CONFIG.Slot0.kG = 0.0;
         SHOOTER_CONFIG.Slot0.kS = 0.0;
         SHOOTER_CONFIG.Slot0.kV = 0.0;
         SHOOTER_CONFIG.Slot0.kA = 0.0;
-        SHOOTER_CONFIG.Slot0.kP = 0.00;
+        SHOOTER_CONFIG.Slot0.kP = 0.1;
         SHOOTER_CONFIG.Slot0.kI = 0.0;
         SHOOTER_CONFIG.Slot0.kD = 0.00;
     }
@@ -47,10 +47,10 @@ public final class TurretConstants {
         TURRET_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         TURRET_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         TURRET_CONFIG.Slot0.kG = 0.0;
-        TURRET_CONFIG.Slot0.kS = 0.1;
+        TURRET_CONFIG.Slot0.kS = 0.5;
         TURRET_CONFIG.Slot0.kV = 0.12;
         TURRET_CONFIG.Slot0.kA = 0.0;
-        TURRET_CONFIG.Slot0.kP = 50;
+        TURRET_CONFIG.Slot0.kP = 0.01;
         TURRET_CONFIG.Slot0.kI = 0.0;
         TURRET_CONFIG.Slot0.kD = 0.5;
 
@@ -65,11 +65,11 @@ public final class TurretConstants {
     static {
         HOOD_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         HOOD_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        HOOD_CONFIG.Slot0.kG = 0.53;
+        HOOD_CONFIG.Slot0.kG = 0.0;
         HOOD_CONFIG.Slot0.kS = 0.5;
         HOOD_CONFIG.Slot0.kV = 0.0;
         HOOD_CONFIG.Slot0.kA = 0.0;
-        HOOD_CONFIG.Slot0.kP = 25;
+        HOOD_CONFIG.Slot0.kP = 0.01;
         HOOD_CONFIG.Slot0.kI = 0.0;
         HOOD_CONFIG.Slot0.kD = 0.00;
 

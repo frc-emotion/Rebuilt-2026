@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -60,11 +61,25 @@ public class Hood extends SubsystemBase {
     }
 
     private void configureHoodMotor() {
-        hoodMotor.getConfigurator().apply(TurretConstants.HOOD_CONFIG);
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = hoodMotor.getConfigurator().apply(TurretConstants.HOOD_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply hood motor configs: " + status.toString());
+        }
     }
 
     private void configureHoodEncoder() {
-        hoodEncoder.getConfigurator().apply(TurretConstants.HOOD_ENCODER_CONFIG);
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = hoodEncoder.getConfigurator().apply(TurretConstants.HOOD_ENCODER_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply hood encoder configs: " + status.toString());
+        }
     }
 
     public void setHoodAngle(Angle setpoint) {
@@ -84,7 +99,7 @@ public class Hood extends SubsystemBase {
     }
 
     public void setHoodManualVoltage(double joystickInput) {
-        double manualVolts = joystickInput * 12.0;
+        double manualVolts = joystickInput * 3.0;
         hoodMotor.setControl(hoodManualVoltageRequest.withOutput(manualVolts));
     }
 

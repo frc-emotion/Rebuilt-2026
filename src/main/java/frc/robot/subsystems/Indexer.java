@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
@@ -108,7 +109,14 @@ public class Indexer extends SubsystemBase {
     // }
 
     private void configureUpwardIndexerMotor() {
-        upwardIndexerMotor.getConfigurator().apply(IndexerConstants.UPWARD_INDEXER_CONFIG);
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = upwardIndexerMotor.getConfigurator().apply(IndexerConstants.UPWARD_INDEXER_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply upward indexer motor configs: " + status.toString());
+        }
     }
 
     public void setIndexerSpeed(double speed, IndexerType indexer) {
