@@ -59,18 +59,18 @@ public class RobotContainer {
         private final CommandXboxController joystick = new CommandXboxController(0);
         private final CommandXboxController operator = new CommandXboxController(1);
 
-        private final CANBus mechansimBus = new CANBus("Persian  Canivore");
+        private final CANBus mechanismBus = new CANBus("Persian  Canivore");
 
         // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
         // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
         // public final Vision vision = new Vision();s
-        // public final Climb climb = new Climb(mechansimBus);
-        public final Intake intake = new Intake(mechansimBus);
-        public final Indexer indexer = new Indexer(mechansimBus);
-        public final Turret turret = new Turret(mechansimBus);
-        public final Hood hood = new Hood(mechansimBus);
-        public final Shooter shooter = new Shooter(mechansimBus);
+        // public final Climb climb = new Climb(mechanismBus);
+        public final Intake intake = new Intake(mechanismBus);
+        public final Indexer indexer = new Indexer(mechanismBus);
+        public final Turret turret = new Turret(mechanismBus);
+        public final Hood hood = new Hood(mechanismBus);
+        public final Shooter shooter = new Shooter(mechanismBus);
 
         // public final Intake intake = null; // Disabled: no hardware connected
         // public final Indexer indexer = null; // Disabled: no hardware connected
@@ -241,3 +241,4 @@ public class RobotContainer {
                                 drivetrain.applyRequest(() -> idle));
         }
 }
+

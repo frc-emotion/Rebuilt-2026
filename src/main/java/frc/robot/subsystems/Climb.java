@@ -1,8 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -11,16 +10,11 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.controls.Follower;
 
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ClimbConstants;
-import frc.robot.Constants.TurretConstants;
 
 /**
- * Intake subsystem with automatic telemetry via Epilogue.
+ * Climb subsystem with automatic telemetry via Epilogue.
  * 
  * <p>
  * The @Logged annotation on TalonFX motors enables automatic logging of
@@ -68,19 +62,37 @@ public class Climb extends SubsystemBase {
     }
 
     private void configureLeaderMotor() {
-
-        leaderMotor.getConfigurator().apply(ClimbConstants.CLIMB_CONFIG);
-
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = leaderMotor.getConfigurator().apply(ClimbConstants.CLIMB_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply climb leader motor configs: " + status.toString());
+        }
     }
 
     private void configureFollowerMotor() {
-
-        followerMotor.getConfigurator().apply(ClimbConstants.CLIMB_CONFIG);
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = followerMotor.getConfigurator().apply(ClimbConstants.CLIMB_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply climb follower motor configs: " + status.toString());
+        }
         followerMotor.setControl(new Follower(leaderMotor.getDeviceID(), MotorAlignmentValue.Opposed));
     }
 
     private void configureClimbEncoder() {
-        climbEncoder.getConfigurator().apply(ClimbConstants.CLIMB_ENCODER_CONFIG);
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = climbEncoder.getConfigurator().apply(ClimbConstants.CLIMB_ENCODER_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply climb encoder configs: " + status.toString());
+        }
     }
 
 

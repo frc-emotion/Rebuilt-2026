@@ -69,7 +69,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public boolean atShooterSetpoint() {
-        return (shooterMotor.getVelocity().getValueAsDouble()
+        return Math.abs(shooterMotor.getVelocity().getValueAsDouble()
                 - shooterCurrentSetpoint) < TurretConstants.shooterTolerance;
     }
 

@@ -14,8 +14,8 @@ public class LevelCommand extends Command{
         Climb climbSubsystem,
         ClimbLevel level
     ){
+        m_climbSubsystem = climbSubsystem;
         climbLevel = level;
-
 
         addRequirements(m_climbSubsystem);
 
