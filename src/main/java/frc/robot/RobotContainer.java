@@ -59,7 +59,7 @@ public class RobotContainer {
         private final CommandXboxController joystick = new CommandXboxController(0);
         private final CommandXboxController operator = new CommandXboxController(1);
 
-        private final CANBus mechanismBus = new CANBus("Persian CANivore");
+        private final CANBus mechanismBus = new CANBus("Persian  Canivore");
 
         // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
         // Set to null to disable subsystems that don't have hardware connected
@@ -241,3 +241,4 @@ public class RobotContainer {
                                 drivetrain.applyRequest(() -> idle));
         }
 }
+
