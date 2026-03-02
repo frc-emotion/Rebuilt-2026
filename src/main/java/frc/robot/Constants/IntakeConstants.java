@@ -32,6 +32,11 @@ public final class IntakeConstants {
         INTAKE_CONFIG.Slot0.kP = 25;
         INTAKE_CONFIG.Slot0.kI = 0.0;
         INTAKE_CONFIG.Slot0.kD = 0.00;
+
+        // MotionMagic constraints — prevents slapdown from slamming. TODO: tune on robot.
+        INTAKE_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 2.0; // RPS
+        INTAKE_CONFIG.MotionMagic.MotionMagicAcceleration = 4.0;   // RPS^2
+        INTAKE_CONFIG.MotionMagic.MotionMagicJerk = 40.0;          // Smoothing
     }
 
     public static final double INTAKE_ROLLER_VELOCITY = 40;

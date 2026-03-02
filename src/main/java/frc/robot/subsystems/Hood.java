@@ -37,7 +37,7 @@ public class Hood extends SubsystemBase {
     private final com.ctre.phoenix6.controls.VoltageOut hoodManualVoltageRequest = new com.ctre.phoenix6.controls.VoltageOut(
             0);
 
-    private Angle hoodCurrentSetpoint;
+    private Angle hoodCurrentSetpoint = Rotations.of(0);
 
     public Hood(CANBus canBus) {
         hoodMotor = new TalonFX(TurretConstants.hoodMotorID, canBus);

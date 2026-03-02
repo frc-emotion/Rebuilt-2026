@@ -289,49 +289,15 @@ public final class VisionConstants {
     /** Pitch angle of cameras from horizontal (negative = tilted up) */
     public static final double CAM_PITCH_RADIANS = Units.degreesToRadians(-30);
 
-    // ==================
-    // 2025 REEFSCAPE APRILTAG HEIGHTS
-    // ==================
-    // Heights of AprilTag centers from the floor (from game manual)
-    // These are used for trigonometric distance calculations
-
-    /** Reef AprilTag height (tags 6-11, 17-22) */
-    public static final double REEF_TAG_HEIGHT_METERS = Units.inchesToMeters(12.125);
-
-    /** Processor AprilTag height (tags 3, 16) */
-    public static final double PROCESSOR_TAG_HEIGHT_METERS = Units.inchesToMeters(47.875);
-
-    /** Coral Station AprilTag height (tags 1, 2, 12, 13) */
-    public static final double CORAL_STATION_TAG_HEIGHT_METERS = Units.inchesToMeters(53.25);
-
-    /** Barge AprilTag height (tags 4, 5, 14, 15) */
-    public static final double BARGE_TAG_HEIGHT_METERS = Units.inchesToMeters(73.875);
-
     /**
-     * Gets the height of an AprilTag based on its ID for 2025 REEFSCAPE.
-     * 
-     * @param tagId The fiducial ID of the AprilTag
-     * @return Height of the tag center from the floor in meters
+     * Gets the height of an AprilTag based on its ID for 2026 REBUILT.
+     * Hub tags are all at the same height.
      */
     public static double getTagHeight(int tagId) {
-        // Reef tags
-        if ((tagId >= 6 && tagId <= 11) || (tagId >= 17 && tagId <= 22)) {
-            return REEF_TAG_HEIGHT_METERS;
+        if (isHubTag(tagId)) {
+            return HUB_TAG_HEIGHT_METERS;
         }
-        // Processor tags
-        if (tagId == 3 || tagId == 16) {
-            return PROCESSOR_TAG_HEIGHT_METERS;
-        }
-        // Coral Station tags
-        if (tagId == 1 || tagId == 2 || tagId == 12 || tagId == 13) {
-            return CORAL_STATION_TAG_HEIGHT_METERS;
-        }
-        // Barge tags
-        if (tagId == 4 || tagId == 5 || tagId == 14 || tagId == 15) {
-            return BARGE_TAG_HEIGHT_METERS;
-        }
-        // Default fallback
-        return REEF_TAG_HEIGHT_METERS;
+        return HUB_TAG_HEIGHT_METERS; // TODO: add heights for non-hub tags
     }
 
     private VisionConstants() {

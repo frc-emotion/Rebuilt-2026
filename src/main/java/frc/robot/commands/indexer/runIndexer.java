@@ -21,8 +21,8 @@ public class runIndexer extends Command {
     @Override
     public void execute(){
 
-        m_indexerSubsystem.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
         m_indexerSubsystem.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
+        m_indexerSubsystem.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
         m_indexerSubsystem.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
        
 
@@ -34,8 +34,8 @@ public class runIndexer extends Command {
 
     @Override
     public void end(boolean interrupted){
-        m_indexerSubsystem.setIndexerSpeed(0, IndexerType.VERTICAL);
         m_indexerSubsystem.setIndexerSpeed(0, IndexerType.HORIZONTAL);
+        m_indexerSubsystem.setIndexerSpeed(0, IndexerType.VERTICAL);
         m_indexerSubsystem.setIndexerSpeed(0, IndexerType.UPWARD);
     }
 }

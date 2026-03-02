@@ -39,7 +39,7 @@ public class Turret extends SubsystemBase {
     private final MotionMagicVoltage turretMotionRequest;
     private final VoltageOut manualTurretRequest;
 
-    private Angle turretCurrentSetpoint;
+    private Angle turretCurrentSetpoint = Rotations.of(0);
 
     public Turret(CANBus canBus) {
         turretMotor = new TalonFX(TurretConstants.turretMotorID, canBus);
@@ -92,8 +92,13 @@ public class Turret extends SubsystemBase {
         turretMotor.setControl(turretMotionRequest.withPosition(setpoint));
     }
 
+    public void moveTurret(Angle setpoint, double feedforwardVolts) {
+        turretCurrentSetpoint = setpoint;
+        turretMotor.setControl(turretMotionRequest.withPosition(setpoint).withFeedForward(feedforwardVolts));
+    }
+
     public void setTurretVoltage(double joystickInput) {
-        double turretVoltage = joystickInput * 1.00;
+        double turretVoltage = joystickInput * 3.0;
         turretMotor.setControl(manualTurretRequest.withOutput(turretVoltage));
 
     }

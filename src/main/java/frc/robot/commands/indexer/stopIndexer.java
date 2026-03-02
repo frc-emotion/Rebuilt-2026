@@ -2,7 +2,6 @@ package frc.robot.commands.indexer;
 
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
 import frc.robot.subsystems.Indexer;
 
@@ -21,8 +20,8 @@ public class stopIndexer extends Command {
     @Override
     public void execute(){
 
-        m_indexerSubsystem.setIndexerSpeed(0, IndexerType.VERTICAL);
         m_indexerSubsystem.setIndexerSpeed(0, IndexerType.HORIZONTAL);
+        m_indexerSubsystem.setIndexerSpeed(0, IndexerType.VERTICAL);
         m_indexerSubsystem.setIndexerSpeed(0, IndexerType.UPWARD);
        
 

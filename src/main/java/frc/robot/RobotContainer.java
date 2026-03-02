@@ -22,13 +22,18 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.CANID;
 import frc.robot.commands.AimAtLeftCamera;
 import frc.robot.commands.AimAtRightCamera;
+import frc.robot.commands.ShootCommand;
+import frc.robot.commands.TurretAutoAimCommand;
 import frc.robot.commands.climb.ManualClimbCommand;
 import frc.robot.commands.indexer.runIndexer;
+import frc.robot.commands.intake.IntakeInCommand;
+import frc.robot.commands.intake.IntakeOutCommand;
 import frc.robot.commands.turret.ManualShooterCommand;
 import frc.robot.commands.turret.ManualTurretCommand;
 import frc.robot.commands.turret.ManualHoodCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.logging.FaultMonitor;
+import frc.robot.util.SuperstructureTuner;
 import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Indexer;
@@ -64,7 +69,7 @@ public class RobotContainer {
         // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
         // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-        // public final Vision vision = new Vision();s
+        // public final Vision vision = new Vision();
         // public final Climb climb = new Climb(mechanismBus);
         public final Intake intake = new Intake(mechanismBus);
         public final Indexer indexer = new Indexer(mechanismBus);
@@ -80,14 +85,27 @@ public class RobotContainer {
         // public final Vision vision = null;
         // public final Climb climb = null;
 
+        // ===== AUTONOMY TOGGLE =====
+        // Set to true for competition (auto-aim + gated shoot + intake toggle on driver).
+        // Set to false for testing (manual operator control of turret/hood/shooter).
+        private static final boolean FULL_AUTONOMOUS = false;
+
+        // Stored reference so ShootCommand can check isAimed() (only used when FULL_AUTONOMOUS)
+        private TurretAutoAimCommand autoAimCommand;
+
         // ===== LOGGING & MONITORING =====
         private final Telemetry logger = new Telemetry(MaxSpeed);
         @Logged
         public final FaultMonitor faultMonitor = new FaultMonitor();
 
+        // ===== DASHBOARD TUNER (all constants live in Elastic under /Tuning/) =====
+        @Logged
+        public final SuperstructureTuner tuner = new SuperstructureTuner();
+
         public RobotContainer() {
                 configureBindings();
                 registerMotorsForFaultMonitoring();
+                tuner.setSubsystems(turret, hood, shooter, intake);
         }
 
         /**
@@ -110,8 +128,8 @@ public class RobotContainer {
 
                 // Indexer motors (if enabled)
                 if (indexer != null) {
-                        // faultMonitor.register(CANID.HORIZONTAL_INDEXER, indexer.getHorizontalMotor());
-                        // faultMonitor.register(CANID.VERTICAL_INDEXER, indexer.getVerticalMotor());
+                        faultMonitor.register(CANID.HORIZONTAL_INDEXER, indexer.getHorizontalMotor());
+                        faultMonitor.register(CANID.VERTICAL_INDEXER, indexer.getVerticalMotor());
                         faultMonitor.register(CANID.UPWARD_INDEXER, indexer.getUpwardMotor());
                 }
 
@@ -138,27 +156,13 @@ public class RobotContainer {
         }
 
         private void configureBindings() {
-                // Note that X is defined as forward according to WPILib convention,
-                // and Y is defined as to the left according to WPILib convention.
+                // ===== DRIVETRAIN (always the same) =====
                 drivetrain.setDefaultCommand(
-                                // Drivetrain will execute this command periodically
-                                drivetrain.applyRequest(() -> drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive
-                                                                                                                   // forward
-                                                                                                                   // with
-                                                                                                                   // negative
-                                                                                                                   // Y
-                                                                                                                   // (forward)
-                                                .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with
-                                                                                                // negative X (left)
-                                                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive
-                                                                                                            // counterclockwise
-                                                                                                            // with
-                                                                                                            // negative
-                                                                                                            // X (left)
-                                ));
+                                drivetrain.applyRequest(() -> drive
+                                                .withVelocityX(-joystick.getLeftY() * MaxSpeed)
+                                                .withVelocityY(-joystick.getLeftX() * MaxSpeed)
+                                                .withRotationalRate(-joystick.getRightX() * MaxAngularRate)));
 
-                // Idle while the robot is disabled. This ensures the configured
-                // neutral mode is applied to the drive motors while disabled.
                 final var idle = new SwerveRequest.Idle();
                 RobotModeTriggers.disabled().whileTrue(
                                 drivetrain.applyRequest(() -> idle).ignoringDisable(true));
@@ -167,41 +171,69 @@ public class RobotContainer {
                 joystick.b().whileTrue(drivetrain.applyRequest(
                                 () -> point.withModuleDirection(
                                                 new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))));
-
-                // RIGHT TRIGGER: Aim at AprilTag using FRONT RIGHT camera (mugilanr)
-                // joystick.rightTrigger().whileTrue(
-                //                 new AimAtRightCamera(drivetrain, vision));
-
-                // // LEFT TRIGGER: Aim at AprilTag using FRONT LEFT camera (aaranc)
-                // joystick.leftTrigger().whileTrue(
-                //                 new AimAtLeftCamera(drivetrain, vision));
-
-                // Run SysId routines when holding back/start and X/Y.
-                // Note that each routine should be run exactly once in a single log.
-                // joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-                // joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-                // joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-                // joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-
-                // Reset the field-centric heading on left bumper press.
                 joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
-
                 drivetrain.registerTelemetry(logger::telemeterize);
 
-                // operator.rightBumper().whileTrue(new ManualClimbCommand(climb, 6.0));
-                // operator.leftBumper().whileTrue(new ManualClimbCommand(climb, -6.0));
-
-                operator.rightTrigger().whileTrue(new ParallelCommandGroup(new runIndexer(indexer),
-                                new ManualShooterCommand(shooter, () -> operator.getRightTriggerAxis())));
-                
-                if (turret!=null){
-                        turret.setDefaultCommand(new ManualTurretCommand(turret, () -> operator.getRightX()));
+                // ===== SUPERSTRUCTURE =====
+                if (FULL_AUTONOMOUS) {
+                        configureAutonomousBindings();
+                } else {
+                        configureManualBindings();
                 }
 
+                // ===== INTAKE TOGGLE (same in both modes) =====
+                if (intake != null) {
+                        // Operator A: toggle slapdown + rollers. Double-tap safe.
+                        operator.a().onTrue(Commands.either(
+                                new IntakeInCommand(intake)
+                                        .beforeStarting(() -> intake.setDeployed(false)),
+                                new IntakeOutCommand(intake)
+                                        .beforeStarting(() -> intake.setDeployed(true)),
+                                intake::isDeployed
+                        ));
+                }
+
+                // // Climb (uncomment when ready)
+                // operator.rightBumper().whileTrue(new ManualClimbCommand(climb, 6.0));
+                // operator.leftBumper().whileTrue(new ManualClimbCommand(climb, -6.0));
+        }
+
+        /**
+         * COMPETITION MODE: Turret auto-aims, driver shoots with gated indexer.
+         * Flip FULL_AUTONOMOUS to true to enable.
+         */
+        private void configureAutonomousBindings() {
+                // Turret + Hood + Shooter: always tracking hub
+                // Pass null for vision until cameras are mounted, then pass vision
+                autoAimCommand = new TurretAutoAimCommand(drivetrain, null, turret, hood, shooter);
+                turret.setDefaultCommand(autoAimCommand);
+
+                // Driver right trigger: SHOOT — feeds indexer only when aimed + flywheel ready
+                joystick.rightTrigger().whileTrue(new ShootCommand(indexer, autoAimCommand));
+
+                // Driver left trigger: intake toggle (slapdown + rollers)
+                joystick.leftTrigger().onTrue(Commands.either(
+                        new IntakeInCommand(intake)
+                                .beforeStarting(() -> intake.setDeployed(false)),
+                        new IntakeOutCommand(intake)
+                                .beforeStarting(() -> intake.setDeployed(true)),
+                        intake::isDeployed
+                ));
+        }
+
+        /**
+         * TESTING MODE: All manual operator control. Default when FULL_AUTONOMOUS = false.
+         */
+        private void configureManualBindings() {
+                if (turret != null) {
+                        turret.setDefaultCommand(new ManualTurretCommand(turret, () -> operator.getRightX()));
+                }
                 if (hood != null) {
                         hood.setDefaultCommand(new ManualHoodCommand(hood, () -> operator.getLeftY()));
                 }
-
+                operator.rightTrigger().whileTrue(new ParallelCommandGroup(
+                                new runIndexer(indexer),
+                                new ManualShooterCommand(shooter, () -> operator.getRightTriggerAxis())));
         }
 
         /**

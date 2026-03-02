@@ -3,14 +3,10 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IndexerConstants;
@@ -24,90 +20,71 @@ import frc.robot.Constants.IndexerConstants.IndexerType;
  */
 @Logged
 public class Indexer extends SubsystemBase {
-    // @Logged
-    // private final TalonFX horizontalIndexerMotor;
-    // @Logged
-    // private final TalonFX verticalIndexerMotor;
+    @Logged
+    private final TalonFX horizontalIndexerMotor;
+    @Logged
+    private final TalonFX verticalIndexerMotor;
     @Logged
     private final TalonFX upwardIndexerMotor;
 
-    // private final StatusSignal<AngularVelocity> horizontalIndexerMotorVelocity;
-    // private final StatusSignal<Current> horizontalIndexerMotorCurrent;
-    // private final StatusSignal<Voltage> horizontalIndexerMotorVoltage;
-
-    // private final StatusSignal<AngularVelocity> verticalIndexerMotorVelocity;
-    // private final StatusSignal<Current> verticalIndexerMotorCurrent;
-    // private final StatusSignal<Voltage> verticalIndexerMotorVoltage;
-
-    // private final StatusSignal<AngularVelocity> upwardIndexerMotorVelocity;
-    // private final StatusSignal<Current> upwardIndexerMotorCurrent;
+    private final StatusSignal<Voltage> horizontalIndexerMotorVoltage;
+    private final StatusSignal<Voltage> verticalIndexerMotorVoltage;
     private final StatusSignal<Voltage> upwardIndexerMotorVoltage;
 
-    // private final VelocityVoltage horizontalMotionController;
-    // private final VelocityVoltage verticalMotionController;
+    private final VelocityVoltage horizontalMotionController;
+    private final VelocityVoltage verticalMotionController;
     private final VelocityVoltage upwardMotionController;
 
     public Indexer(CANBus canBus) {
-        // horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID, canBus);
-        // verticalIndexerMotor = new TalonFX(IndexerConstants.verticalIndexerMotorID, canBus);
+        horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID, canBus);
+        verticalIndexerMotor = new TalonFX(IndexerConstants.verticalIndexerMotorID, canBus);
         upwardIndexerMotor = new TalonFX(IndexerConstants.upwardIndexerMotorID, canBus);
 
-        // configureHorizontalIndexerMotor();
-        // configureVerticalIndexerMotor();
+        configureHorizontalIndexerMotor();
+        configureVerticalIndexerMotor();
         configureUpwardIndexerMotor();
 
-        // horizontalMotionController = new VelocityVoltage(0);
-        // verticalMotionController = new VelocityVoltage(0);
+        horizontalMotionController = new VelocityVoltage(0);
+        verticalMotionController = new VelocityVoltage(0);
         upwardMotionController = new VelocityVoltage(0);
 
-        // horizontalIndexerMotorVelocity = horizontalIndexerMotor.getVelocity();
-        // horizontalIndexerMotorCurrent = horizontalIndexerMotor.getSupplyCurrent();
-        // horizontalIndexerMotorVoltage = horizontalIndexerMotor.getMotorVoltage();
-
-        // verticalIndexerMotorVelocity = verticalIndexerMotor.getVelocity();
-        // verticalIndexerMotorCurrent = verticalIndexerMotor.getSupplyCurrent();
-        // verticalIndexerMotorVoltage = verticalIndexerMotor.getMotorVoltage();
-
-        // upwardIndexerMotorVelocity = upwardIndexerMotor.getVelocity();
-        // upwardIndexerMotorCurrent = upwardIndexerMotor.getSupplyCurrent();
+        horizontalIndexerMotorVoltage = horizontalIndexerMotor.getMotorVoltage();
+        verticalIndexerMotorVoltage = verticalIndexerMotor.getMotorVoltage();
         upwardIndexerMotorVoltage = upwardIndexerMotor.getMotorVoltage();
 
-        // horizontalIndexerMotorVelocity.setUpdateFrequency(50);
-        // horizontalIndexerMotorCurrent.setUpdateFrequency(50);
-        // horizontalIndexerMotorVoltage.setUpdateFrequency(50);
-
-        // verticalIndexerMotorVelocity.setUpdateFrequency(50);
-        // verticalIndexerMotorCurrent.setUpdateFrequency(50);
-        // verticalIndexerMotorVoltage.setUpdateFrequency(50);
-
-        // upwardIndexerMotorVelocity.setUpdateFrequency(50);
-        // upwardIndexerMotorCurrent.setUpdateFrequency(50);
+        horizontalIndexerMotorVoltage.setUpdateFrequency(50);
+        verticalIndexerMotorVoltage.setUpdateFrequency(50);
         upwardIndexerMotorVoltage.setUpdateFrequency(50);
-
     }
 
     @Override
     public void periodic() {
-        // horizontalIndexerMotorVelocity.refresh();
-        // horizontalIndexerMotorCurrent.refresh();
-        // horizontalIndexerMotorVoltage.refresh();
-
-        // verticalIndexerMotorVelocity.refresh();
-        // verticalIndexerMotorCurrent.refresh();
-        // verticalIndexerMotorVoltage.refresh();
-
-        // upwardIndexerMotorVelocity.refresh();
-        // upwardIndexerMotorCurrent.refresh();
+        horizontalIndexerMotorVoltage.refresh();
+        verticalIndexerMotorVoltage.refresh();
         upwardIndexerMotorVoltage.refresh();
     }
 
-    // private void configureHorizontalIndexerMotor() {
-    //     horizontalIndexerMotor.getConfigurator().apply(IndexerConstants.HORIZONTAL_INDEXER_CONFIG);
-    // }
+    private void configureHorizontalIndexerMotor() {
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = horizontalIndexerMotor.getConfigurator().apply(IndexerConstants.HORIZONTAL_INDEXER_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply horizontal indexer motor configs: " + status.toString());
+        }
+    }
 
-    // private void configureVerticalIndexerMotor() {
-    //     verticalIndexerMotor.getConfigurator().apply(IndexerConstants.VERTICAL_INDEXER_CONFIG);
-    // }
+    private void configureVerticalIndexerMotor() {
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = verticalIndexerMotor.getConfigurator().apply(IndexerConstants.VERTICAL_INDEXER_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply vertical indexer motor configs: " + status.toString());
+        }
+    }
 
     private void configureUpwardIndexerMotor() {
         StatusCode status = StatusCode.StatusCodeNotInitialized;
@@ -122,28 +99,35 @@ public class Indexer extends SubsystemBase {
 
     public void setIndexerSpeed(double speed, IndexerType indexer) {
         switch (indexer) {
-            case VERTICAL:
-                return;
-                // verticalIndexerMotor.setControl(verticalMotionController.withVelocity(speed));
             case HORIZONTAL:
-                return;
-                // horizontalIndexerMotor.setControl(horizontalMotionController.withVelocity(speed));
+                horizontalIndexerMotor.setControl(horizontalMotionController.withVelocity(speed));
+                break;
+            case VERTICAL:
+                verticalIndexerMotor.setControl(verticalMotionController.withVelocity(speed));
+                break;
             case UPWARD:
                 upwardIndexerMotor.setControl(upwardMotionController.withVelocity(speed));
+                break;
         }
+    }
+
+    public void stop() {
+        horizontalIndexerMotor.stopMotor();
+        verticalIndexerMotor.stopMotor();
+        upwardIndexerMotor.stopMotor();
     }
 
     // ==================
     // MOTOR ACCESSORS (for FaultMonitor registration)
     // ==================
 
-    // public TalonFX getHorizontalMotor() {
-    //     return horizontalIndexerMotor;
-    // }
+    public TalonFX getHorizontalMotor() {
+        return horizontalIndexerMotor;
+    }
 
-    // public TalonFX getVerticalMotor() {
-    //     return verticalIndexerMotor;
-    // }
+    public TalonFX getVerticalMotor() {
+        return verticalIndexerMotor;
+    }
 
     public TalonFX getUpwardMotor() {
         return upwardIndexerMotor;

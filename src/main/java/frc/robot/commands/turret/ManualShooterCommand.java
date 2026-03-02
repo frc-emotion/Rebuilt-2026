@@ -30,7 +30,7 @@ public class ManualShooterCommand extends Command {
     }
 
     @Override
-    public void end(boolean interrputed){
+    public void end(boolean interrupted){
         m_shooterSubsystem.setShooterSpeed(RotationsPerSecond.of(0));
     }
 }

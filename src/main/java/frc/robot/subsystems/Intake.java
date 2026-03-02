@@ -44,6 +44,7 @@ public class Intake extends SubsystemBase {
     private final MotionMagicVelocityVoltage rollerMotionRequest;
 
     private Angle currentSetpoint = Degrees.of(0);
+    private boolean deployed = false;
 
     public Intake(CANBus canBus) {
         intakeMotor = new TalonFX(IntakeConstants.intakeMotorID, canBus);
@@ -124,13 +125,21 @@ public class Intake extends SubsystemBase {
 
     public boolean atSetpoint(){
 
-        return Math.abs(rollerMotor.getPosition().getValueAsDouble() * 360.0 - currentSetpoint.in(Degrees)) < IntakeConstants.TOLERANCE.in(Degrees);
+        return Math.abs(intakeMotor.getPosition().getValueAsDouble() * 360.0 - currentSetpoint.in(Degrees)) < IntakeConstants.TOLERANCE.in(Degrees);
 
     }
 
     // ==================
     // MOTOR ACCESSORS (for FaultMonitor registration)
     // ==================
+
+    public boolean isDeployed() { return deployed; }
+    public void setDeployed(boolean deployed) { this.deployed = deployed; }
+
+    public void stop() {
+        intakeMotor.stopMotor();
+        rollerMotor.stopMotor();
+    }
 
     public TalonFX getIntakeMotor() {
         return intakeMotor;
