@@ -33,8 +33,18 @@ public final class VisionConstants {
     // CAMERA NAMES
     // ==================
     // Must match exactly what's configured in PhotonVision web UI
-    public static final String CAMERA_NAME_RIGHT = "mugilanr";
-    public static final String CAMERA_NAME_LEFT = "aaranc";
+    public static final String CAMERA_NAME_RIGHT = "yurr"; //mugilanr
+    public static final String CAMERA_NAME_LEFT = "yurr2"; //aaranc
+
+    // ==================
+    // CAMERA ENABLE/DISABLE — set to true only for cameras physically connected
+    // ==================
+    public static final boolean ENABLE_RIGHT_CAM = false;
+    public static final boolean ENABLE_LEFT_CAM = false;
+    public static final boolean ENABLE_TURRET_CAM = true;
+
+    /** Which camera name is physically on the turret. Change to match your wiring. */
+    public static final String TURRET_CAM_NAME = "aaranc"; // "aaranc"
 
     // ==================
     // FIELD LAYOUT

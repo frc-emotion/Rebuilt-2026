@@ -124,8 +124,16 @@ public class FaultMonitor extends SubsystemBase {
             CANID canId = entry.getKey();
             StatusSignal<Integer> faultSignal = faultSignals.get(canId);
 
-            // Refresh and get fault field
-            int faultField = faultSignal.refresh().getValue();
+            // Non-blocking refresh — getValueAsDouble returns cached value,
+            // refresh() updates cache but we check status to avoid blocking on
+            // unreachable devices (which caused 35ms periodic overruns).
+            faultSignal.refresh();
+            if (!faultSignal.getStatus().isOK()) {
+                // Device not reachable — skip, don't block
+                continue;
+            }
+
+            int faultField = faultSignal.getValue();
             int previousFault = previousFaults.get(canId);
 
             // Check if there are any faults (non-zero = fault present)

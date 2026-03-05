@@ -141,10 +141,10 @@ public class Vision extends SubsystemBase {
      * Creates a new Vision subsystem with three cameras (2 drivebase + 1 turret).
      */
     public Vision() {
-        // Initialize cameras with names matching PhotonVision UI
-        cameraRight = new PhotonCamera(VisionConstants.CAMERA_NAME_RIGHT);
-        cameraLeft = new PhotonCamera(VisionConstants.CAMERA_NAME_LEFT);
-        cameraTurret = new PhotonCamera(VisionConstants.CAMERA_NAME_TURRET);
+        // Only instantiate cameras that are enabled — disabled cameras stay null (no NT traffic)
+        cameraRight = VisionConstants.ENABLE_RIGHT_CAM ? new PhotonCamera(VisionConstants.CAMERA_NAME_RIGHT) : null;
+        cameraLeft = VisionConstants.ENABLE_LEFT_CAM ? new PhotonCamera(VisionConstants.CAMERA_NAME_LEFT) : null;
+        cameraTurret = VisionConstants.ENABLE_TURRET_CAM ? new PhotonCamera(VisionConstants.TURRET_CAM_NAME) : null;
 
         // Check for valid field layout before creating pose estimators
         if (VisionConstants.TAG_LAYOUT == null) {
@@ -155,28 +155,27 @@ public class Vision extends SubsystemBase {
             return;
         }
 
-        // Initialize pose estimators using MULTI_TAG_PNP_ON_COPROCESSOR strategy
-        // This is the recommended strategy per PhotonVision docs for best accuracy
-        poseEstimatorRight = new PhotonPoseEstimator(
+        // Initialize pose estimators only for enabled cameras
+        poseEstimatorRight = cameraRight != null ? new PhotonPoseEstimator(
                 VisionConstants.TAG_LAYOUT,
                 PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-                VisionConstants.ROBOT_TO_CAM_RIGHT);
+                VisionConstants.ROBOT_TO_CAM_RIGHT) : null;
 
-        poseEstimatorLeft = new PhotonPoseEstimator(
+        poseEstimatorLeft = cameraLeft != null ? new PhotonPoseEstimator(
                 VisionConstants.TAG_LAYOUT,
                 PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-                VisionConstants.ROBOT_TO_CAM_LEFT);
+                VisionConstants.ROBOT_TO_CAM_LEFT) : null;
 
         // Turret camera uses dynamic transform - start with forward-facing
-        poseEstimatorTurret = new PhotonPoseEstimator(
+        poseEstimatorTurret = cameraTurret != null ? new PhotonPoseEstimator(
                 VisionConstants.TAG_LAYOUT,
                 PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-                calculateTurretCameraTransform(new Rotation2d()));
+                calculateTurretCameraTransform(new Rotation2d())) : null;
 
         // Set fallback strategy for when only one tag is visible
-        poseEstimatorRight.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
-        poseEstimatorLeft.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
-        poseEstimatorTurret.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
+        if (poseEstimatorRight != null) poseEstimatorRight.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
+        if (poseEstimatorLeft != null) poseEstimatorLeft.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
+        if (poseEstimatorTurret != null) poseEstimatorTurret.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
     }
 
     @Override
@@ -186,11 +185,10 @@ public class Vision extends SubsystemBase {
         // Update turret camera transform BEFORE processing results
         updateTurretCameraTransform();
 
-        // Process all unread results from all cameras (always runs - this is the
-        // critical path)
-        updateCameraRight();
-        updateCameraLeft();
-        updateCameraTurret();
+        // Process enabled cameras only
+        if (cameraRight != null) updateCameraRight();
+        if (cameraLeft != null) updateCameraLeft();
+        if (cameraTurret != null) updateCameraTurret();
 
         // Update Epilogue telemetry fields (logged automatically each cycle)
         updateTelemetryFields();
@@ -201,8 +199,8 @@ public class Vision extends SubsystemBase {
      */
     private void updateTelemetryFields() {
         // Camera connection status
-        rightCameraConnected = cameraRight.isConnected();
-        leftCameraConnected = cameraLeft.isConnected();
+        rightCameraConnected = cameraRight != null && cameraRight.isConnected();
+        leftCameraConnected = cameraLeft != null && cameraLeft.isConnected();
 
         // Right camera pose and targets
         if (latestEstimateRight.isPresent()) {
@@ -787,8 +785,9 @@ public class Vision extends SubsystemBase {
      * Enables or disables driver mode on both cameras.
      */
     public void setDriverMode(boolean enabled) {
-        cameraRight.setDriverMode(enabled);
-        cameraLeft.setDriverMode(enabled);
+        if (cameraRight != null) cameraRight.setDriverMode(enabled);
+        if (cameraLeft != null) cameraLeft.setDriverMode(enabled);
+        if (cameraTurret != null) cameraTurret.setDriverMode(enabled);
     }
 
     // ==================

@@ -64,14 +64,16 @@ public class RobotContainer {
         private final CommandXboxController joystick = new CommandXboxController(0);
         private final CommandXboxController operator = new CommandXboxController(1);
 
-        private final CANBus mechanismBus = new CANBus("Persian  Canivore");
+        private final CANBus mechanismBus = new CANBus("mechanisms");
 
         // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
         // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-        // public final Vision vision = new Vision();
+        // public final Vision vision = new Vision(); // DISABLED: 22ms periodic overruns robot loop, causes CAN timeouts
+        public final Vision vision = null;
         // public final Climb climb = new Climb(mechanismBus);
-        public final Intake intake = new Intake(mechanismBus);
+        // public final Intake intake = new Intake(mechanismBus); // DISABLED: not installed
+        public final Intake intake = null;
         public final Indexer indexer = new Indexer(mechanismBus);
         public final Turret turret = new Turret(mechanismBus);
         public final Hood hood = new Hood(mechanismBus);
@@ -91,7 +93,8 @@ public class RobotContainer {
         private static final boolean FULL_AUTONOMOUS = false;
 
         // Stored reference so ShootCommand can check isAimed() (only used when FULL_AUTONOMOUS)
-        private TurretAutoAimCommand autoAimCommand;
+        // Not @Logged — null when FULL_AUTONOMOUS=false, which crashes Epilogue
+        private transient TurretAutoAimCommand autoAimCommand;
 
         // ===== LOGGING & MONITORING =====
         private final Telemetry logger = new Telemetry(MaxSpeed);
@@ -106,6 +109,10 @@ public class RobotContainer {
                 configureBindings();
                 registerMotorsForFaultMonitoring();
                 tuner.setSubsystems(turret, hood, shooter, intake);
+                // Vision turret angle wiring disabled while vision is null
+                // if (vision != null && turret != null) {
+                //         vision.setTurretAngleSupplier(turret::getTurretPosition);
+                // }
         }
 
         /**
@@ -120,16 +127,16 @@ public class RobotContainer {
                         faultMonitor.register(CANID.SWERVE_IDS[i][1], module.getSteerMotor());
                 }
 
-                // Intake motors (if enabled)
-                if (intake != null) {
-                        faultMonitor.register(CANID.INTAKE_MOTOR, intake.getIntakeMotor());
-                        faultMonitor.register(CANID.ROLLER_MOTOR, intake.getRollerMotor());
-                }
+                // // Intake motors — DISABLED: not installed
+                // if (intake != null) {
+                //         faultMonitor.register(CANID.INTAKE_MOTOR, intake.getIntakeMotor());
+                //         faultMonitor.register(CANID.ROLLER_MOTOR, intake.getRollerMotor());
+                // }
 
                 // Indexer motors (if enabled)
                 if (indexer != null) {
                         faultMonitor.register(CANID.HORIZONTAL_INDEXER, indexer.getHorizontalMotor());
-                        faultMonitor.register(CANID.VERTICAL_INDEXER, indexer.getVerticalMotor());
+                        // faultMonitor.register(CANID.VERTICAL_INDEXER, indexer.getVerticalMotor()); // DISABLED
                         faultMonitor.register(CANID.UPWARD_INDEXER, indexer.getUpwardMotor());
                 }
 
@@ -176,8 +183,10 @@ public class RobotContainer {
 
                 // ===== SUPERSTRUCTURE =====
                 if (FULL_AUTONOMOUS) {
+                        System.out.println("[BINDINGS] FULL_AUTONOMOUS = true -> configureAutonomousBindings()");
                         configureAutonomousBindings();
                 } else {
+                        System.out.println("[BINDINGS] FULL_AUTONOMOUS = false -> configureManualBindings()");
                         configureManualBindings();
                 }
 
@@ -211,29 +220,35 @@ public class RobotContainer {
                 // Driver right trigger: SHOOT — feeds indexer only when aimed + flywheel ready
                 joystick.rightTrigger().whileTrue(new ShootCommand(indexer, autoAimCommand));
 
-                // Driver left trigger: intake toggle (slapdown + rollers)
-                joystick.leftTrigger().onTrue(Commands.either(
-                        new IntakeInCommand(intake)
-                                .beforeStarting(() -> intake.setDeployed(false)),
-                        new IntakeOutCommand(intake)
-                                .beforeStarting(() -> intake.setDeployed(true)),
-                        intake::isDeployed
-                ));
+                // // Driver left trigger: intake toggle — DISABLED: not installed
+                // if (intake != null) {
+                //         joystick.leftTrigger().onTrue(Commands.either(
+                //                 new IntakeInCommand(intake)
+                //                         .beforeStarting(() -> intake.setDeployed(false)),
+                //                 new IntakeOutCommand(intake)
+                //                         .beforeStarting(() -> intake.setDeployed(true)),
+                //                 intake::isDeployed
+                //         ));
+                // }
         }
 
         /**
          * TESTING MODE: All manual operator control. Default when FULL_AUTONOMOUS = false.
          */
         private void configureManualBindings() {
+                System.out.println("[BINDINGS] turret=" + turret + " hood=" + hood + " indexer=" + indexer + " shooter=" + shooter);
                 if (turret != null) {
                         turret.setDefaultCommand(new ManualTurretCommand(turret, () -> operator.getRightX()));
+                        System.out.println("[BINDINGS] ManualTurretCommand set as default (operator right stick X)");
                 }
                 if (hood != null) {
                         hood.setDefaultCommand(new ManualHoodCommand(hood, () -> operator.getLeftY()));
+                        System.out.println("[BINDINGS] ManualHoodCommand set as default (operator left stick Y)");
                 }
                 operator.rightTrigger().whileTrue(new ParallelCommandGroup(
                                 new runIndexer(indexer),
                                 new ManualShooterCommand(shooter, () -> operator.getRightTriggerAxis())));
+                System.out.println("[BINDINGS] Operator right trigger -> runIndexer + ManualShooterCommand");
         }
 
         /**

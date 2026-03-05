@@ -76,22 +76,27 @@ public class TurretAimingCalculator {
      */
     public TurretAimingCalculator() {
         // Initialize flywheel RPM interpolation table (distance -> RPM)
+        // RPM / 60 = RPS sent to shooter. Wide spread so speed change is audible/visible.
+        // TODO: tune each distance on the real robot
         flywheelRPMTable = new InterpolatingDoubleTreeMap();
-        flywheelRPMTable.put(1.0, 2000.0); // 1m distance -> 2000 RPM
-        flywheelRPMTable.put(2.0, 2500.0); // 2m distance -> 2500 RPM
-        flywheelRPMTable.put(3.0, 3000.0); // 3m distance -> 3000 RPM
-        flywheelRPMTable.put(4.0, 3500.0); // 4m distance -> 3500 RPM
-        flywheelRPMTable.put(5.0, 4000.0); // 5m distance -> 4000 RPM
-        flywheelRPMTable.put(6.0, 4500.0); // 6m distance -> 4500 RPM
+        flywheelRPMTable.put(1.0, 1500.0); // 1m -> 25 RPS (gentle lob)
+        flywheelRPMTable.put(2.0, 2000.0); // 2m -> 33 RPS
+        flywheelRPMTable.put(3.0, 2700.0); // 3m -> 45 RPS
+        flywheelRPMTable.put(4.0, 3300.0); // 4m -> 55 RPS
+        flywheelRPMTable.put(5.0, 3900.0); // 5m -> 65 RPS
+        flywheelRPMTable.put(6.0, 4500.0); // 6m -> 75 RPS (max range)
 
         // Initialize hood angle interpolation table (distance -> degrees)
+        // Degrees / 360 = rotations sent to hood encoder. Hood range: 0.0-0.5 rot.
+        // Close = steep (high angle), far = flat (low angle). Wide spread for visible motion.
+        // TODO: tune each distance on the real robot
         hoodAngleTable = new InterpolatingDoubleTreeMap();
-        hoodAngleTable.put(1.0, 60.0); // 1m -> 60°
-        hoodAngleTable.put(2.0, 50.0); // 2m -> 50°
-        hoodAngleTable.put(3.0, 45.0); // 3m -> 45°
-        hoodAngleTable.put(4.0, 40.0); // 4m -> 40°
-        hoodAngleTable.put(5.0, 35.0); // 5m -> 35°
-        hoodAngleTable.put(6.0, 30.0); // 6m -> 30°
+        hoodAngleTable.put(1.0, 150.0); // 1m -> 0.417 rot (near max, steep lob)
+        hoodAngleTable.put(2.0, 130.0); // 2m -> 0.361 rot
+        hoodAngleTable.put(3.0, 110.0); // 3m -> 0.306 rot
+        hoodAngleTable.put(4.0,  85.0); // 4m -> 0.236 rot
+        hoodAngleTable.put(5.0,  60.0); // 5m -> 0.167 rot
+        hoodAngleTable.put(6.0,  40.0); // 6m -> 0.111 rot (flat shot)
     }
 
     /**
