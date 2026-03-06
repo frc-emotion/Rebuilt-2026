@@ -95,6 +95,11 @@ public class RobotContainer {
         // Stored reference so ShootCommand can check isAimed() (only used when FULL_AUTONOMOUS)
         // Not @Logged — null when FULL_AUTONOMOUS=false, which crashes Epilogue
         private transient TurretAutoAimCommand autoAimCommand;
+        public final Intake intake = null; // Disabled: no hardware connected
+        public final Indexer indexer = null; // Disabled: no hardware connected
+        public final Turret turret = null; // Disabled: no hardware connected
+        public final Climb climb = null;
+        public final LED led = null; //i don't know if the hardware is connected
 
         // ===== LOGGING & MONITORING =====
         private final Telemetry logger = new Telemetry(MaxSpeed);
