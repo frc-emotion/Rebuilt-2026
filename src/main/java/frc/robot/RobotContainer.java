@@ -73,7 +73,7 @@ public class RobotContainer {
         public final Vision vision = null;
         // public final Climb climb = new Climb(mechanismBus);
         // public final Intake intake = new Intake(mechanismBus); // DISABLED: not installed
-        public final Intake intake = null;
+        //public final Intake intake = null;
         public final Indexer indexer = new Indexer(mechanismBus);
         public final Turret turret = new Turret(mechanismBus);
         public final Hood hood = new Hood(mechanismBus);
@@ -96,10 +96,10 @@ public class RobotContainer {
         // Not @Logged — null when FULL_AUTONOMOUS=false, which crashes Epilogue
         private transient TurretAutoAimCommand autoAimCommand;
         public final Intake intake = null; // Disabled: no hardware connected
-        public final Indexer indexer = null; // Disabled: no hardware connected
-        public final Turret turret = null; // Disabled: no hardware connected
+        // public final Indexer indexer = null; // Disabled: no hardware connected
+        // public final Turret turret = null; // Disabled: no hardware connected
         public final Climb climb = null;
-        public final LED led = null; //i don't know if the hardware is connected
+        //public final LED led = null; //i don't know if the hardware is connected
 
         // ===== LOGGING & MONITORING =====
         private final Telemetry logger = new Telemetry(MaxSpeed);
