@@ -41,6 +41,9 @@ public class Turret extends SubsystemBase {
 
     private Angle turretCurrentSetpoint = Rotations.of(0);
 
+    @Logged
+    private double turretPositionRot = 0.0;
+
     public Turret(CANBus canBus) {
         turretMotor = new TalonFX(TurretConstants.turretMotorID, canBus);
         turretEncoder = new CANcoder(TurretConstants.turretEncoderID, canBus);
@@ -69,7 +72,8 @@ public class Turret extends SubsystemBase {
         StatusCode status = StatusCode.StatusCodeNotInitialized;
         for (int i = 0; i < 5; ++i) {
             status = turretMotor.getConfigurator().apply(TurretConstants.TURRET_CONFIG, 0.1);
-            if (status.isOK()) break;
+            if (status.isOK())
+                break;
         }
         if (!status.isOK()) {
             System.err.println("Could not apply turret motor configs: " + status.toString());
@@ -80,7 +84,8 @@ public class Turret extends SubsystemBase {
         StatusCode status = StatusCode.StatusCodeNotInitialized;
         for (int i = 0; i < 5; ++i) {
             status = turretEncoder.getConfigurator().apply(TurretConstants.TURRET_ENCODER_CONFIG, 0.1);
-            if (status.isOK()) break;
+            if (status.isOK())
+                break;
         }
         if (!status.isOK()) {
             System.err.println("Could not apply turret encoder configs: " + status.toString());
@@ -110,6 +115,11 @@ public class Turret extends SubsystemBase {
 
     public Rotation2d getTurretPosition() {
         return Rotation2d.fromRotations(turretMotor.getPosition().getValueAsDouble());
+    }
+
+    @Override
+    public void periodic() {
+        turretPositionRot = turretMotor.getPosition().getValueAsDouble();
     }
 
     // ==================

@@ -39,6 +39,9 @@ public class Hood extends SubsystemBase {
 
     private Angle hoodCurrentSetpoint = Rotations.of(0);
 
+    @Logged
+    private double hoodPositionRot = 0.0;
+
     public Hood(CANBus canBus) {
         hoodMotor = new TalonFX(TurretConstants.hoodMotorID, canBus);
         hoodEncoder = new CANcoder(TurretConstants.hoodEncoderID, canBus);
@@ -64,7 +67,8 @@ public class Hood extends SubsystemBase {
         StatusCode status = StatusCode.StatusCodeNotInitialized;
         for (int i = 0; i < 5; ++i) {
             status = hoodMotor.getConfigurator().apply(TurretConstants.HOOD_CONFIG, 0.1);
-            if (status.isOK()) break;
+            if (status.isOK())
+                break;
         }
         if (!status.isOK()) {
             System.err.println("Could not apply hood motor configs: " + status.toString());
@@ -75,7 +79,8 @@ public class Hood extends SubsystemBase {
         StatusCode status = StatusCode.StatusCodeNotInitialized;
         for (int i = 0; i < 5; ++i) {
             status = hoodEncoder.getConfigurator().apply(TurretConstants.HOOD_ENCODER_CONFIG, 0.1);
-            if (status.isOK()) break;
+            if (status.isOK())
+                break;
         }
         if (!status.isOK()) {
             System.err.println("Could not apply hood encoder configs: " + status.toString());
@@ -92,7 +97,10 @@ public class Hood extends SubsystemBase {
                 - hoodCurrentSetpoint.in(Rotations)) < TurretConstants.hoodTolerance;
     }
 
- 
+    @Override
+    public void periodic() {
+        hoodPositionRot = hoodMotor.getPosition().getValueAsDouble();
+    }
 
     public TalonFX getHoodMotor() {
         return hoodMotor;

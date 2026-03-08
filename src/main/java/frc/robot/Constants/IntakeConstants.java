@@ -37,6 +37,10 @@ public final class IntakeConstants {
         INTAKE_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 2.0; // RPS
         INTAKE_CONFIG.MotionMagic.MotionMagicAcceleration = 4.0;   // RPS^2
         INTAKE_CONFIG.MotionMagic.MotionMagicJerk = 40.0;          // Smoothing
+
+        INTAKE_CONFIG.Feedback.SensorToMechanismRatio = 27.0;
+        //27:1
+
     }
 
     public static final double INTAKE_ROLLER_VELOCITY = 40;

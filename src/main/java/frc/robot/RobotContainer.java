@@ -69,11 +69,12 @@ public class RobotContainer {
         // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
         // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-        // public final Vision vision = new Vision(); // DISABLED: 22ms periodic overruns robot loop, causes CAN timeouts
+        // public final Vision vision = new Vision(); // DISABLED: 22ms periodic
+        // overruns robot loop, causes CAN timeouts
         public final Vision vision = null;
         // public final Climb climb = new Climb(mechanismBus);
-        // public final Intake intake = new Intake(mechanismBus); // DISABLED: not installed
-        //public final Intake intake = null;
+        public final Intake intake = new Intake(mechanismBus); // DISABLED: not installed
+        // public final Intake intake = null;
         public final Indexer indexer = new Indexer(mechanismBus);
         public final Turret turret = new Turret(mechanismBus);
         public final Hood hood = new Hood(mechanismBus);
@@ -88,18 +89,20 @@ public class RobotContainer {
         // public final Climb climb = null;
 
         // ===== AUTONOMY TOGGLE =====
-        // Set to true for competition (auto-aim + gated shoot + intake toggle on driver).
+        // Set to true for competition (auto-aim + gated shoot + intake toggle on
+        // driver).
         // Set to false for testing (manual operator control of turret/hood/shooter).
         private static final boolean FULL_AUTONOMOUS = false;
 
-        // Stored reference so ShootCommand can check isAimed() (only used when FULL_AUTONOMOUS)
+        // Stored reference so ShootCommand can check isAimed() (only used when
+        // FULL_AUTONOMOUS)
         // Not @Logged — null when FULL_AUTONOMOUS=false, which crashes Epilogue
         private transient TurretAutoAimCommand autoAimCommand;
-        public final Intake intake = null; // Disabled: no hardware connected
+        // public final Intake intake = null; // Disabled: no hardware connected
         // public final Indexer indexer = null; // Disabled: no hardware connected
         // public final Turret turret = null; // Disabled: no hardware connected
         public final Climb climb = null;
-        //public final LED led = null; //i don't know if the hardware is connected
+        // public final LED led = null; //i don't know if the hardware is connected
 
         // ===== LOGGING & MONITORING =====
         private final Telemetry logger = new Telemetry(MaxSpeed);
@@ -116,7 +119,7 @@ public class RobotContainer {
                 tuner.setSubsystems(turret, hood, shooter, intake);
                 // Vision turret angle wiring disabled while vision is null
                 // if (vision != null && turret != null) {
-                //         vision.setTurretAngleSupplier(turret::getTurretPosition);
+                // vision.setTurretAngleSupplier(turret::getTurretPosition);
                 // }
         }
 
@@ -134,14 +137,14 @@ public class RobotContainer {
 
                 // // Intake motors — DISABLED: not installed
                 // if (intake != null) {
-                //         faultMonitor.register(CANID.INTAKE_MOTOR, intake.getIntakeMotor());
-                //         faultMonitor.register(CANID.ROLLER_MOTOR, intake.getRollerMotor());
+                // faultMonitor.register(CANID.INTAKE_MOTOR, intake.getIntakeMotor());
+                // faultMonitor.register(CANID.ROLLER_MOTOR, intake.getRollerMotor());
                 // }
 
                 // Indexer motors (if enabled)
                 if (indexer != null) {
                         faultMonitor.register(CANID.HORIZONTAL_INDEXER, indexer.getHorizontalMotor());
-                        // faultMonitor.register(CANID.VERTICAL_INDEXER, indexer.getVerticalMotor()); // DISABLED
+                        faultMonitor.register(CANID.VERTICAL_INDEXER, indexer.getVerticalMotor());
                         faultMonitor.register(CANID.UPWARD_INDEXER, indexer.getUpwardMotor());
                 }
 
@@ -162,8 +165,8 @@ public class RobotContainer {
 
                 // // Climb motors (always enabled since it's instantiated)
                 // if (climb != null) {
-                //         faultMonitor.register(CANID.CLIMB_LEADER, climb.getLeaderMotor());
-                //         faultMonitor.register(CANID.CLIMB_FOLLOWER, climb.getFollowerMotor());
+                // faultMonitor.register(CANID.CLIMB_LEADER, climb.getLeaderMotor());
+                // faultMonitor.register(CANID.CLIMB_FOLLOWER, climb.getFollowerMotor());
                 // }
         }
 
@@ -199,12 +202,11 @@ public class RobotContainer {
                 if (intake != null) {
                         // Operator A: toggle slapdown + rollers. Double-tap safe.
                         operator.a().onTrue(Commands.either(
-                                new IntakeInCommand(intake)
-                                        .beforeStarting(() -> intake.setDeployed(false)),
-                                new IntakeOutCommand(intake)
-                                        .beforeStarting(() -> intake.setDeployed(true)),
-                                intake::isDeployed
-                        ));
+                                        new IntakeInCommand(intake)
+                                                        .beforeStarting(() -> intake.setDeployed(false)),
+                                        new IntakeOutCommand(intake)
+                                                        .beforeStarting(() -> intake.setDeployed(true)),
+                                        intake::isDeployed));
                 }
 
                 // // Climb (uncomment when ready)
@@ -227,21 +229,23 @@ public class RobotContainer {
 
                 // // Driver left trigger: intake toggle — DISABLED: not installed
                 // if (intake != null) {
-                //         joystick.leftTrigger().onTrue(Commands.either(
-                //                 new IntakeInCommand(intake)
-                //                         .beforeStarting(() -> intake.setDeployed(false)),
-                //                 new IntakeOutCommand(intake)
-                //                         .beforeStarting(() -> intake.setDeployed(true)),
-                //                 intake::isDeployed
-                //         ));
+                // joystick.leftTrigger().onTrue(Commands.either(
+                // new IntakeInCommand(intake)
+                // .beforeStarting(() -> intake.setDeployed(false)),
+                // new IntakeOutCommand(intake)
+                // .beforeStarting(() -> intake.setDeployed(true)),
+                // intake::isDeployed
+                // ));
                 // }
         }
 
         /**
-         * TESTING MODE: All manual operator control. Default when FULL_AUTONOMOUS = false.
+         * TESTING MODE: All manual operator control. Default when FULL_AUTONOMOUS =
+         * false.
          */
         private void configureManualBindings() {
-                System.out.println("[BINDINGS] turret=" + turret + " hood=" + hood + " indexer=" + indexer + " shooter=" + shooter);
+                System.out.println("[BINDINGS] turret=" + turret + " hood=" + hood + " indexer=" + indexer + " shooter="
+                                + shooter);
                 if (turret != null) {
                         turret.setDefaultCommand(new ManualTurretCommand(turret, () -> operator.getRightX()));
                         System.out.println("[BINDINGS] ManualTurretCommand set as default (operator right stick X)");
@@ -261,20 +265,20 @@ public class RobotContainer {
          * Call this from Robot.periodic().
          */
         // public void updateVisionPoseEstimates() {
-        //         // Update drivetrain with vision measurements from both cameras
-        //         vision.getEstimatedPoseRight().ifPresent(estimate -> {
-        //                 drivetrain.addVisionMeasurement(
-        //                                 estimate.estimatedPose.toPose2d(),
-        //                                 estimate.timestampSeconds,
-        //                                 vision.getStdDevsRight());
-        //         });
+        // // Update drivetrain with vision measurements from both cameras
+        // vision.getEstimatedPoseRight().ifPresent(estimate -> {
+        // drivetrain.addVisionMeasurement(
+        // estimate.estimatedPose.toPose2d(),
+        // estimate.timestampSeconds,
+        // vision.getStdDevsRight());
+        // });
 
-        //         vision.getEstimatedPoseLeft().ifPresent(estimate -> {
-        //                 drivetrain.addVisionMeasurement(
-        //                                 estimate.estimatedPose.toPose2d(),
-        //                                 estimate.timestampSeconds,
-        //                                 vision.getStdDevsLeft());
-        //         });
+        // vision.getEstimatedPoseLeft().ifPresent(estimate -> {
+        // drivetrain.addVisionMeasurement(
+        // estimate.estimatedPose.toPose2d(),
+        // estimate.timestampSeconds,
+        // vision.getStdDevsLeft());
+        // });
         // }
 
         public Command getAutonomousCommand() {
@@ -293,4 +297,3 @@ public class RobotContainer {
                                 drivetrain.applyRequest(() -> idle));
         }
 }
-

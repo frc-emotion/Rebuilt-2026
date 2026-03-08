@@ -14,30 +14,36 @@ public final class TurretConstants {
     public static final int turretEncoderID = 53;
     public static final int hoodEncoderID = 54;
 
-    
     public static final double TURRET_ENCODER_OFFSET = 0.0;
-    public static final double TURRET_GEAR_RATIO = 1.0;
 
-    // Barrier: the ONE position the turret must never cross (in mechanism rotations).
-    // Set CANcoder magnet offset so this reads 0.0 at the physical barrier.
-    public static final double TURRET_BARRIER_POSITION = 0.0;
-    public static final double TURRET_REVERSE_LIMIT = 0.002; // ~0.7° past barrier (CCW side)
-    public static final double TURRET_FORWARD_LIMIT = 0.998; // ~359.3° past barrier (CW side)
-    // Encoder reading (rotations) when turret faces robot-forward. TODO: measure on robot.
+    public static final double TURRET_GEAR_RATIO = 122.0/30.0;
+    
+    public static final double HOOD_GEAR_RATIO = 155.0 / 12.0; // SensorToMechanismRatio
+
+    // Dead zone: range of positions the turret must never cross (in mechanism
+    // rotations).
+    // Set CANcoder magnet offset so BARRIER_START reads 0.0 at the physical barrier
+    // edge.
+    public static final double TURRET_BARRIER_START = 0.0; // TODO: tune on robot
+    public static final double TURRET_BARRIER_END = 0.056; // ~20° dead zone — TODO: tune on robot
+    public static final double TURRET_REVERSE_LIMIT = TURRET_BARRIER_END + 0.002; // just past dead zone end
+    public static final double TURRET_FORWARD_LIMIT = 1.0 - (TURRET_BARRIER_START + 0.002); // just before dead zone
+                                                                                            // start
+    // Encoder reading (rotations) when turret faces robot-forward. TODO: measure on
+    // robot.
     public static final double TURRET_FORWARD_POSITION = 0.5;
 
     public static final double HOOD_ENCODER_OFFSET = 0.0;
-    public static final double HOOD_GEAR_RATIO = 1.0;
 
     // Hood hard stops — absolute positions the hood must NEVER exceed
-    public static final double HOOD_REVERSE_HARD_STOP = 0.0;  // TODO: set to actual min
-    public static final double HOOD_FORWARD_HARD_STOP = 0.5;  // TODO: set to actual max
+    public static final double HOOD_REVERSE_HARD_STOP = 0.0; // TODO: set to actual min
+    public static final double HOOD_FORWARD_HARD_STOP = 0.5; // TODO: set to actual max
 
     public static final double shooterTolerance = 0.5;
     public static final double turretTolerance = 0.05;
     public static final double hoodTolerance = 0.02;
 
-    public static final double MAX_SHOOTER_RPS = 100; 
+    public static final double MAX_SHOOTER_RPS = 100;
 
     public static TalonFXConfiguration SHOOTER_CONFIG = new TalonFXConfiguration();
 
@@ -73,8 +79,8 @@ public final class TurretConstants {
 
         // MotionMagic constraints — prevents turret from slamming. TODO: tune on robot.
         TURRET_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 2.0; // RPS
-        TURRET_CONFIG.MotionMagic.MotionMagicAcceleration = 4.0;   // RPS^2
-        TURRET_CONFIG.MotionMagic.MotionMagicJerk = 40.0;          // Smoothing
+        TURRET_CONFIG.MotionMagic.MotionMagicAcceleration = 4.0; // RPS^2
+        TURRET_CONFIG.MotionMagic.MotionMagicJerk = 40.0; // Smoothing
 
         TURRET_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         TURRET_CONFIG.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
@@ -97,19 +103,20 @@ public final class TurretConstants {
 
         HOOD_CONFIG.Feedback.FeedbackRemoteSensorID = hoodEncoderID;
         HOOD_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-        HOOD_CONFIG.Feedback.SensorToMechanismRatio = HOOD_GEAR_RATIO;
 
         HOOD_CONFIG.Feedback.RotorToSensorRatio = 1.0;
 
         // MotionMagic constraints — prevents hood from slamming. TODO: tune on robot.
         HOOD_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 1.0; // RPS
-        HOOD_CONFIG.MotionMagic.MotionMagicAcceleration = 2.0;   // RPS^2
-        HOOD_CONFIG.MotionMagic.MotionMagicJerk = 20.0;          // Smoothing
+        HOOD_CONFIG.MotionMagic.MotionMagicAcceleration = 2.0; // RPS^2
+        HOOD_CONFIG.MotionMagic.MotionMagicJerk = 20.0; // Smoothing
         HOOD_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         HOOD_CONFIG.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
 
         HOOD_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitThreshold = HOOD_FORWARD_HARD_STOP;
         HOOD_CONFIG.SoftwareLimitSwitch.ReverseSoftLimitThreshold = HOOD_REVERSE_HARD_STOP;
+        HOOD_CONFIG.Feedback.SensorToMechanismRatio = HOOD_GEAR_RATIO;
+        HOOD_CONFIG.Feedback.RotorToSensorRatio = 15.0 / 12.0;
     }
 
     public static CANcoderConfiguration TURRET_ENCODER_CONFIG = new CANcoderConfiguration();
