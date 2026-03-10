@@ -27,13 +27,12 @@ public class Climb extends SubsystemBase {
     private final TalonFX leaderMotor;
     @Logged
     private final TalonFX followerMotor;
-    
+
     private final CANcoder climbEncoder;
 
     private final MotionMagicVoltage leaderMotionRequest;
 
     private final VoltageOut manualRequest;
-
 
     private double currentSetpoint;
 
@@ -43,18 +42,13 @@ public class Climb extends SubsystemBase {
 
         climbEncoder = new CANcoder(ClimbConstants.CLIMB_ENCODER_ID, canBus);
 
-
         configureLeaderMotor();
         configureFollowerMotor();
         configureClimbEncoder();
 
-
         leaderMotionRequest = new MotionMagicVoltage(0);
 
         manualRequest = new VoltageOut(0);
-
-
-
 
     }
 
@@ -65,7 +59,8 @@ public class Climb extends SubsystemBase {
         StatusCode status = StatusCode.StatusCodeNotInitialized;
         for (int i = 0; i < 5; ++i) {
             status = leaderMotor.getConfigurator().apply(ClimbConstants.CLIMB_CONFIG, 0.1);
-            if (status.isOK()) break;
+            if (status.isOK())
+                break;
         }
         if (!status.isOK()) {
             System.err.println("Could not apply climb leader motor configs: " + status.toString());
@@ -76,7 +71,8 @@ public class Climb extends SubsystemBase {
         StatusCode status = StatusCode.StatusCodeNotInitialized;
         for (int i = 0; i < 5; ++i) {
             status = followerMotor.getConfigurator().apply(ClimbConstants.CLIMB_CONFIG, 0.1);
-            if (status.isOK()) break;
+            if (status.isOK())
+                break;
         }
         if (!status.isOK()) {
             System.err.println("Could not apply climb follower motor configs: " + status.toString());
@@ -88,23 +84,21 @@ public class Climb extends SubsystemBase {
         StatusCode status = StatusCode.StatusCodeNotInitialized;
         for (int i = 0; i < 5; ++i) {
             status = climbEncoder.getConfigurator().apply(ClimbConstants.CLIMB_ENCODER_CONFIG, 0.1);
-            if (status.isOK()) break;
+            if (status.isOK())
+                break;
         }
         if (!status.isOK()) {
             System.err.println("Could not apply climb encoder configs: " + status.toString());
         }
     }
 
-
-    
     public void setClimbPosition(double setpoint) {
         currentSetpoint = setpoint;
         // passing in position in rotations
         leaderMotor.setControl(leaderMotionRequest.withPosition(setpoint));
     }
 
-
-    public boolean atSetpoint(){
+    public boolean atSetpoint() {
         return Math.abs(leaderMotor.getPosition().getValueAsDouble() - currentSetpoint) < ClimbConstants.TOLERANCE;
     }
 
@@ -112,7 +106,6 @@ public class Climb extends SubsystemBase {
         double manualVolts = joystickInput * 12.0;
         leaderMotor.setControl(manualRequest.withOutput(manualVolts + ClimbConstants.manual_kG));
     }
-
 
     // MOTOR ACCESSORS (for FaultMonitor registration)
 
@@ -124,7 +117,7 @@ public class Climb extends SubsystemBase {
         return followerMotor;
     }
 
-    public void stop(){
+    public void stop() {
         leaderMotor.stopMotor();
         followerMotor.stopMotor();
     }

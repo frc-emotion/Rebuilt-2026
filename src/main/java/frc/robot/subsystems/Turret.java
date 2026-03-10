@@ -45,6 +45,12 @@ public class Turret extends SubsystemBase {
         configureTurretEncoder();
         configureTurretMotor();
 
+        // Seed RotorSensor from CANcoder absolute position.
+        // CANcoder is geared 1:1 with the motor, so divide by gear ratio to get turret
+        // rotations.
+        double absolutePos = turretEncoder.getAbsolutePosition().waitForUpdate(0.250).getValueAsDouble();
+        turretMotor.setPosition(absolutePos / TurretConstants.TURRET_GEAR_RATIO);
+
         turretVelocity = turretMotor.getVelocity();
         turretCurrent = turretMotor.getSupplyCurrent();
         turretVoltage = turretMotor.getMotorVoltage();

@@ -12,7 +12,8 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
 public final class ClimbConstants {
-    // IDs - Defined locally here to match subsystem style, mirrored in CANID for documentation
+    // IDs - Defined locally here to match subsystem style, mirrored in CANID for
+    // documentation
     public static final int CLIMB_LEADER_ID = 40;
     public static final int CLIMB_FOLLOWER_ID = 41;
 
@@ -21,7 +22,7 @@ public final class ClimbConstants {
     public static final int CLIMB_ENCODER_ID = 67;
 
     // Mechanics
-    public static final double GEAR_RATIO = 12.0; 
+    public static final double GEAR_RATIO = 12.0;
 
     public static final double TOLERANCE = 0.5;
 
@@ -57,7 +58,7 @@ public final class ClimbConstants {
         CLIMB_CONFIG.CurrentLimits.SupplyCurrentLimit = 60.0;
 
         // Feedback
-        CLIMB_CONFIG.Feedback.SensorToMechanismRatio = 1.0; 
+        CLIMB_CONFIG.Feedback.SensorToMechanismRatio = 1.0;
 
         // Soft Limits (Safety)
         CLIMB_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitThreshold = MAX_HEIGHT_ROTATIONS;
@@ -67,12 +68,12 @@ public final class ClimbConstants {
 
         // Motion Magic PID Slots
         // Slot 0: Position Control
-        CLIMB_CONFIG.Slot0.kP = 0.1; 
+        CLIMB_CONFIG.Slot0.kP = 0.1;
         CLIMB_CONFIG.Slot0.kI = 0.0;
         CLIMB_CONFIG.Slot0.kD = 0.0;
-        CLIMB_CONFIG.Slot0.kV = 0.0; 
-        CLIMB_CONFIG.Slot0.kG = 0.5;  
-        CLIMB_CONFIG.Slot0.GravityType = GravityTypeValue.Elevator_Static; 
+        CLIMB_CONFIG.Slot0.kV = 0.0;
+        CLIMB_CONFIG.Slot0.kG = 0.5;
+        CLIMB_CONFIG.Slot0.GravityType = GravityTypeValue.Elevator_Static;
 
         // Motion Magic constraints
         // CLIMB_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 80.0; // RPS
@@ -80,12 +81,12 @@ public final class ClimbConstants {
         // CLIMB_CONFIG.MotionMagic.MotionMagicJerk = 1600.0; // Smoothing
 
         CLIMB_CONFIG.Feedback.FeedbackRemoteSensorID = CLIMB_ENCODER_ID;
-        CLIMB_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+        CLIMB_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
         CLIMB_CONFIG.Feedback.SensorToMechanismRatio = CLIMB_GEAR_RATIO;
         CLIMB_CONFIG.Feedback.RotorToSensorRatio = 1.0;
     }
 
-    public static CANcoderConfiguration CLIMB_ENCODER_CONFIG = new CANcoderConfiguration(); 
+    public static CANcoderConfiguration CLIMB_ENCODER_CONFIG = new CANcoderConfiguration();
 
     public static double CLIMB_ENCODER_OFFSET = 0;
 
