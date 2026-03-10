@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(xargs wc:*)",
+      "Bash(JAVA_HOME=\"C:/Users/Public/wpilib/2026/jdk\" ./gradlew build:*)",
+      "Bash(JAVA_HOME=\"C:\\\\Users\\\\Public\\\\wpilib\\\\2026\\\\jdk\" ./gradlew build:*)",
+      "WebFetch(domain:v6.docs.ctr-electronics.com)",
+      "WebFetch(domain:api.ctr-electronics.com)"
+    ]
+  }
+}

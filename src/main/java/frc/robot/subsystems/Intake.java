@@ -3,8 +3,9 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.NeutralOut;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
@@ -16,16 +17,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IntakeConstants;
 import static edu.wpi.first.units.Units.*;
 
-/**
- * Intake subsystem with automatic telemetry via Epilogue.
- * 
- * <p>
- * The @Logged annotation on TalonFX motors enables automatic logging of
- * motor health data (current, voltage, temperature) via TalonFXLogger.
- */
 @Logged
 public class Intake extends SubsystemBase {
-    // Motors marked @Logged will have health data auto-logged via TalonFXLogger
     @Logged
     private final TalonFX intakeMotor;
     @Logged
@@ -41,7 +34,7 @@ public class Intake extends SubsystemBase {
     private final StatusSignal<Voltage> rollerVoltage;
 
     private final MotionMagicVoltage intakeMotionRequest;
-    private final MotionMagicVelocityVoltage rollerMotionRequest;
+    private final VelocityVoltage rollerMotionRequest;
 
     private Angle currentSetpoint = Degrees.of(0);
     private boolean deployed = false;
@@ -53,7 +46,6 @@ public class Intake extends SubsystemBase {
         configureIntakeMotor();
         configureRollerMotor();
 
-        // Intialize status signals
         intakeVelocity = intakeMotor.getVelocity();
         intakeCurrent = intakeMotor.getSupplyCurrent();
         intakeVoltage = intakeMotor.getMotorVoltage();
@@ -71,7 +63,7 @@ public class Intake extends SubsystemBase {
         rollerCurrent.setUpdateFrequency(50);
 
         intakeMotionRequest = new MotionMagicVoltage(currentSetpoint);
-        rollerMotionRequest = new MotionMagicVelocityVoltage(0);
+        rollerMotionRequest = new VelocityVoltage(0);
 
 
     }
@@ -113,14 +105,17 @@ public class Intake extends SubsystemBase {
     
     public void setIntakeAngle(Angle setpoint) {
 
-        // passing in angle as degrees
         currentSetpoint = setpoint;
         intakeMotor.setControl(intakeMotionRequest.withPosition(setpoint));
     }
 
+    // speed in RPS
     public void setRollerSpeed(double speed) {
-        // speed needs to be given in [-1,1]
         rollerMotor.setControl(rollerMotionRequest.withVelocity(speed));
+    }
+
+    public void stopRoller() {
+        rollerMotor.setControl(new NeutralOut());
     }
 
     public boolean atSetpoint(){

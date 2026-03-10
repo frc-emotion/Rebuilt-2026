@@ -1,6 +1,7 @@
 package frc.robot.Constants;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import static edu.wpi.first.units.Units.*;
@@ -13,10 +14,13 @@ public final class IntakeConstants {
     public static final int rollerMotorID = 21;
     public static final double IntakeCurrentSpike = 20;
 
-    public static final Angle INTAKE_IN_ANGLE = Degrees.of(0);
-    public static final Angle INTAKE_OUT_ANGLE = Degrees.of(85);
+    public static final Angle INTAKE_IN_ANGLE = Degrees.of(-8);
 
-    public static final Angle TOLERANCE = Degrees.of(0.5);
+    // raw rotations: intake = 0.34 so we gotta multiply by 360
+
+    public static final Angle INTAKE_OUT_ANGLE = Degrees.of(126.7);
+
+    public static final Angle TOLERANCE = Degrees.of(5);
 
 
     public static final TalonFXConfiguration INTAKE_CONFIG = new TalonFXConfiguration();
@@ -25,13 +29,13 @@ public final class IntakeConstants {
         INTAKE_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         INTAKE_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
-        INTAKE_CONFIG.Slot0.kG = 0.53; // Volts to overcome gravity
-        INTAKE_CONFIG.Slot0.kS = 0.5; // Volts to overcome static friction
-        INTAKE_CONFIG.Slot0.kV = 0.0; // Volts for a velocity target of 1 rps
-        INTAKE_CONFIG.Slot0.kA = 0.0; // Volts for an acceleration of 1 rps/s
-        INTAKE_CONFIG.Slot0.kP = 25;
+        INTAKE_CONFIG.Slot0.kG = 0;
+        INTAKE_CONFIG.Slot0.kS = 0;
+        INTAKE_CONFIG.Slot0.kV = 0.0;
+        INTAKE_CONFIG.Slot0.kA = 0.0;
+        INTAKE_CONFIG.Slot0.kP = 13;
         INTAKE_CONFIG.Slot0.kI = 0.0;
-        INTAKE_CONFIG.Slot0.kD = 0.00;
+        INTAKE_CONFIG.Slot0.kD = 0.0;
 
         // MotionMagic constraints — prevents slapdown from slamming. TODO: tune on robot.
         INTAKE_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 2.0; // RPS
@@ -41,21 +45,23 @@ public final class IntakeConstants {
         INTAKE_CONFIG.Feedback.SensorToMechanismRatio = 27.0;
         //27:1
 
+
+
     }
 
-    public static final double INTAKE_ROLLER_VELOCITY = 40;
+    public static final double INTAKE_ROLLER_VELOCITY = 45;
 
     public static final TalonFXConfiguration ROLLER_CONFIG = new TalonFXConfiguration();
 
     static{
         ROLLER_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-        ROLLER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+        ROLLER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
-        ROLLER_CONFIG.Slot0.kG = 0; // Volts to overcome gravity
-        ROLLER_CONFIG.Slot0.kS = 0; // Volts to overcome static friction
-        ROLLER_CONFIG.Slot0.kV = 0.0; // Volts for a velocity target of 1 rps
-        ROLLER_CONFIG.Slot0.kA = 0.0; // Volts for an acceleration of 1 rps/s
-        ROLLER_CONFIG.Slot0.kP = 25;
+        ROLLER_CONFIG.Slot0.kG = 0;
+        ROLLER_CONFIG.Slot0.kS = 0;
+        ROLLER_CONFIG.Slot0.kV = 0;
+        ROLLER_CONFIG.Slot0.kA = 0.0;
+        ROLLER_CONFIG.Slot0.kP = 0.4;
         ROLLER_CONFIG.Slot0.kI = 0.0;
         ROLLER_CONFIG.Slot0.kD = 0.00;
 

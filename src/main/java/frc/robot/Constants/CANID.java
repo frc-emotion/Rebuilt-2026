@@ -22,13 +22,13 @@ public enum CANID {
     FRONT_LEFT_STEER(24, "Front Left Steer"),
     FRONT_LEFT_CANCODER(1, "Front Left CANcoder"),
 
-    FRONT_RIGHT_DRIVE(23, "Front Right Drive"),
-    FRONT_RIGHT_STEER(15, "Front Right Steer"),
-    FRONT_RIGHT_CANCODER(4, "Front Right CANcoder"),
+    FRONT_RIGHT_DRIVE(25, "Front Right Drive"),
+    FRONT_RIGHT_STEER(17, "Front Right Steer"),
+    FRONT_RIGHT_CANCODER(2, "Front Right CANcoder"),
 
-    BACK_LEFT_DRIVE(25, "Back Left Drive"),
-    BACK_LEFT_STEER(17, "Back Left Steer"),
-    BACK_LEFT_CANCODER(2, "Back Left CANcoder"),
+    BACK_LEFT_DRIVE(23, "Back Left Drive"),
+    BACK_LEFT_STEER(15, "Back Left Steer"),
+    BACK_LEFT_CANCODER(4, "Back Left CANcoder"),
 
     BACK_RIGHT_DRIVE(18, "Back Right Drive"),
     BACK_RIGHT_STEER(16, "Back Right Steer"),

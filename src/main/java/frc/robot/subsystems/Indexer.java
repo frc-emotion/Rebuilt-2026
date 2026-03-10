@@ -12,12 +12,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
 
-/**
- * Indexer subsystem with automatic telemetry via Epilogue.
- * 
- * <p>
- * All three TalonFX motors are automatically logged with health data.
- */
 @Logged
 public class Indexer extends SubsystemBase {
     @Logged

@@ -16,12 +16,6 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.TurretConstants;
 
-/**
- * Hood subsystem with automatic telemetry via Epilogue.
- * 
- * <p>
- * Controls the hood angle for shot trajectory.
- */
 @Logged
 public class Hood extends SubsystemBase {
     @Logged
@@ -49,15 +43,12 @@ public class Hood extends SubsystemBase {
         configureHoodEncoder();
         configureHoodMotor();
 
-        // Cache status signals for telemetry
         hoodVelocity = hoodMotor.getVelocity();
         hoodCurrent = hoodMotor.getSupplyCurrent();
         hoodVoltage = hoodMotor.getMotorVoltage();
 
-        // Motion magic controllers
         hoodMotionRequest = new MotionMagicVoltage(0);
 
-        // Set update frequencies for efficient CAN usage
         hoodVelocity.setUpdateFrequency(50);
         hoodCurrent.setUpdateFrequency(50);
         hoodVoltage.setUpdateFrequency(50);

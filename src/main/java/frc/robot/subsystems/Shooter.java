@@ -14,12 +14,6 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.TurretConstants;
 
-/**
- * Shooter subsystem with automatic telemetry via Epilogue.
- * 
- * <p>
- * Controls the flywheel motor for shooting balls.
- */
 @Logged
 public class Shooter extends SubsystemBase {
     @Logged
@@ -38,15 +32,12 @@ public class Shooter extends SubsystemBase {
 
         configureShooterMotor();
 
-        // Cache status signals for telemetry
         shooterVelocity = shooterMotor.getVelocity();
         shooterCurrent = shooterMotor.getSupplyCurrent();
         shooterVoltage = shooterMotor.getMotorVoltage();
 
-        // Motion magic controllers
         shooterMotionRequest = new VelocityVoltage(0);
 
-        // Set update frequencies for efficient CAN usage
         shooterVelocity.setUpdateFrequency(50);
         shooterCurrent.setUpdateFrequency(50);
         shooterVoltage.setUpdateFrequency(50);

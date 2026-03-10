@@ -18,12 +18,6 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.TurretConstants;
 
-/**
- * Turret subsystem with automatic telemetry via Epilogue.
- * 
- * <p>
- * Controls the turret rotation for aiming.
- */
 @Logged
 public class Turret extends SubsystemBase {
     @Logged
@@ -51,17 +45,14 @@ public class Turret extends SubsystemBase {
         configureTurretEncoder();
         configureTurretMotor();
 
-        // Cache status signals for telemetry
         turretVelocity = turretMotor.getVelocity();
         turretCurrent = turretMotor.getSupplyCurrent();
         turretVoltage = turretMotor.getMotorVoltage();
         turretPosition = turretMotor.getPosition();
 
-        // Motion magic controllers
         turretMotionRequest = new MotionMagicVoltage(0);
         manualTurretRequest = new VoltageOut(0);
 
-        // Set update frequencies for efficient CAN usage
         turretVelocity.setUpdateFrequency(50);
         turretCurrent.setUpdateFrequency(50);
         turretVoltage.setUpdateFrequency(50);

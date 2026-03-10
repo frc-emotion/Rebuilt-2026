@@ -13,6 +13,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import java.util.Set;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
@@ -20,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.CANID;
+import frc.robot.Constants.IntakeConstants;
 import frc.robot.commands.AimAtLeftCamera;
 import frc.robot.commands.AimAtRightCamera;
 import frc.robot.commands.ShootCommand;
@@ -200,13 +203,15 @@ public class RobotContainer {
 
                 // ===== INTAKE TOGGLE (same in both modes) =====
                 if (intake != null) {
-                        // Operator A: toggle slapdown + rollers. Double-tap safe.
-                        operator.a().onTrue(Commands.either(
-                                        new IntakeInCommand(intake)
-                                                        .beforeStarting(() -> intake.setDeployed(false)),
-                                        new IntakeOutCommand(intake)
-                                                        .beforeStarting(() -> intake.setDeployed(true)),
-                                        intake::isDeployed));
+                        operator.a().onTrue(Commands.defer(() -> {
+                                if (intake.isDeployed()) {
+                                        intake.setDeployed(false);
+                                        return new IntakeInCommand(intake);
+                                } else {
+                                        intake.setDeployed(true);
+                                        return new IntakeOutCommand(intake);
+                                }
+                        }, Set.of(intake)));
                 }
 
                 // // Climb (uncomment when ready)
@@ -228,15 +233,7 @@ public class RobotContainer {
                 joystick.rightTrigger().whileTrue(new ShootCommand(indexer, autoAimCommand));
 
                 // // Driver left trigger: intake toggle — DISABLED: not installed
-                // if (intake != null) {
-                // joystick.leftTrigger().onTrue(Commands.either(
-                // new IntakeInCommand(intake)
-                // .beforeStarting(() -> intake.setDeployed(false)),
-                // new IntakeOutCommand(intake)
-                // .beforeStarting(() -> intake.setDeployed(true)),
-                // intake::isDeployed
-                // ));
-                // }
+
         }
 
         /**
@@ -257,7 +254,7 @@ public class RobotContainer {
                 operator.rightTrigger().whileTrue(new ParallelCommandGroup(
                                 new runIndexer(indexer),
                                 new ManualShooterCommand(shooter, () -> operator.getRightTriggerAxis())));
-                System.out.println("[BINDINGS] Operator right trigger -> runIndexer + ManualShooterCommand");
+                System.out.println("[BINDINGS] Operator right ][\trigger -> runIndexer + ManualShooterCommand");
         }
 
         /**

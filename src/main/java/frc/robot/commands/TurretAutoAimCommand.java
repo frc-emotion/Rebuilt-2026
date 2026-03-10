@@ -47,12 +47,9 @@ public class TurretAutoAimCommand extends Command {
     @Logged private double gyroFFVolts = 0.0;
     @Logged private boolean visionActive = false;
 
-    // --- Tuning ---
-    // Vision correction: turret rotations per degree of camera tx error.
-    // Sign may need flipping on the real robot.
+    // rotations per degree of camera tx error
     private static final double kVisionP = 0.003;
-    // Gyro feedforward: volts per turret-rotation-per-second of robot yaw rate.
-    // Compensates for robot rotation so the turret stays locked on target.
+    // volts per RPS of robot yaw rate
     private static final double kGyroFF = 0.15;
 
     public TurretAutoAimCommand(
