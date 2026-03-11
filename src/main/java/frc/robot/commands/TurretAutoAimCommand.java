@@ -78,7 +78,9 @@ public class TurretAutoAimCommand extends Command {
         AimingParameters params = calculator.calculate(robotPose);
         distanceToHubMeters = params.distanceToHub();
 
-        if (!params.isValid()) return;
+        // Note: params.isValid() is false when distance is outside [1m, 7m].
+        // We still compute a setpoint so the turret always moves (critical for testing).
+        // TODO: Once field pose is reliable, use isValid to gate shooter spin-up only.
 
         // Layer 1: Pose-based angle → absolute encoder setpoint
         double setpoint = TurretConstants.TURRET_FORWARD_POSITION
