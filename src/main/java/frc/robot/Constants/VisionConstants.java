@@ -44,7 +44,7 @@ public final class VisionConstants {
     public static final boolean ENABLE_TURRET_CAM = true;
 
     /** Which camera name is physically on the turret. Change to match your wiring. */
-    public static final String TURRET_CAM_NAME = "aaranc"; // "aaranc"
+    public static final String TURRET_CAM_NAME = "mugilanr"; // "aaranc"
 
     // ==================
     // FIELD LAYOUT

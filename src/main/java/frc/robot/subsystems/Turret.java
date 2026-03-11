@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -37,6 +38,12 @@ public class Turret extends SubsystemBase {
 
     @Logged
     private double turretPositionRot = 0.0;
+    @Logged
+    private double cancoderAbsoluteRot = 0.0;
+    @Logged
+    private boolean faultRemoteSensorInvalid = false;
+    @Logged
+    private boolean faultFusedOutOfSync = false;
 
     public Turret(CANBus canBus) {
         turretMotor = new TalonFX(TurretConstants.turretMotorID, canBus);
@@ -45,11 +52,12 @@ public class Turret extends SubsystemBase {
         configureTurretEncoder();
         configureTurretMotor();
 
-        // Seed RotorSensor from CANcoder absolute position.
-        // CANcoder is geared 1:1 with the motor, so divide by gear ratio to get turret
-        // rotations.
-        double absolutePos = turretEncoder.getAbsolutePosition().waitForUpdate(0.250).getValueAsDouble();
-        turretMotor.setPosition(absolutePos / TurretConstants.TURRET_GEAR_RATIO);
+        // FusedCANcoder handles absolute position seeding from the CANcoder
+        // automatically — no manual setPosition() needed.
+        // NOTE: With CANcoder on motor shaft (5.08:1 to turret), boot position has
+        // ~±35° ambiguity. Always boot with turret in a consistent position.
+
+        verifySoftLimitsApplied();
 
         turretVelocity = turretMotor.getVelocity();
         turretCurrent = turretMotor.getSupplyCurrent();
@@ -117,6 +125,9 @@ public class Turret extends SubsystemBase {
     @Override
     public void periodic() {
         turretPositionRot = turretMotor.getPosition().getValueAsDouble();
+        cancoderAbsoluteRot = turretEncoder.getAbsolutePosition().getValueAsDouble();
+        faultRemoteSensorInvalid = turretMotor.getFault_RemoteSensorDataInvalid().getValue();
+        faultFusedOutOfSync = turretMotor.getFault_FusedSensorOutOfSync().getValue();
     }
 
     // ==================
@@ -125,6 +136,28 @@ public class Turret extends SubsystemBase {
 
     public TalonFX getTurretMotor() {
         return turretMotor;
+    }
+
+    /**
+     * Reads back the motor's actual applied config and prints soft limit status
+     * to console. If this doesn't match what we sent, the config didn't apply.
+     */
+    private void verifySoftLimitsApplied() {
+        var readback = new TalonFXConfiguration();
+        var status = turretMotor.getConfigurator().refresh(readback, 0.1);
+        if (status.isOK()) {
+            System.out.println("[Turret] Config readback:");
+            System.out.println("  FeedbackSource: " + readback.Feedback.FeedbackSensorSource);
+            System.out.println("  RemoteSensorID: " + readback.Feedback.FeedbackRemoteSensorID);
+            System.out.println("  RotorToSensor: " + readback.Feedback.RotorToSensorRatio);
+            System.out.println("  SensorToMech: " + readback.Feedback.SensorToMechanismRatio);
+            System.out.println("  FwdSoftLimit: enabled=" + readback.SoftwareLimitSwitch.ForwardSoftLimitEnable
+                    + " threshold=" + readback.SoftwareLimitSwitch.ForwardSoftLimitThreshold);
+            System.out.println("  RevSoftLimit: enabled=" + readback.SoftwareLimitSwitch.ReverseSoftLimitEnable
+                    + " threshold=" + readback.SoftwareLimitSwitch.ReverseSoftLimitThreshold);
+        } else {
+            System.err.println("[Turret] WARNING: Could not read back config: " + status);
+        }
     }
 
     public void stop() {

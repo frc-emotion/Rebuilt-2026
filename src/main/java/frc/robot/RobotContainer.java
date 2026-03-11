@@ -72,9 +72,9 @@ public class RobotContainer {
         // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
         // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-        // public final Vision vision = new Vision(); // DISABLED: 22ms periodic
-        // overruns robot loop, causes CAN timeouts
-        public final Vision vision = null;
+        // Only turret cam enabled (ENABLE_RIGHT_CAM/LEFT_CAM = false).
+        // Re-disable if periodic overruns return with single camera.
+        public final Vision vision = new Vision();
         // public final Climb climb = new Climb(mechanismBus);
         public final Intake intake = new Intake(mechanismBus); // DISABLED: not installed
         // public final Intake intake = null;
@@ -95,7 +95,7 @@ public class RobotContainer {
         // Set to true for competition (auto-aim + gated shoot + intake toggle on
         // driver).
         // Set to false for testing (manual operator control of turret/hood/shooter).
-        private static final boolean FULL_AUTONOMOUS = false;
+        private static final boolean FULL_AUTONOMOUS = true;
 
         // Stored reference so ShootCommand can check isAimed() (only used when
         // FULL_AUTONOMOUS)
@@ -120,10 +120,9 @@ public class RobotContainer {
                 configureBindings();
                 registerMotorsForFaultMonitoring();
                 tuner.setSubsystems(turret, hood, shooter, intake);
-                // Vision turret angle wiring disabled while vision is null
-                // if (vision != null && turret != null) {
-                // vision.setTurretAngleSupplier(turret::getTurretPosition);
-                // }
+                if (vision != null && turret != null) {
+                        vision.setTurretAngleSupplier(turret::getTurretPosition);
+                }
         }
 
         /**
@@ -226,7 +225,7 @@ public class RobotContainer {
         private void configureAutonomousBindings() {
                 // Turret + Hood + Shooter: always tracking hub
                 // Pass null for vision until cameras are mounted, then pass vision
-                autoAimCommand = new TurretAutoAimCommand(drivetrain, null, turret, hood, shooter);
+                autoAimCommand = new TurretAutoAimCommand(drivetrain, vision, turret, hood, shooter);
                 turret.setDefaultCommand(autoAimCommand);
 
                 // Driver right trigger: SHOOT — feeds indexer only when aimed + flywheel ready

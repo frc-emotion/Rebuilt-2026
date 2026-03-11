@@ -24,10 +24,10 @@ public final class TurretConstants {
     // Dead zone edges (mechanism rotations). Safe range is BETWEEN these values.
     // TODO: Push turret to each stop, read turretPositionRot on Elastic, put values
     // here.
-    public static final double TURRET_BARRIER_START = -0.8; // TODO: left stop value from Elastic
-    public static final double TURRET_BARRIER_END = 0.1; // TODO: right stop value from Elastic
-    public static final double TURRET_REVERSE_LIMIT = TURRET_BARRIER_START + 0.001;
-    public static final double TURRET_FORWARD_LIMIT = TURRET_BARRIER_END - 0.001;
+    public static final double TURRET_BARRIER_START = -0.65; // TODO: left stop value from Elastic
+    public static final double TURRET_BARRIER_END = 0.32; // TODO: right stop value from Elastic
+    public static final double TURRET_REVERSE_LIMIT = TURRET_BARRIER_START + 0.02;
+    public static final double TURRET_FORWARD_LIMIT = TURRET_BARRIER_END - 0.02;
     // Encoder reading (rotations) when turret faces robot-forward.
     // Average of barrier limits (dead zone is behind robot).
     public static final double TURRET_FORWARD_POSITION = (TURRET_BARRIER_START + TURRET_BARRIER_END) / 2.0;
@@ -73,10 +73,16 @@ public final class TurretConstants {
         TURRET_CONFIG.Slot0.kI = 0.0;
         TURRET_CONFIG.Slot0.kD = 0.5;
 
-        // RotorSensor + seed from CANcoder at boot (in Turret.java constructor).
-        // getPosition() returns turret rotations. Boot with turret pointing forward =
-        // 0.0.
-        TURRET_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
+        // FusedCANcoder: fuses CANcoder absolute data with rotor sensor for
+        // high-bandwidth, backlash-compensated position. Requires Phoenix Pro.
+        // CANcoder is on the motor shaft (1:1 with rotor), so:
+        //   RotorToSensorRatio = 1.0 (rotor and CANcoder turn together)
+        //   SensorToMechanismRatio = TURRET_GEAR_RATIO (5.08 sensor turns per turret turn)
+        // getPosition() returns turret rotations.
+        // NOTE: If Pro is not licensed, this silently falls back to RemoteCANcoder.
+        TURRET_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+        TURRET_CONFIG.Feedback.FeedbackRemoteSensorID = turretEncoderID;
+        TURRET_CONFIG.Feedback.RotorToSensorRatio = 1.0;
         TURRET_CONFIG.Feedback.SensorToMechanismRatio = TURRET_GEAR_RATIO;
 
         // MotionMagic constraints — prevents turret from slamming. TODO: tune on robot.
@@ -84,9 +90,8 @@ public final class TurretConstants {
         TURRET_CONFIG.MotionMagic.MotionMagicAcceleration = 4.0; // RPS^2
         TURRET_CONFIG.MotionMagic.MotionMagicJerk = 40.0; // Smoothing
 
-        // SOFT LIMITS DISABLED until you tune TURRET_BARRIER_START and
-        // TURRET_BARRIER_END.
-        // Once tuned, change these to true.
+        // Soft limits enabled. Thresholds derived from TURRET_BARRIER_START/END
+        // with 0.02 rot (~7°) margin to absorb turret inertia at manual voltage.
         TURRET_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         TURRET_CONFIG.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         TURRET_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitThreshold = TURRET_FORWARD_LIMIT;

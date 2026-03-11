@@ -74,6 +74,10 @@ public class TalonFXLogger extends ClassSpecificLogger<TalonFX> {
             backend.log("FaultBootDuringEnable", motor.getFault_BootDuringEnable().getValue());
             backend.log("FaultUnderVoltage", motor.getFault_Undervoltage().getValue());
             backend.log("FaultUnlicensedFeature", motor.getFault_UnlicensedFeatureInUse().getValue());
+            backend.log("FaultRemoteSensorDataInvalid", motor.getFault_RemoteSensorDataInvalid().getValue());
+            backend.log("FaultFusedSensorOutOfSync", motor.getFault_FusedSensorOutOfSync().getValue());
+            backend.log("FaultForwardSoftLimit", motor.getFault_ForwardSoftLimit().getValue());
+            backend.log("FaultReverseSoftLimit", motor.getFault_ReverseSoftLimit().getValue());
         }
     }
 }
