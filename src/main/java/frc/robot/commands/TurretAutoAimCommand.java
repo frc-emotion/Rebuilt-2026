@@ -74,47 +74,50 @@ public class TurretAutoAimCommand extends Command {
 
     @Override
     public void execute() {
-        Pose2d robotPose = drivetrain.getState().Pose;
-        AimingParameters params = calculator.calculate(robotPose);
-        distanceToHubMeters = params.distanceToHub();
+        // ============================================================
+        // VISION-ONLY MODE (odometry disabled for bench testing)
+        // Turret tracks hub tag yaw directly via P-controller.
+        // Re-enable odometry layers when field pose is reliable.
+        // ============================================================
 
-        // Note: params.isValid() is false when distance is outside [1m, 7m].
-        // We still compute a setpoint so the turret always moves (critical for testing).
-        // TODO: Once field pose is reliable, use isValid to gate shooter spin-up only.
-
-        // Layer 1: Pose-based angle → absolute encoder setpoint
-        double setpoint = TurretConstants.TURRET_FORWARD_POSITION
-                + params.turretAngle().getRotations();
-
-        // Layer 2: Additive vision correction
         visionActive = false;
         visionCorrectionDeg = 0.0;
+        gyroFFVolts = 0.0;
+
         if (vision != null && vision.turretCameraHasTargets()) {
             var target = vision.getTurretCameraBestTarget();
             if (target.isPresent() && VisionConstants.isHubTag(target.get().getFiducialId())) {
-                double tx = target.get().getYaw();
-                setpoint += kVisionP * tx;
+                double tx = target.get().getYaw(); // degrees off camera center
                 visionCorrectionDeg = tx;
                 visionActive = true;
+
+                // P-controller: current position + error converted to rotations.
+                // If tag is right of center (positive yaw), turret rotates to follow.
+                // Flip sign below if turret tracks the wrong direction.
+                double currentPos = turret.getTurretMotor().getPosition().getValueAsDouble();
+                double setpoint = currentPos + (tx / 360.0);
+
+                setpoint = MathUtil.clamp(setpoint,
+                        TurretConstants.TURRET_REVERSE_LIMIT,
+                        TurretConstants.TURRET_FORWARD_LIMIT);
+                encoderSetpointRot = setpoint;
+
+                turret.moveTurret(Rotations.of(setpoint), 0);
             }
         }
+        // If no hub tag visible, turret holds last position (no new command sent).
 
-        // Layer 3: Gyro feedforward — counter-rotate against robot yaw
-        double robotYawRPS = drivetrain.getPigeon2()
-                .getAngularVelocityZWorld().getValueAsDouble() / 360.0;
-        gyroFFVolts = kGyroFF * (-robotYawRPS);
-
-        // Layer 4: Clamp to barrier-safe encoder range
-        setpoint = MathUtil.clamp(setpoint,
-                TurretConstants.TURRET_REVERSE_LIMIT,
-                TurretConstants.TURRET_FORWARD_LIMIT);
-        encoderSetpointRot = setpoint;
-
-        turret.moveTurret(Rotations.of(setpoint), gyroFFVolts);
-
-        // Layer 5: Hood angle and flywheel speed from distance
-        hood.setHoodAngle(Rotations.of(params.hoodAngle().getRotations()));
-        shooter.setShooterSpeed(RotationsPerSecond.of(params.flywheelRPM() / 60.0));
+        // --- ODOMETRY DISABLED ---
+        // Pose2d robotPose = drivetrain.getState().Pose;
+        // AimingParameters params = calculator.calculate(robotPose);
+        // distanceToHubMeters = params.distanceToHub();
+        // double setpoint = TurretConstants.TURRET_FORWARD_POSITION
+        //         + params.turretAngle().getRotations();
+        // double robotYawRPS = drivetrain.getPigeon2()
+        //         .getAngularVelocityZWorld().getValueAsDouble() / 360.0;
+        // gyroFFVolts = kGyroFF * (-robotYawRPS);
+        // hood.setHoodAngle(Rotations.of(params.hoodAngle().getRotations()));
+        // shooter.setShooterSpeed(RotationsPerSecond.of(params.flywheelRPM() / 60.0));
     }
 
     @Override
