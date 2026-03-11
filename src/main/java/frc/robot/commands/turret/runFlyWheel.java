@@ -17,7 +17,8 @@ public class runFlyWheel extends Command {
 
     @Override
     public void execute() {
-        m_shooterSubsystem.setShooterSpeed(RotationsPerSecond.of(speed));
+        return;
+        //m_shooterSubsystem.setShooterSpeed(RotationsPerSecond.of(speed));
     }
 
     @Override

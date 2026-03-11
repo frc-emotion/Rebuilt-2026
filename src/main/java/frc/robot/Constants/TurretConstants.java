@@ -14,31 +14,26 @@ public final class TurretConstants {
     public static final int turretEncoderID = 53;
     public static final int hoodEncoderID = 54;
 
-    public static final double TURRET_ENCODER_OFFSET = 0.0; // TODO: tune in Phoenix Tuner
+    public static final double TURRET_ENCODER_OFFSET = 0.0;
 
-    public static final double TURRET_GEAR_RATIO = 122.0 / 24.0;
-
+    public static final double TURRET_GEAR_RATIO = 122.0/30.0;
+    
     public static final double HOOD_GEAR_RATIO = 155.0 / 12.0; // SensorToMechanismRatio
-    // -0.553955
-    // 0.3884277
-    // Dead zone edges (mechanism rotations). Safe range is BETWEEN these values.
-    // TODO: Push turret to each stop, read turretPositionRot on Elastic, put values
-    // here.
-    public static final double TURRET_BARRIER_START = -0.65; // TODO: left stop value from Elastic
-    public static final double TURRET_BARRIER_END = 0.32; // TODO: right stop value from Elastic
-    public static final double TURRET_REVERSE_LIMIT = TURRET_BARRIER_START + 0.02;
-    public static final double TURRET_FORWARD_LIMIT = TURRET_BARRIER_END - 0.02;
+//-0.553955 
+//0.3884277
+    // Turret range of motion: 0.1 - 4.5 (hard), 0.11 - 4.4 (soft limits)
+    public static final double TURRET_REVERSE_LIMIT = 0.11;
+    public static final double TURRET_FORWARD_LIMIT = 4.4;
     // Encoder reading (rotations) when turret faces robot-forward.
-    // Average of barrier limits (dead zone is behind robot).
-    public static final double TURRET_FORWARD_POSITION = (TURRET_BARRIER_START + TURRET_BARRIER_END) / 2.0;
+    public static final double TURRET_FORWARD_POSITION = 3.4;
 
     public static final double HOOD_ENCODER_OFFSET = 0.0;
 
     // Hood hard stops — absolute positions the hood must NEVER exceed
     // hood low: 0.087158 (raw rotations)
     // hood high: 0.011962 (raw rotations)
-    public static final double HOOD_REVERSE_HARD_STOP = -0.8; // TODO: set to actual min
-    public static final double HOOD_FORWARD_HARD_STOP = 0.1; // TODO: set to actual max
+    public static final double HOOD_REVERSE_HARD_STOP = 0.011962; // TODO: set to actual min
+    public static final double HOOD_FORWARD_HARD_STOP = 0.087158; // TODO: set to actual max
 
     public static final double shooterTolerance = 0.5;
     public static final double turretTolerance = 0.05;
@@ -66,32 +61,23 @@ public final class TurretConstants {
         TURRET_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         TURRET_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         TURRET_CONFIG.Slot0.kG = 0.0;
-        TURRET_CONFIG.Slot0.kS = 0.5;
-        TURRET_CONFIG.Slot0.kV = 0.12;
+        TURRET_CONFIG.Slot0.kS = 0.0;
+        TURRET_CONFIG.Slot0.kV = 0.0;
         TURRET_CONFIG.Slot0.kA = 0.0;
-        TURRET_CONFIG.Slot0.kP = 0.01;
+        TURRET_CONFIG.Slot0.kP = 0.2;
         TURRET_CONFIG.Slot0.kI = 0.0;
-        TURRET_CONFIG.Slot0.kD = 0.5;
+        TURRET_CONFIG.Slot0.kD = 0.0;
 
-        // FusedCANcoder: fuses CANcoder absolute data with rotor sensor for
-        // high-bandwidth, backlash-compensated position. Requires Phoenix Pro.
-        // CANcoder is on the motor shaft (1:1 with rotor), so:
-        //   RotorToSensorRatio = 1.0 (rotor and CANcoder turn together)
-        //   SensorToMechanismRatio = TURRET_GEAR_RATIO (5.08 sensor turns per turret turn)
-        // getPosition() returns turret rotations.
-        // NOTE: If Pro is not licensed, this silently falls back to RemoteCANcoder.
-        TURRET_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
         TURRET_CONFIG.Feedback.FeedbackRemoteSensorID = turretEncoderID;
-        TURRET_CONFIG.Feedback.RotorToSensorRatio = 1.0;
-        TURRET_CONFIG.Feedback.SensorToMechanismRatio = TURRET_GEAR_RATIO;
+        TURRET_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+        TURRET_CONFIG.Feedback.SensorToMechanismRatio = 1.0; // CANcoder is on mechanism output
+        TURRET_CONFIG.Feedback.RotorToSensorRatio = TURRET_GEAR_RATIO; // 122:30 motor-to-CANcoder
 
         // MotionMagic constraints — prevents turret from slamming. TODO: tune on robot.
         TURRET_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 2.0; // RPS
         TURRET_CONFIG.MotionMagic.MotionMagicAcceleration = 4.0; // RPS^2
         TURRET_CONFIG.MotionMagic.MotionMagicJerk = 40.0; // Smoothing
 
-        // Soft limits enabled. Thresholds derived from TURRET_BARRIER_START/END
-        // with 0.02 rot (~7°) margin to absorb turret inertia at manual voltage.
         TURRET_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         TURRET_CONFIG.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         TURRET_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitThreshold = TURRET_FORWARD_LIMIT;
@@ -112,7 +98,8 @@ public final class TurretConstants {
         HOOD_CONFIG.Slot0.kD = 0.00;
 
         HOOD_CONFIG.Feedback.FeedbackRemoteSensorID = hoodEncoderID;
-        HOOD_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
+        HOOD_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+
         HOOD_CONFIG.Feedback.RotorToSensorRatio = 1.0;
 
         // MotionMagic constraints — prevents hood from slamming. TODO: tune on robot.

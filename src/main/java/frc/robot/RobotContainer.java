@@ -9,9 +9,11 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.NotLogged;
 import edu.wpi.first.math.geometry.Rotation2d;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import java.util.Set;
 
@@ -95,15 +97,18 @@ public class RobotContainer {
         // Set to true for competition (auto-aim + gated shoot + intake toggle on
         // driver).
         // Set to false for testing (manual operator control of turret/hood/shooter).
-        private static final boolean FULL_AUTONOMOUS = true;
+        private static final boolean FULL_AUTONOMOUS = false;
 
         // Stored reference so ShootCommand can check isAimed() (only used when
         // FULL_AUTONOMOUS)
         // Not @Logged — null when FULL_AUTONOMOUS=false, which crashes Epilogue
-        private transient TurretAutoAimCommand autoAimCommand;
+        @NotLogged
+        private TurretAutoAimCommand autoAimCommand;
         // public final Intake intake = null; // Disabled: no hardware connected
         // public final Indexer indexer = null; // Disabled: no hardware connected
         // public final Turret turret = null; // Disabled: no hardware connected
+        // @NotLogged tells Epilogue annotation processor to skip this null field
+        @NotLogged
         public final Climb climb = null;
         // public final LED led = null; //i don't know if the hardware is connected
 
@@ -230,6 +235,15 @@ public class RobotContainer {
 
                 // Driver right trigger: SHOOT — feeds indexer only when aimed + flywheel ready
                 joystick.rightTrigger().whileTrue(new ShootCommand(indexer, autoAimCommand));
+
+                // ===== TURRET TEST POSITIONS (hold button to go to position, release to return to auto-aim) =====
+                operator.x().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(3.0))));   // left of forward
+                operator.y().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(3.2))));   // slight left
+                operator.b().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(3.4))));   // forward
+                operator.povUp().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(3.6))));    // slight right
+                operator.povDown().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(3.8))));  // right of forward
+                operator.povLeft().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(1.0))));  // far left
+                operator.povRight().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(4.0)))); // far right
 
                 // // Driver left trigger: intake toggle — DISABLED: not installed
 

@@ -39,6 +39,8 @@ public class Turret extends SubsystemBase {
     @Logged
     private double turretPositionRot = 0.0;
     @Logged
+    private double turretPositionDegRelative = 0.0;
+    @Logged
     private double cancoderAbsoluteRot = 0.0;
     @Logged
     private boolean faultRemoteSensorInvalid = false;
@@ -125,6 +127,7 @@ public class Turret extends SubsystemBase {
     @Override
     public void periodic() {
         turretPositionRot = turretMotor.getPosition().getValueAsDouble();
+        turretPositionDegRelative = (turretPositionRot - TurretConstants.TURRET_FORWARD_POSITION) * 360.0;
         cancoderAbsoluteRot = turretEncoder.getAbsolutePosition().getValueAsDouble();
         faultRemoteSensorInvalid = turretMotor.getFault_RemoteSensorDataInvalid().getValue();
         faultFusedOutOfSync = turretMotor.getFault_FusedSensorOutOfSync().getValue();
