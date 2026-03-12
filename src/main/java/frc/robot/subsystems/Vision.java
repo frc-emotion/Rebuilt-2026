@@ -131,6 +131,11 @@ public class Vision extends SubsystemBase {
     // Turret angle supplier for dynamic camera transform
     private Supplier<Rotation2d> turretAngleSupplier = () -> new Rotation2d();
 
+    // Tracks whether the turret camera produced a fresh result THIS cycle.
+    // Prevents stale latestResultTurret from being re-used across cycles.
+    private boolean turretResultFreshThisCycle = false;
+    private double turretResultTimestamp = 0.0;
+
     // Diagnostic counters
     private int periodicCallCount = 0;
     private int rightResultCount = 0;
@@ -375,6 +380,7 @@ public class Vision extends SubsystemBase {
      */
     private void updateCameraTurret() {
         latestEstimateTurret = Optional.empty();
+        turretResultFreshThisCycle = false;
 
         // Skip if pose estimator wasn't initialized (no field layout)
         if (poseEstimatorTurret == null) {
@@ -386,6 +392,8 @@ public class Vision extends SubsystemBase {
 
         for (PhotonPipelineResult result : results) {
             latestResultTurret = result;
+            turretResultFreshThisCycle = true;
+            turretResultTimestamp = result.getTimestampSeconds();
 
             // Skip if no targets
             if (!result.hasTargets()) {
@@ -509,6 +517,21 @@ public class Vision extends SubsystemBase {
      */
     public boolean turretCameraHasTargets() {
         return latestResultTurret != null && latestResultTurret.hasTargets();
+    }
+
+    /**
+     * Returns true only if the turret camera produced a NEW result this robot cycle.
+     * Use this to avoid re-processing stale vision data in control loops.
+     */
+    public boolean isTurretResultFresh() {
+        return turretResultFreshThisCycle;
+    }
+
+    /**
+     * Gets the timestamp of the latest turret camera result (FPGA seconds).
+     */
+    public double getTurretResultTimestamp() {
+        return turretResultTimestamp;
     }
 
     /**

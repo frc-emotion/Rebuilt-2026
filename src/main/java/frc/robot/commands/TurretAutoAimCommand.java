@@ -42,7 +42,7 @@ public class TurretAutoAimCommand extends Command {
     private final TurretAimingCalculator calculator;
 
     @Logged private double distanceToHubMeters = 0.0;
-    @Logged private double encoderSetpointRot = 0.0;
+    @Logged private double encoderSetpointRot = TurretConstants.TURRET_FORWARD_POSITION;
     @Logged private double visionCorrectionDeg = 0.0;
     @Logged private double gyroFFVolts = 0.0;
     @Logged private boolean visionActive = false;
@@ -51,6 +51,9 @@ public class TurretAutoAimCommand extends Command {
     private static final double kVisionP = 0.003;
     // volts per RPS of robot yaw rate
     private static final double kGyroFF = 0.15;
+
+    // Tracks the last vision timestamp so we only update setpoint on FRESH frames
+    private double lastVisionTimestamp = 0.0;
 
     public TurretAutoAimCommand(
             CommandSwerveDrivetrain drivetrain,
@@ -70,6 +73,10 @@ public class TurretAutoAimCommand extends Command {
     @Override
     public void initialize() {
         calculator.clearAllianceCache();
+        // Seed the setpoint to wherever the turret currently is, so it doesn't
+        // jump to TURRET_FORWARD_POSITION on startup.
+        encoderSetpointRot = turret.getTurretMotor().getPosition().getValueAsDouble();
+        lastVisionTimestamp = 0.0;
     }
 
     @Override
@@ -84,28 +91,39 @@ public class TurretAutoAimCommand extends Command {
         visionCorrectionDeg = 0.0;
         gyroFFVolts = 0.0;
 
-        if (vision != null && vision.turretCameraHasTargets()) {
-            var target = vision.getTurretCameraBestTarget();
-            if (target.isPresent() && VisionConstants.isHubTag(target.get().getFiducialId())) {
-                double tx = target.get().getYaw(); // degrees off camera center
-                visionCorrectionDeg = tx;
-                visionActive = true;
+        // Only recompute the setpoint when the turret camera delivers a FRESH frame.
+        // This prevents the old bug where stale tx was re-applied every robot cycle,
+        // turning the P-controller into an integrator that drifts in one direction.
+        if (vision != null
+                && vision.isTurretResultFresh()
+                && vision.turretCameraHasTargets()) {
+            double currentTimestamp = vision.getTurretResultTimestamp();
+            if (currentTimestamp != lastVisionTimestamp) {
+                lastVisionTimestamp = currentTimestamp;
 
-                // P-controller: current position + error converted to rotations.
-                // If tag is right of center (positive yaw), turret rotates to follow.
-                // Flip sign below if turret tracks the wrong direction.
-                double currentPos = turret.getTurretMotor().getPosition().getValueAsDouble();
-                double setpoint = currentPos + (tx / 360.0);
+                var target = vision.getTurretCameraBestTarget();
+                if (target.isPresent() && VisionConstants.isHubTag(target.get().getFiducialId())) {
+                    double tx = target.get().getYaw(); // degrees off camera center
+                    visionCorrectionDeg = tx;
+                    visionActive = true;
 
-                setpoint = MathUtil.clamp(setpoint,
-                        TurretConstants.TURRET_REVERSE_LIMIT,
-                        TurretConstants.TURRET_FORWARD_LIMIT);
-                encoderSetpointRot = setpoint;
-
-                turret.moveTurret(Rotations.of(setpoint), 0);
+                    // P-controller: current position + error converted to rotations.
+                    // Computed ONCE per fresh vision frame, then MotionMagic holds
+                    // the setpoint until the next frame arrives.
+                    // Flip sign below if turret tracks the wrong direction.
+                    double currentPos = turret.getTurretMotor().getPosition().getValueAsDouble();
+                    encoderSetpointRot = MathUtil.clamp(
+                            currentPos + (tx / 360.0),
+                            TurretConstants.TURRET_REVERSE_LIMIT,
+                            TurretConstants.TURRET_FORWARD_LIMIT);
+                }
             }
         }
-        // If no hub tag visible, turret holds last position (no new command sent).
+
+        // ALWAYS command the turret — holds last setpoint when no fresh vision.
+        // This replaces the old "do nothing" fallback that left the motor in an
+        // undefined state.
+        turret.moveTurret(Rotations.of(encoderSetpointRot), gyroFFVolts);
 
         // --- ODOMETRY DISABLED ---
         // Pose2d robotPose = drivetrain.getState().Pose;
