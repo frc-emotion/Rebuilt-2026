@@ -17,12 +17,16 @@ public class runFlyWheel extends Command {
 
     @Override
     public void execute() {
-        return;
-        //m_shooterSubsystem.setShooterSpeed(RotationsPerSecond.of(speed));
+        m_shooterSubsystem.setShooterSpeed(RotationsPerSecond.of(speed));
     }
 
     @Override
     public boolean isFinished() {
         return m_shooterSubsystem.atShooterSetpoint();
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        m_shooterSubsystem.stop();
     }
 }

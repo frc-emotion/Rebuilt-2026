@@ -43,9 +43,15 @@ public class Turret extends SubsystemBase {
     @Logged
     private double cancoderAbsoluteRot = 0.0;
     @Logged
+    private double rotorPositionRot = 0.0;
+    @Logged
     private boolean faultRemoteSensorInvalid = false;
     @Logged
     private boolean faultFusedOutOfSync = false;
+    @Logged
+    private boolean faultForwardSoftLimit = false;
+    @Logged
+    private boolean faultReverseSoftLimit = false;
 
     public Turret(CANBus canBus) {
         turretMotor = new TalonFX(TurretConstants.turretMotorID, canBus);
@@ -56,8 +62,9 @@ public class Turret extends SubsystemBase {
 
         // FusedCANcoder handles absolute position seeding from the CANcoder
         // automatically — no manual setPosition() needed.
-        // NOTE: With CANcoder on motor shaft (5.08:1 to turret), boot position has
-        // ~±35° ambiguity. Always boot with turret in a consistent position.
+        // CANcoder is 1:1 with rotor (RotorToSensorRatio = 1.0).
+        // SensorToMechanismRatio = 5.08 converts CANcoder rotations to
+        // turret output rotations. motor.getPosition() reports in turret rotations.
 
         verifySoftLimitsApplied();
 
@@ -101,18 +108,17 @@ public class Turret extends SubsystemBase {
 
     public void moveTurret(Angle setpoint) {
         turretCurrentSetpoint = setpoint;
-        turretMotor.setControl(turretMotionRequest.withPosition(setpoint));
+        turretMotor.setControl(turretMotionRequest.withPosition(turretCurrentSetpoint));
     }
 
     public void moveTurret(Angle setpoint, double feedforwardVolts) {
         turretCurrentSetpoint = setpoint;
-        turretMotor.setControl(turretMotionRequest.withPosition(setpoint).withFeedForward(feedforwardVolts));
+        turretMotor.setControl(turretMotionRequest.withPosition(turretCurrentSetpoint).withFeedForward(feedforwardVolts));
     }
 
     public void setTurretVoltage(double joystickInput) {
-        double turretVoltage = joystickInput * 3.0;
-        turretMotor.setControl(manualTurretRequest.withOutput(turretVoltage));
-
+        double voltage = joystickInput * 3.0;
+        turretMotor.setControl(manualTurretRequest.withOutput(voltage));
     }
 
     public boolean atTurretSetpoint() {
@@ -129,8 +135,11 @@ public class Turret extends SubsystemBase {
         turretPositionRot = turretMotor.getPosition().getValueAsDouble();
         turretPositionDegRelative = (turretPositionRot - TurretConstants.TURRET_FORWARD_POSITION) * 360.0;
         cancoderAbsoluteRot = turretEncoder.getAbsolutePosition().getValueAsDouble();
+        rotorPositionRot = turretMotor.getRotorPosition().getValueAsDouble();
         faultRemoteSensorInvalid = turretMotor.getFault_RemoteSensorDataInvalid().getValue();
         faultFusedOutOfSync = turretMotor.getFault_FusedSensorOutOfSync().getValue();
+        faultForwardSoftLimit = turretMotor.getFault_ForwardSoftLimit().getValue();
+        faultReverseSoftLimit = turretMotor.getFault_ReverseSoftLimit().getValue();
     }
 
     // ==================

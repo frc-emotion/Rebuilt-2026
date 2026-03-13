@@ -16,16 +16,21 @@ public final class TurretConstants {
 
     public static final double TURRET_ENCODER_OFFSET = 0.0;
 
-    public static final double TURRET_GEAR_RATIO = 122.0/30.0;
+    // Total gear ratio from motor/CANcoder to turret output (SensorToMechanismRatio).
+    // CANcoder is 1:1 with the motor rotor shaft.
+    // Empirically measured: 5.08 rotor turns per 1 turret turn.
+    public static final double TURRET_GEAR_RATIO = 5.08;
     
     public static final double HOOD_GEAR_RATIO = 155.0 / 12.0; // SensorToMechanismRatio
 //-0.553955 
 //0.3884277
-    // Turret range of motion: 0.1 - 4.5 (hard), 0.11 - 4.4 (soft limits)
-    public static final double TURRET_REVERSE_LIMIT = 0.11;
-    public static final double TURRET_FORWARD_LIMIT = 4.4;
-    // Encoder reading (rotations) when turret faces robot-forward.
-    public static final double TURRET_FORWARD_POSITION = 3.4;
+    // Measured with corrected FusedCANcoder config (5.08:1, RotorToSensor=1.0).
+    // Physical hardstops at -0.37 and 0.4 mechanism rotations. Soft limits add 0.02 margin.
+    // In MECHANISM rotations (turret output). Used for both code-side clamping and firmware soft limits.
+    public static final double TURRET_REVERSE_LIMIT = -0.35;
+    public static final double TURRET_FORWARD_LIMIT = 0.38;
+    // Encoder reading (turret output rotations) when turret faces robot-forward.
+    public static final double TURRET_FORWARD_POSITION = 0.29;
 
     public static final double HOOD_ENCODER_OFFSET = 0.0;
 
@@ -36,7 +41,7 @@ public final class TurretConstants {
     public static final double HOOD_FORWARD_HARD_STOP = 0.087158; // TODO: set to actual max
 
     public static final double shooterTolerance = 0.5;
-    public static final double turretTolerance = 0.05;
+    public static final double turretTolerance = 0.005; // ~1.8° — tight enough for shooting
     public static final double hoodTolerance = 0.001;
 
     public static final double MAX_SHOOTER_RPS = 100;
@@ -62,16 +67,16 @@ public final class TurretConstants {
         TURRET_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         TURRET_CONFIG.Slot0.kG = 0.0;
         TURRET_CONFIG.Slot0.kS = 0.0;
-        TURRET_CONFIG.Slot0.kV = 0.0;
+        TURRET_CONFIG.Slot0.kV = 1.0;
         TURRET_CONFIG.Slot0.kA = 0.0;
-        TURRET_CONFIG.Slot0.kP = 0.2;
+        TURRET_CONFIG.Slot0.kP = 40.0;
         TURRET_CONFIG.Slot0.kI = 0.0;
         TURRET_CONFIG.Slot0.kD = 0.0;
 
         TURRET_CONFIG.Feedback.FeedbackRemoteSensorID = turretEncoderID;
         TURRET_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-        TURRET_CONFIG.Feedback.SensorToMechanismRatio = 1.0; // CANcoder is on mechanism output
-        TURRET_CONFIG.Feedback.RotorToSensorRatio = TURRET_GEAR_RATIO; // 122:30 motor-to-CANcoder
+        TURRET_CONFIG.Feedback.RotorToSensorRatio = 1.0;                // CANcoder is 1:1 with motor rotor
+        TURRET_CONFIG.Feedback.SensorToMechanismRatio = TURRET_GEAR_RATIO; // 5.08:1 CANcoder-to-turret output
 
         // MotionMagic constraints — prevents turret from slamming. TODO: tune on robot.
         TURRET_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 2.0; // RPS

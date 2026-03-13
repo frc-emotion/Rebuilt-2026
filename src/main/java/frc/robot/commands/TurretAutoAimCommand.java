@@ -102,7 +102,8 @@ public class TurretAutoAimCommand extends Command {
                 lastVisionTimestamp = currentTimestamp;
 
                 var target = vision.getTurretCameraBestTarget();
-                if (target.isPresent() && VisionConstants.isHubTag(target.get().getFiducialId())) {
+                if (target.isPresent()
+                        && (VisionConstants.BENCH_TEST_ANY_TAG || VisionConstants.isHubTag(target.get().getFiducialId()))) {
                     double tx = target.get().getYaw(); // degrees off camera center
                     visionCorrectionDeg = tx;
                     visionActive = true;
@@ -112,10 +113,7 @@ public class TurretAutoAimCommand extends Command {
                     // the setpoint until the next frame arrives.
                     // Flip sign below if turret tracks the wrong direction.
                     double currentPos = turret.getTurretMotor().getPosition().getValueAsDouble();
-                    encoderSetpointRot = MathUtil.clamp(
-                            currentPos + (tx / 360.0),
-                            TurretConstants.TURRET_REVERSE_LIMIT,
-                            TurretConstants.TURRET_FORWARD_LIMIT);
+                    encoderSetpointRot = currentPos + (kVisionP * tx);
                 }
             }
         }

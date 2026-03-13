@@ -97,7 +97,7 @@ public class RobotContainer {
         // Set to true for competition (auto-aim + gated shoot + intake toggle on
         // driver).
         // Set to false for testing (manual operator control of turret/hood/shooter).
-        private static final boolean FULL_AUTONOMOUS = false;
+        private static final boolean FULL_AUTONOMOUS = true;
 
         // Stored reference so ShootCommand can check isAimed() (only used when
         // FULL_AUTONOMOUS)
@@ -236,14 +236,15 @@ public class RobotContainer {
                 // Driver right trigger: SHOOT — feeds indexer only when aimed + flywheel ready
                 joystick.rightTrigger().whileTrue(new ShootCommand(indexer, autoAimCommand));
 
-                // ===== TURRET TEST POSITIONS (hold button to go to position, release to return to auto-aim) =====
-                operator.x().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(3.0))));   // left of forward
-                operator.y().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(3.2))));   // slight left
-                operator.b().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(3.4))));   // forward
-                operator.povUp().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(3.6))));    // slight right
-                operator.povDown().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(3.8))));  // right of forward
-                operator.povLeft().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(1.0))));  // far left
-                operator.povRight().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(4.0)))); // far right
+                // ===== TURRET TEST POSITIONS (range: -0.35 to 0.38, forward = 0.29) =====
+                // whileTrue: interrupts TurretAutoAimCommand while held, resumes auto-aim on release.
+                operator.x().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.10))));    // left of forward
+                operator.y().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.20))));    // slight left
+                operator.b().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.29))));    // forward
+                operator.povUp().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.35))));     // slight right
+                operator.povDown().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.0))));    // center
+                operator.povLeft().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(-0.30))));  // far left
+                operator.povRight().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.38)))); // far right
 
                 // // Driver left trigger: intake toggle — DISABLED: not installed
 

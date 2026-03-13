@@ -23,4 +23,9 @@ public class moveHood extends Command {
     public boolean isFinished() {
         return m_hoodSubsystem.atHoodSetpoint();
     }
+
+    @Override
+    public void end(boolean interrupted) {
+        m_hoodSubsystem.stop();
+    }
 }

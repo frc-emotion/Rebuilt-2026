@@ -22,7 +22,7 @@ public class ShootCommand extends Command {
 
     @Override
     public void execute() {
-        if (!autoAim.isAimed()) {
+        if (autoAim.isAimed()) {
             indexer.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
             // indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL); // DISABLED
             indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);

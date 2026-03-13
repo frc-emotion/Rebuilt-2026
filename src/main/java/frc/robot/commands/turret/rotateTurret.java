@@ -23,4 +23,9 @@ public class rotateTurret extends Command{
     public boolean isFinished(){
         return m_turretSubsystem.atTurretSetpoint();
     }
+
+    @Override
+    public void end(boolean interrupted){
+        m_turretSubsystem.stop();
+    }
 }
