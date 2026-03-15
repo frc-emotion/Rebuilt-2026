@@ -2,12 +2,11 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
@@ -18,13 +17,22 @@ public class Indexer extends SubsystemBase {
     private final TalonFX verticalIndexerMotor;
     private final TalonFX upwardIndexerMotor;
 
-    private final StatusSignal<Voltage> horizontalIndexerMotorVoltage;
-    private final StatusSignal<Voltage> verticalIndexerMotorVoltage;
-    private final StatusSignal<Voltage> upwardIndexerMotorVoltage;
-
     private final VelocityVoltage horizontalMotionController;
     private final VelocityVoltage verticalMotionController;
     private final VelocityVoltage upwardMotionController;
+
+    @Logged
+    private double horizontalVelocityRPS = 0.0;
+    @Logged
+    private double horizontalVoltageVolts = 0.0;
+    @Logged
+    private double verticalVelocityRPS = 0.0;
+    @Logged
+    private double verticalVoltageVolts = 0.0;
+    @Logged
+    private double upwardVelocityRPS = 0.0;
+    @Logged
+    private double upwardVoltageVolts = 0.0;
 
     public Indexer(CANBus canBus) {
         horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID, canBus);
@@ -39,20 +47,24 @@ public class Indexer extends SubsystemBase {
         verticalMotionController = new VelocityVoltage(0);
         upwardMotionController = new VelocityVoltage(0);
 
-        horizontalIndexerMotorVoltage = horizontalIndexerMotor.getMotorVoltage();
-        verticalIndexerMotorVoltage = verticalIndexerMotor.getMotorVoltage();
-        upwardIndexerMotorVoltage = upwardIndexerMotor.getMotorVoltage();
-
-        horizontalIndexerMotorVoltage.setUpdateFrequency(50);
-        verticalIndexerMotorVoltage.setUpdateFrequency(50);
-        upwardIndexerMotorVoltage.setUpdateFrequency(50);
+        // Disable all default status signals, then enable only what we need
+        ParentDevice.optimizeBusUtilizationForAll(horizontalIndexerMotor, verticalIndexerMotor, upwardIndexerMotor);
+        horizontalIndexerMotor.getVelocity().setUpdateFrequency(10);     // telemetry
+        horizontalIndexerMotor.getMotorVoltage().setUpdateFrequency(10); // telemetry
+        verticalIndexerMotor.getVelocity().setUpdateFrequency(10);       // telemetry
+        verticalIndexerMotor.getMotorVoltage().setUpdateFrequency(10);   // telemetry
+        upwardIndexerMotor.getVelocity().setUpdateFrequency(10);         // telemetry
+        upwardIndexerMotor.getMotorVoltage().setUpdateFrequency(10);     // telemetry
     }
 
     @Override
     public void periodic() {
-        horizontalIndexerMotorVoltage.refresh();
-        verticalIndexerMotorVoltage.refresh();
-        upwardIndexerMotorVoltage.refresh();
+        horizontalVelocityRPS = horizontalIndexerMotor.getVelocity().getValueAsDouble();
+        horizontalVoltageVolts = horizontalIndexerMotor.getMotorVoltage().getValueAsDouble();
+        verticalVelocityRPS = verticalIndexerMotor.getVelocity().getValueAsDouble();
+        verticalVoltageVolts = verticalIndexerMotor.getMotorVoltage().getValueAsDouble();
+        upwardVelocityRPS = upwardIndexerMotor.getVelocity().getValueAsDouble();
+        upwardVoltageVolts = upwardIndexerMotor.getMotorVoltage().getValueAsDouble();
     }
 
     private void configureHorizontalIndexerMotor() {

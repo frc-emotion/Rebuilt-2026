@@ -2,17 +2,14 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
 import static edu.wpi.first.units.Units.Rotations;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.TurretConstants;
 
@@ -22,10 +19,6 @@ public class Hood extends SubsystemBase {
 
     private final CANcoder hoodEncoder;
 
-    private final StatusSignal<AngularVelocity> hoodVelocity;
-    private final StatusSignal<Current> hoodCurrent;
-    private final StatusSignal<Voltage> hoodVoltage;
-
     private final MotionMagicVoltage hoodMotionRequest;
     private final com.ctre.phoenix6.controls.VoltageOut hoodManualVoltageRequest = new com.ctre.phoenix6.controls.VoltageOut(
             0);
@@ -34,6 +27,12 @@ public class Hood extends SubsystemBase {
 
     @Logged
     private double hoodPositionRot = 0.0;
+    @Logged
+    private double hoodVelocityRPS = 0.0;
+    @Logged
+    private double hoodCurrentAmps = 0.0;
+    @Logged
+    private double hoodVoltageVolts = 0.0;
 
     public Hood(CANBus canBus) {
         hoodMotor = new TalonFX(TurretConstants.hoodMotorID, canBus);
@@ -42,15 +41,15 @@ public class Hood extends SubsystemBase {
         configureHoodEncoder();
         configureHoodMotor();
 
-        hoodVelocity = hoodMotor.getVelocity();
-        hoodCurrent = hoodMotor.getSupplyCurrent();
-        hoodVoltage = hoodMotor.getMotorVoltage();
-
         hoodMotionRequest = new MotionMagicVoltage(0);
 
-        hoodVelocity.setUpdateFrequency(50);
-        hoodCurrent.setUpdateFrequency(50);
-        hoodVoltage.setUpdateFrequency(50);
+        // Disable all default status signals, then enable only what we need
+        ParentDevice.optimizeBusUtilizationForAll(hoodMotor, hoodEncoder);
+        hoodMotor.getPosition().setUpdateFrequency(50);          // MotionMagic feedback
+        hoodMotor.getVelocity().setUpdateFrequency(10);          // telemetry
+        hoodMotor.getSupplyCurrent().setUpdateFrequency(10);     // telemetry
+        hoodMotor.getMotorVoltage().setUpdateFrequency(10);      // telemetry
+        hoodEncoder.getAbsolutePosition().setUpdateFrequency(10); // encoder health
     }
 
     private void configureHoodMotor() {
@@ -90,6 +89,9 @@ public class Hood extends SubsystemBase {
     @Override
     public void periodic() {
         hoodPositionRot = hoodMotor.getPosition().getValueAsDouble();
+        hoodVelocityRPS = hoodMotor.getVelocity().getValueAsDouble();
+        hoodCurrentAmps = hoodMotor.getSupplyCurrent().getValueAsDouble();
+        hoodVoltageVolts = hoodMotor.getMotorVoltage().getValueAsDouble();
     }
 
     public TalonFX getHoodMotor() {

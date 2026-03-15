@@ -2,21 +2,18 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.hardware.ParentDevice;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import static edu.wpi.first.units.Units.Rotations;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.TurretConstants;
 
@@ -25,11 +22,6 @@ public class Turret extends SubsystemBase {
     private final TalonFX turretMotor;
 
     private final CANcoder turretEncoder;
-
-    private final StatusSignal<AngularVelocity> turretVelocity;
-    private final StatusSignal<Current> turretCurrent;
-    private final StatusSignal<Voltage> turretVoltage;
-    private final StatusSignal<Angle> turretPosition;
 
     private final MotionMagicVoltage turretMotionRequest;
     private final VoltageOut manualTurretRequest;
@@ -56,6 +48,12 @@ public class Turret extends SubsystemBase {
     private boolean faultForwardSoftLimit = false;
     @Logged
     private boolean faultReverseSoftLimit = false;
+    @Logged
+    private double turretVelocityRPS = 0.0;
+    @Logged
+    private double turretCurrentAmps = 0.0;
+    @Logged
+    private double turretVoltageVolts = 0.0;
 
     public Turret(CANBus canBus) {
         turretMotor = new TalonFX(TurretConstants.turretMotorID, canBus);
@@ -72,18 +70,17 @@ public class Turret extends SubsystemBase {
 
         verifySoftLimitsApplied();
 
-        turretVelocity = turretMotor.getVelocity();
-        turretCurrent = turretMotor.getSupplyCurrent();
-        turretVoltage = turretMotor.getMotorVoltage();
-        turretPosition = turretMotor.getPosition();
-
         turretMotionRequest = new MotionMagicVoltage(0);
         manualTurretRequest = new VoltageOut(0);
 
-        turretVelocity.setUpdateFrequency(50);
-        turretCurrent.setUpdateFrequency(50);
-        turretVoltage.setUpdateFrequency(50);
-        turretPosition.setUpdateFrequency(50);
+        // Disable all default status signals, then enable only what we need
+        ParentDevice.optimizeBusUtilizationForAll(turretMotor, turretEncoder);
+        turretMotor.getPosition().setUpdateFrequency(50);         // MotionMagic feedback
+        turretMotor.getVelocity().setUpdateFrequency(10);         // telemetry
+        turretMotor.getSupplyCurrent().setUpdateFrequency(10);    // telemetry
+        turretMotor.getMotorVoltage().setUpdateFrequency(10);     // telemetry
+        turretMotor.getRotorPosition().setUpdateFrequency(10);    // verify FusedCANcoder
+        turretEncoder.getAbsolutePosition().setUpdateFrequency(10); // encoder health
     }
 
     private void configureTurretMotor() {
@@ -150,6 +147,9 @@ public class Turret extends SubsystemBase {
         faultFusedOutOfSync = turretMotor.getFault_FusedSensorOutOfSync().getValue();
         faultForwardSoftLimit = turretMotor.getFault_ForwardSoftLimit().getValue();
         faultReverseSoftLimit = turretMotor.getFault_ReverseSoftLimit().getValue();
+        turretVelocityRPS = turretMotor.getVelocity().getValueAsDouble();
+        turretCurrentAmps = turretMotor.getSupplyCurrent().getValueAsDouble();
+        turretVoltageVolts = turretMotor.getMotorVoltage().getValueAsDouble();
     }
 
     // ==================

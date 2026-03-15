@@ -2,18 +2,15 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IntakeConstants;
 import static edu.wpi.first.units.Units.*;
@@ -24,15 +21,6 @@ public class Intake extends SubsystemBase {
     private final TalonFX rollerMotor;
 
     private final CANcoder pivotEncoder;
-
-    private final StatusSignal<AngularVelocity> intakeVelocity;
-    private final StatusSignal<Current> intakeCurrent;
-    private final StatusSignal<Voltage> intakeVoltage;
-
-
-    private final StatusSignal<AngularVelocity> rollerVelocity;
-    private final StatusSignal<Current> rollerCurrent;
-    private final StatusSignal<Voltage> rollerVoltage;
 
     private final MotionMagicVoltage intakeMotionRequest;
     private final VelocityVoltage rollerMotionRequest;
@@ -48,6 +36,18 @@ public class Intake extends SubsystemBase {
     private double cancoderAbsoluteRot = 0.0;
     @Logged
     private double rotorPositionRot = 0.0;
+    @Logged
+    private double pivotVelocityRPS = 0.0;
+    @Logged
+    private double pivotCurrentAmps = 0.0;
+    @Logged
+    private double pivotVoltageVolts = 0.0;
+    @Logged
+    private double rollerVelocityRPS = 0.0;
+    @Logged
+    private double rollerCurrentAmps = 0.0;
+    @Logged
+    private double rollerVoltageVolts = 0.0;
 
     public Intake(CANBus canBus) {
         intakeMotor = new TalonFX(IntakeConstants.intakeMotorID, canBus);
@@ -58,42 +58,34 @@ public class Intake extends SubsystemBase {
         configureIntakeMotor();
         configureRollerMotor();
 
-        intakeVelocity = intakeMotor.getVelocity();
-        intakeCurrent = intakeMotor.getSupplyCurrent();
-        intakeVoltage = intakeMotor.getMotorVoltage();
-
-        rollerVelocity = rollerMotor.getVelocity();
-        rollerCurrent = rollerMotor.getSupplyCurrent();
-        rollerVoltage = rollerMotor.getMotorVoltage();
-
-        intakeVelocity.setUpdateFrequency(50); // 50 Hz
-        intakeVoltage.setUpdateFrequency(50);
-        intakeCurrent.setUpdateFrequency(50);
-
-        rollerVelocity.setUpdateFrequency(50);
-        rollerVoltage.setUpdateFrequency(50);
-        rollerCurrent.setUpdateFrequency(50);
-
         intakeMotionRequest = new MotionMagicVoltage(currentSetpoint);
         rollerMotionRequest = new VelocityVoltage(0);
 
-
+        // Disable all default status signals, then enable only what we need
+        ParentDevice.optimizeBusUtilizationForAll(intakeMotor, rollerMotor, pivotEncoder);
+        intakeMotor.getPosition().setUpdateFrequency(50);          // MotionMagic feedback
+        intakeMotor.getVelocity().setUpdateFrequency(10);          // telemetry
+        intakeMotor.getSupplyCurrent().setUpdateFrequency(10);     // telemetry
+        intakeMotor.getMotorVoltage().setUpdateFrequency(10);      // telemetry
+        intakeMotor.getRotorPosition().setUpdateFrequency(10);     // verify gear ratio
+        rollerMotor.getVelocity().setUpdateFrequency(10);          // telemetry
+        rollerMotor.getSupplyCurrent().setUpdateFrequency(10);     // telemetry
+        rollerMotor.getMotorVoltage().setUpdateFrequency(10);      // telemetry
+        pivotEncoder.getAbsolutePosition().setUpdateFrequency(10); // encoder health
     }
 
     @Override
     public void periodic() {
-        intakeVelocity.refresh();
-        intakeVoltage.refresh();
-        intakeCurrent.refresh();
-
-        rollerVelocity.refresh();
-        rollerVoltage.refresh();
-        rollerCurrent.refresh();
-
         pivotPositionRot = intakeMotor.getPosition().getValueAsDouble();
         pivotPositionDeg = pivotPositionRot * 360.0;
         cancoderAbsoluteRot = pivotEncoder.getAbsolutePosition().getValueAsDouble();
         rotorPositionRot = intakeMotor.getRotorPosition().getValueAsDouble();
+        pivotVelocityRPS = intakeMotor.getVelocity().getValueAsDouble();
+        pivotCurrentAmps = intakeMotor.getSupplyCurrent().getValueAsDouble();
+        pivotVoltageVolts = intakeMotor.getMotorVoltage().getValueAsDouble();
+        rollerVelocityRPS = rollerMotor.getVelocity().getValueAsDouble();
+        rollerCurrentAmps = rollerMotor.getSupplyCurrent().getValueAsDouble();
+        rollerVoltageVolts = rollerMotor.getMotorVoltage().getValueAsDouble();
     }
 
     private void configurePivotEncoder() {

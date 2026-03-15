@@ -129,15 +129,8 @@ public class FaultMonitor extends SubsystemBase {
             CANID canId = entry.getKey();
             StatusSignal<Integer> faultSignal = faultSignals.get(canId);
 
-            // Non-blocking refresh — getValueAsDouble returns cached value,
-            // refresh() updates cache but we check status to avoid blocking on
-            // unreachable devices (which caused 35ms periodic overruns).
-            faultSignal.refresh();
-            if (!faultSignal.getStatus().isOK()) {
-                // Device not reachable — skip, don't block
-                continue;
-            }
-
+            // Read cached value — signal auto-updates at 4Hz via setUpdateFrequency in register().
+            // No .refresh() needed; it can block when optimizeBusUtilization() is active.
             int faultField = faultSignal.getValue();
             int previousFault = previousFaults.get(canId);
 
@@ -151,7 +144,7 @@ public class FaultMonitor extends SubsystemBase {
 
                     // Log to DriverStation console
                     DriverStation.reportWarning(
-                            "⚠️ MOTOR FAULT: " + canId.getName() +
+                            "[FAULT] " + canId.getName() +
                                     " (ID: " + canId.getId() + ") - " + faultDescription,
                             false);
 

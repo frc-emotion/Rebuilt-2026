@@ -2,15 +2,12 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.TurretConstants;
 
@@ -18,28 +15,36 @@ import frc.robot.Constants.TurretConstants;
 public class Shooter extends SubsystemBase {
     private final TalonFX shooterMotor;
 
-    private final StatusSignal<AngularVelocity> shooterVelocity;
-    private final StatusSignal<Current> shooterCurrent;
-    private final StatusSignal<Voltage> shooterVoltage;
-
     private final VelocityVoltage shooterMotionRequest;
 
     private double shooterCurrentSetpoint;
+
+    @Logged
+    private double shooterVelocityRPS = 0.0;
+    @Logged
+    private double shooterCurrentAmps = 0.0;
+    @Logged
+    private double shooterVoltageVolts = 0.0;
 
     public Shooter(CANBus canBus) {
         shooterMotor = new TalonFX(TurretConstants.shooterMotorID, canBus);
 
         configureShooterMotor();
 
-        shooterVelocity = shooterMotor.getVelocity();
-        shooterCurrent = shooterMotor.getSupplyCurrent();
-        shooterVoltage = shooterMotor.getMotorVoltage();
-
         shooterMotionRequest = new VelocityVoltage(0);
 
-        shooterVelocity.setUpdateFrequency(50);
-        shooterCurrent.setUpdateFrequency(50);
-        shooterVoltage.setUpdateFrequency(50);
+        // Disable all default status signals, then enable only what we need
+        shooterMotor.optimizeBusUtilization();
+        shooterMotor.getVelocity().setUpdateFrequency(50);       // VelocityVoltage feedback + atSetpoint()
+        shooterMotor.getSupplyCurrent().setUpdateFrequency(10);  // telemetry
+        shooterMotor.getMotorVoltage().setUpdateFrequency(10);   // telemetry
+    }
+
+    @Override
+    public void periodic() {
+        shooterVelocityRPS = shooterMotor.getVelocity().getValueAsDouble();
+        shooterCurrentAmps = shooterMotor.getSupplyCurrent().getValueAsDouble();
+        shooterVoltageVolts = shooterMotor.getMotorVoltage().getValueAsDouble();
     }
 
     private void configureShooterMotor() {
