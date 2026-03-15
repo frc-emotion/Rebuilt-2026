@@ -6,6 +6,7 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
@@ -19,10 +20,10 @@ import static edu.wpi.first.units.Units.*;
 
 @Logged
 public class Intake extends SubsystemBase {
-    @Logged
     private final TalonFX intakeMotor;
-    @Logged
     private final TalonFX rollerMotor;
+
+    private final CANcoder pivotEncoder;
 
     private final StatusSignal<AngularVelocity> intakeVelocity;
     private final StatusSignal<Current> intakeCurrent;
@@ -39,10 +40,21 @@ public class Intake extends SubsystemBase {
     private Angle currentSetpoint = Degrees.of(0);
     private boolean deployed = false;
 
+    @Logged
+    private double pivotPositionRot = 0.0;
+    @Logged
+    private double pivotPositionDeg = 0.0;
+    @Logged
+    private double cancoderAbsoluteRot = 0.0;
+    @Logged
+    private double rotorPositionRot = 0.0;
+
     public Intake(CANBus canBus) {
         intakeMotor = new TalonFX(IntakeConstants.intakeMotorID, canBus);
         rollerMotor = new TalonFX(IntakeConstants.rollerMotorID, canBus);
+        pivotEncoder = new CANcoder(IntakeConstants.intakePivotEncoderID, canBus);
 
+        configurePivotEncoder();
         configureIntakeMotor();
         configureRollerMotor();
 
@@ -77,6 +89,22 @@ public class Intake extends SubsystemBase {
         rollerVelocity.refresh();
         rollerVoltage.refresh();
         rollerCurrent.refresh();
+
+        pivotPositionRot = intakeMotor.getPosition().getValueAsDouble();
+        pivotPositionDeg = pivotPositionRot * 360.0;
+        cancoderAbsoluteRot = pivotEncoder.getAbsolutePosition().getValueAsDouble();
+        rotorPositionRot = intakeMotor.getRotorPosition().getValueAsDouble();
+    }
+
+    private void configurePivotEncoder() {
+        StatusCode status = StatusCode.StatusCodeNotInitialized;
+        for (int i = 0; i < 5; ++i) {
+            status = pivotEncoder.getConfigurator().apply(IntakeConstants.INTAKE_ENCODER_CONFIG, 0.1);
+            if (status.isOK()) break;
+        }
+        if (!status.isOK()) {
+            System.err.println("Could not apply intake pivot encoder configs: " + status.toString());
+        }
     }
 
     private void configureIntakeMotor() {

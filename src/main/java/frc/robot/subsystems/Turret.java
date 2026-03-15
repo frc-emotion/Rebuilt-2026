@@ -10,6 +10,7 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import static edu.wpi.first.units.Units.Rotations;
 import edu.wpi.first.units.measure.Angle;
@@ -21,7 +22,6 @@ import frc.robot.Constants.TurretConstants;
 
 @Logged
 public class Turret extends SubsystemBase {
-    @Logged
     private final TalonFX turretMotor;
 
     private final CANcoder turretEncoder;
@@ -37,9 +37,13 @@ public class Turret extends SubsystemBase {
     private Angle turretCurrentSetpoint = Rotations.of(0);
 
     @Logged
+    private double turretSetpointRot = 0.0;
+    @Logged
     private double turretPositionRot = 0.0;
     @Logged
     private double turretPositionDegRelative = 0.0;
+    @Logged
+    private double turretErrorRot = 0.0;
     @Logged
     private double cancoderAbsoluteRot = 0.0;
     @Logged
@@ -107,12 +111,16 @@ public class Turret extends SubsystemBase {
     }
 
     public void moveTurret(Angle setpoint) {
-        turretCurrentSetpoint = setpoint;
+        double clampedRot = MathUtil.clamp(setpoint.in(Rotations),
+                TurretConstants.TURRET_REVERSE_LIMIT, TurretConstants.TURRET_FORWARD_LIMIT);
+        turretCurrentSetpoint = Rotations.of(clampedRot);
         turretMotor.setControl(turretMotionRequest.withPosition(turretCurrentSetpoint));
     }
 
     public void moveTurret(Angle setpoint, double feedforwardVolts) {
-        turretCurrentSetpoint = setpoint;
+        double clampedRot = MathUtil.clamp(setpoint.in(Rotations),
+                TurretConstants.TURRET_REVERSE_LIMIT, TurretConstants.TURRET_FORWARD_LIMIT);
+        turretCurrentSetpoint = Rotations.of(clampedRot);
         turretMotor.setControl(turretMotionRequest.withPosition(turretCurrentSetpoint).withFeedForward(feedforwardVolts));
     }
 
@@ -133,6 +141,8 @@ public class Turret extends SubsystemBase {
     @Override
     public void periodic() {
         turretPositionRot = turretMotor.getPosition().getValueAsDouble();
+        turretSetpointRot = turretCurrentSetpoint.in(Rotations);
+        turretErrorRot = turretSetpointRot - turretPositionRot;
         turretPositionDegRelative = (turretPositionRot - TurretConstants.TURRET_FORWARD_POSITION) * 360.0;
         cancoderAbsoluteRot = turretEncoder.getAbsolutePosition().getValueAsDouble();
         rotorPositionRot = turretMotor.getRotorPosition().getValueAsDouble();

@@ -14,11 +14,8 @@ import frc.robot.Constants.IndexerConstants.IndexerType;
 
 @Logged
 public class Indexer extends SubsystemBase {
-    @Logged
     private final TalonFX horizontalIndexerMotor;
-    @Logged
     private final TalonFX verticalIndexerMotor;
-    @Logged
     private final TalonFX upwardIndexerMotor;
 
     private final StatusSignal<Voltage> horizontalIndexerMotorVoltage;

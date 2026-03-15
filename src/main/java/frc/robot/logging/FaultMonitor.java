@@ -10,6 +10,7 @@ import com.ctre.phoenix6.StatusSignal;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import frc.robot.Constants.CANID;
@@ -75,8 +76,11 @@ public class FaultMonitor extends SubsystemBase {
     /**
      * Creates a new FaultMonitor.
      */
+    private final Timer checkTimer = new Timer();
+    private static final double CHECK_INTERVAL_SECONDS = 0.5; // 2 Hz
+
     public FaultMonitor() {
-        // Subsystem registered automatically
+        checkTimer.start();
     }
 
     /**
@@ -92,7 +96,7 @@ public class FaultMonitor extends SubsystemBase {
         monitoredMotorCount = motors.size();
 
         // Set update frequency for fault signals (don't need to be super fast)
-        motor.getStickyFaultField().setUpdateFrequency(10); // 10 Hz
+        motor.getStickyFaultField().setUpdateFrequency(4); // 4 Hz (checks run at 2 Hz)
     }
 
     /**
@@ -118,6 +122,7 @@ public class FaultMonitor extends SubsystemBase {
 
     @Override
     public void periodic() {
+        if (!checkTimer.advanceIfElapsed(CHECK_INTERVAL_SECONDS)) return;
         List<String> currentFaults = new ArrayList<>();
 
         for (Map.Entry<CANID, TalonFX> entry : motors.entrySet()) {

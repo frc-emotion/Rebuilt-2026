@@ -16,7 +16,6 @@ import frc.robot.Constants.TurretConstants;
 
 @Logged
 public class Shooter extends SubsystemBase {
-    @Logged
     private final TalonFX shooterMotor;
 
     private final StatusSignal<AngularVelocity> shooterVelocity;

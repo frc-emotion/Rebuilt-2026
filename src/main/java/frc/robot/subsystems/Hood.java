@@ -18,7 +18,6 @@ import frc.robot.Constants.TurretConstants;
 
 @Logged
 public class Hood extends SubsystemBase {
-    @Logged
     private final TalonFX hoodMotor;
 
     private final CANcoder hoodEncoder;

@@ -41,6 +41,7 @@ public enum CANID {
     // ==================
     INTAKE_MOTOR(20, "Intake Motor"),
     ROLLER_MOTOR(21, "Roller Motor"),
+    INTAKE_PIVOT_ENCODER(22, "Intake Pivot Encoder"),
 
     // ==================
     // INDEXER SUBSYSTEM

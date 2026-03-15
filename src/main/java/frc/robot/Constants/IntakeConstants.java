@@ -1,9 +1,12 @@
 package frc.robot.Constants;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.units.measure.Angle;
@@ -12,6 +15,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 public final class IntakeConstants { 
     public static final int intakeMotorID = 20; 
     public static final int rollerMotorID = 21;
+    public static final int intakePivotEncoderID = 22;
     public static final double IntakeCurrentSpike = 20;
 
     public static final Angle INTAKE_IN_ANGLE = Degrees.of(-8);
@@ -42,11 +46,10 @@ public final class IntakeConstants {
         INTAKE_CONFIG.MotionMagic.MotionMagicAcceleration = 4.0;   // RPS^2
         INTAKE_CONFIG.MotionMagic.MotionMagicJerk = 40.0;          // Smoothing
 
-        INTAKE_CONFIG.Feedback.SensorToMechanismRatio = 27.0;
-        //27:1
-
-
-
+        INTAKE_CONFIG.Feedback.FeedbackRemoteSensorID = intakePivotEncoderID;
+        INTAKE_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+        INTAKE_CONFIG.Feedback.RotorToSensorRatio = 27.0; // 27 motor turns per 1 CANcoder turn
+        INTAKE_CONFIG.Feedback.SensorToMechanismRatio = 1.0; // CANcoder is 1:1 with pivot output
     }
 
     public static final double INTAKE_ROLLER_VELOCITY = 45;
@@ -68,7 +71,15 @@ public final class IntakeConstants {
 
     }
 
-   
-   
+    // ==================
+    // INTAKE PIVOT ENCODER CONFIG
+    // ==================
+    public static final double INTAKE_ENCODER_OFFSET = 0.0; // TODO: set magnet offset
 
+    public static final CANcoderConfiguration INTAKE_ENCODER_CONFIG = new CANcoderConfiguration();
+
+    static {
+        INTAKE_ENCODER_CONFIG.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
+        INTAKE_ENCODER_CONFIG.MagnetSensor.MagnetOffset = INTAKE_ENCODER_OFFSET;
+    }
 }

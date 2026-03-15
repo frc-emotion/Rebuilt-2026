@@ -71,12 +71,17 @@ public class RobotContainer {
 
         private final CANBus mechanismBus = new CANBus("mechanisms");
 
+        // ===== HARDWARE ENABLE FLAGS =====
+        // Set to false when hardware is not connected to suppress error spam.
+        private static final boolean ENABLE_VISION = false;
+
         // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
         // Set to null to disable subsystems that don't have hardware connected
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
         // Only turret cam enabled (ENABLE_RIGHT_CAM/LEFT_CAM = false).
         // Re-disable if periodic overruns return with single camera.
-        public final Vision vision = new Vision();
+        @NotLogged
+        public final Vision vision = ENABLE_VISION ? new Vision() : null;
         // public final Climb climb = new Climb(mechanismBus);
         public final Intake intake = new Intake(mechanismBus); // DISABLED: not installed
         // public final Intake intake = null;
@@ -122,12 +127,24 @@ public class RobotContainer {
         public final SuperstructureTuner tuner = new SuperstructureTuner();
 
         public RobotContainer() {
+                edu.wpi.first.wpilibj.DriverStation.silenceJoystickConnectionWarning(true);
+                printStartupWarnings();
                 configureBindings();
                 registerMotorsForFaultMonitoring();
                 tuner.setSubsystems(turret, hood, shooter, intake);
                 if (vision != null && turret != null) {
                         vision.setTurretAngleSupplier(turret::getTurretPosition);
                 }
+        }
+
+        private void printStartupWarnings() {
+                if (!ENABLE_VISION) System.out.println("[WARNING] Vision is DISABLED (ENABLE_VISION = false)");
+                if (intake == null)  System.out.println("[WARNING] Intake is DISABLED (set to null)");
+                if (climb == null)   System.out.println("[WARNING] Climb is DISABLED (set to null)");
+                if (!edu.wpi.first.wpilibj.DriverStation.isJoystickConnected(0))
+                        System.out.println("[WARNING] Driver controller (port 0) is NOT connected");
+                if (!edu.wpi.first.wpilibj.DriverStation.isJoystickConnected(1))
+                        System.out.println("[WARNING] Operator controller (port 1) is NOT connected");
         }
 
         /**
@@ -237,17 +254,13 @@ public class RobotContainer {
                 joystick.rightTrigger().whileTrue(new ShootCommand(indexer, autoAimCommand));
 
                 // ===== TURRET TEST POSITIONS (range: -0.35 to 0.38, forward = 0.29) =====
-                // whileTrue: interrupts TurretAutoAimCommand while held, resumes auto-aim on release.
-                operator.x().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.10))));    // left of forward
-                operator.y().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.20))));    // slight left
-                operator.b().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.29))));    // forward
-                operator.povUp().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.35))));     // slight right
-                operator.povDown().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.0))));    // center
-                operator.povLeft().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(-0.30))));  // far left
-                operator.povRight().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.38)))); // far right
-
-                // // Driver left trigger: intake toggle — DISABLED: not installed
-
+                operator.x().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(-0.25))));
+                operator.y().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.0))));
+                operator.b().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.25))));
+                operator.povUp().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.35))));
+                operator.povDown().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.0))));
+                operator.povLeft().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(-0.30))));
+                operator.povRight().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.38))));
         }
 
         /**

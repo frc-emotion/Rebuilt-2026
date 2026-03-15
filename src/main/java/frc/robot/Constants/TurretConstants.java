@@ -67,10 +67,10 @@ public final class TurretConstants {
         TURRET_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         TURRET_CONFIG.Slot0.kG = 0.0;
         TURRET_CONFIG.Slot0.kS = 0.0;
-        TURRET_CONFIG.Slot0.kV = 1.0;
+        TURRET_CONFIG.Slot0.kV = 0.0;
         TURRET_CONFIG.Slot0.kA = 0.0;
-        TURRET_CONFIG.Slot0.kP = 40.0;
-        TURRET_CONFIG.Slot0.kI = 0.0;
+        TURRET_CONFIG.Slot0.kP = 20;
+        TURRET_CONFIG.Slot0.kI = 5;
         TURRET_CONFIG.Slot0.kD = 0.0;
 
         TURRET_CONFIG.Feedback.FeedbackRemoteSensorID = turretEncoderID;
@@ -79,7 +79,7 @@ public final class TurretConstants {
         TURRET_CONFIG.Feedback.SensorToMechanismRatio = TURRET_GEAR_RATIO; // 5.08:1 CANcoder-to-turret output
 
         // MotionMagic constraints — prevents turret from slamming. TODO: tune on robot.
-        TURRET_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 2.0; // RPS
+        TURRET_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 1.0; // RPS
         TURRET_CONFIG.MotionMagic.MotionMagicAcceleration = 4.0; // RPS^2
         TURRET_CONFIG.MotionMagic.MotionMagicJerk = 40.0; // Smoothing
 
