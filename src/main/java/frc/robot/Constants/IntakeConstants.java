@@ -18,13 +18,16 @@ public final class IntakeConstants {
     public static final int intakePivotEncoderID = 22;
     public static final double IntakeCurrentSpike = 20;
 
-    public static final Angle INTAKE_IN_ANGLE = Degrees.of(-8);
+    public static final Angle INTAKE_IN_ANGLE = Rotations.of(-0.03);//Degrees.of(-8);
 
     // raw rotations: intake = 0.34 so we gotta multiply by 360
 
-    public static final Angle INTAKE_OUT_ANGLE = Degrees.of(126.7);
+    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.34);
 
     public static final Angle TOLERANCE = Degrees.of(5);
+
+    // If pivot is more than this angle away from INTAKE_IN_ANGLE (toward deployed), intake is considered "out"
+    public static final double INTAKE_OUT_THRESHOLD_ROT = 5.0 / 360.0; // 5 degrees in rotations
 
 
     public static final TalonFXConfiguration INTAKE_CONFIG = new TalonFXConfiguration();

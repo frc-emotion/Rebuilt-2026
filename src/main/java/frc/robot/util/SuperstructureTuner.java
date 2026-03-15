@@ -18,23 +18,23 @@ import frc.robot.subsystems.Turret;
 @Logged
 public class SuperstructureTuner {
 
-    // Turret PID
-    public final TunableNumber turretKP = new TunableNumber("Turret/kP", 0.01);
-    public final TunableNumber turretKI = new TunableNumber("Turret/kI", 0.0);
-    public final TunableNumber turretKD = new TunableNumber("Turret/kD", 0.5);
-    public final TunableNumber turretKS = new TunableNumber("Turret/kS", 0.5);
-    public final TunableNumber turretKV = new TunableNumber("Turret/kV", 0.12);
+    // Turret PID — defaults MUST match TurretConstants.TURRET_CONFIG
+    public final TunableNumber turretKP = new TunableNumber("Turret/kP", 20.0);
+    public final TunableNumber turretKI = new TunableNumber("Turret/kI", 5.0);
+    public final TunableNumber turretKD = new TunableNumber("Turret/kD", 0.0);
+    public final TunableNumber turretKS = new TunableNumber("Turret/kS", 0.0);
+    public final TunableNumber turretKV = new TunableNumber("Turret/kV", 0.0);
 
     // Turret MotionMagic
-    public final TunableNumber turretMMCruise = new TunableNumber("Turret/MotionMagic/CruiseVelocity", 2.0);
+    public final TunableNumber turretMMCruise = new TunableNumber("Turret/MotionMagic/CruiseVelocity", 1.0);
     public final TunableNumber turretMMAcc = new TunableNumber("Turret/MotionMagic/Acceleration", 4.0);
     public final TunableNumber turretMMJerk = new TunableNumber("Turret/MotionMagic/Jerk", 40.0);
 
-    // Hood PID
-    public final TunableNumber hoodKP = new TunableNumber("Hood/kP", 0.01);
+    // Hood PID — defaults MUST match TurretConstants.HOOD_CONFIG
+    public final TunableNumber hoodKP = new TunableNumber("Hood/kP", 100.0);
     public final TunableNumber hoodKI = new TunableNumber("Hood/kI", 0.0);
     public final TunableNumber hoodKD = new TunableNumber("Hood/kD", 0.0);
-    public final TunableNumber hoodKS = new TunableNumber("Hood/kS", 0.5);
+    public final TunableNumber hoodKS = new TunableNumber("Hood/kS", 0.0);
     public final TunableNumber hoodKV = new TunableNumber("Hood/kV", 0.0);
 
     // Hood MotionMagic
@@ -42,19 +42,19 @@ public class SuperstructureTuner {
     public final TunableNumber hoodMMAcc = new TunableNumber("Hood/MotionMagic/Acceleration", 2.0);
     public final TunableNumber hoodMMJerk = new TunableNumber("Hood/MotionMagic/Jerk", 20.0);
 
-    // Shooter PID
+    // Shooter PID — defaults MUST match TurretConstants.SHOOTER_CONFIG
     public final TunableNumber shooterKP = new TunableNumber("Shooter/kP", 0.1);
     public final TunableNumber shooterKI = new TunableNumber("Shooter/kI", 0.0);
     public final TunableNumber shooterKD = new TunableNumber("Shooter/kD", 0.0);
     public final TunableNumber shooterKS = new TunableNumber("Shooter/kS", 0.0);
     public final TunableNumber shooterKV = new TunableNumber("Shooter/kV", 0.0);
 
-    // Intake PID
-    public final TunableNumber intakeKP = new TunableNumber("Intake/kP", 25.0);
+    // Intake PID — defaults MUST match IntakeConstants.INTAKE_CONFIG
+    public final TunableNumber intakeKP = new TunableNumber("Intake/kP", 13.0);
     public final TunableNumber intakeKI = new TunableNumber("Intake/kI", 0.0);
     public final TunableNumber intakeKD = new TunableNumber("Intake/kD", 0.0);
-    public final TunableNumber intakeKS = new TunableNumber("Intake/kS", 0.5);
-    public final TunableNumber intakeKG = new TunableNumber("Intake/kG", 0.53);
+    public final TunableNumber intakeKS = new TunableNumber("Intake/kS", 0.0);
+    public final TunableNumber intakeKG = new TunableNumber("Intake/kG", 0.0);
 
     // Intake MotionMagic
     public final TunableNumber intakeMMCruise = new TunableNumber("Intake/MotionMagic/CruiseVelocity", 2.0);

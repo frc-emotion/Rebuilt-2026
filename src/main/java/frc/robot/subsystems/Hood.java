@@ -41,6 +41,9 @@ public class Hood extends SubsystemBase {
         configureHoodEncoder();
         configureHoodMotor();
 
+        // Zero hood at current position (assumed to be bottom/home on startup)
+        hoodMotor.setPosition(0);
+
         hoodMotionRequest = new MotionMagicVoltage(0);
 
         // Disable all default status signals, then enable only what we need

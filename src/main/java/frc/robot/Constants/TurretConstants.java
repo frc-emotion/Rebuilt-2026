@@ -34,15 +34,13 @@ public final class TurretConstants {
 
     public static final double HOOD_ENCODER_OFFSET = 0.0;
 
-    // Hood hard stops — absolute positions the hood must NEVER exceed
-    // hood low: 0.087158 (raw rotations)
-    // hood high: 0.011962 (raw rotations)
-    public static final double HOOD_REVERSE_HARD_STOP = 0.011962; // TODO: set to actual min
-    public static final double HOOD_FORWARD_HARD_STOP = 0.087158; // TODO: set to actual max
+    // Hood hard stops — zeroed at startup (bottom), max travel = 0.08 rotations
+    public static final double HOOD_REVERSE_HARD_STOP = 0.0;
+    public static final double HOOD_FORWARD_HARD_STOP = 0.08;
 
     public static final double shooterTolerance = 0.5;
     public static final double turretTolerance = 0.005; // ~1.8° — tight enough for shooting
-    public static final double hoodTolerance = 0.001;
+    public static final double hoodTolerance = 0.005; // ~1.8° — matches turret tolerance
 
     public static final double MAX_SHOOTER_RPS = 100;
 
@@ -92,20 +90,17 @@ public final class TurretConstants {
     public static TalonFXConfiguration HOOD_CONFIG = new TalonFXConfiguration();
 
     static {
-        HOOD_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        HOOD_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         HOOD_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         HOOD_CONFIG.Slot0.kG = 0.0;
-        HOOD_CONFIG.Slot0.kS = 0.5;
+        HOOD_CONFIG.Slot0.kS = 0.0;
         HOOD_CONFIG.Slot0.kV = 0.0;
         HOOD_CONFIG.Slot0.kA = 0.0;
-        HOOD_CONFIG.Slot0.kP = 0.01;
-        HOOD_CONFIG.Slot0.kI = 0.0;
+        HOOD_CONFIG.Slot0.kP = 500;
+        HOOD_CONFIG.Slot0.kI = 750;
         HOOD_CONFIG.Slot0.kD = 0.00;
 
-        HOOD_CONFIG.Feedback.FeedbackRemoteSensorID = hoodEncoderID;
-        HOOD_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-
-        HOOD_CONFIG.Feedback.RotorToSensorRatio = 1.0;
+        HOOD_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
 
         // MotionMagic constraints — prevents hood from slamming. TODO: tune on robot.
         HOOD_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 1.0; // RPS
@@ -117,7 +112,6 @@ public final class TurretConstants {
         HOOD_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitThreshold = HOOD_FORWARD_HARD_STOP;
         HOOD_CONFIG.SoftwareLimitSwitch.ReverseSoftLimitThreshold = HOOD_REVERSE_HARD_STOP;
         HOOD_CONFIG.Feedback.SensorToMechanismRatio = HOOD_GEAR_RATIO;
-        HOOD_CONFIG.Feedback.RotorToSensorRatio = 15.0 / 12.0;
     }
 
     public static CANcoderConfiguration TURRET_ENCODER_CONFIG = new CANcoderConfiguration();

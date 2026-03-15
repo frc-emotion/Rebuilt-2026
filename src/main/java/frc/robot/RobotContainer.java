@@ -223,13 +223,13 @@ public class RobotContainer {
                 }
 
                 // ===== INTAKE TOGGLE (same in both modes) =====
+                // Position-based: if intake is out >5deg from stowed, retract. Otherwise deploy.
+                // Works correctly regardless of what state the intake was in at boot.
                 if (intake != null) {
                         operator.a().onTrue(Commands.defer(() -> {
-                                if (intake.isDeployed()) {
-                                        intake.setDeployed(false);
+                                if (intake.isOut()) {
                                         return new IntakeInCommand(intake);
                                 } else {
-                                        intake.setDeployed(true);
                                         return new IntakeOutCommand(intake);
                                 }
                         }, Set.of(intake)));
@@ -257,10 +257,16 @@ public class RobotContainer {
                 operator.x().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(-0.25))));
                 operator.y().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.0))));
                 operator.b().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.25))));
-                operator.povUp().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.35))));
-                operator.povDown().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.0))));
-                operator.povLeft().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(-0.30))));
-                operator.povRight().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.38))));
+                // operator.povUp().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.35))));
+                // operator.povDown().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.0))));
+                // operator.povLeft().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(-0.30))));
+                // operator.povRight().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.38))));
+
+                // ===== HOOD TEST POSITIONS (range: 0.0 to 0.08, zeroed at startup) =====
+                operator.povUp().whileTrue(hood.run(() -> hood.setHoodAngle(Rotations.of(0.070))));    // near max (high)
+                operator.povDown().whileTrue(hood.run(() -> hood.setHoodAngle(Rotations.of(0.005))));  // near min (low)
+                operator.povLeft().whileTrue(hood.run(() -> hood.setHoodAngle(Rotations.of(0.025))));  // low-mid
+                operator.povRight().whileTrue(hood.run(() -> hood.setHoodAngle(Rotations.of(0.050)))); // high-mid
         }
 
         /**

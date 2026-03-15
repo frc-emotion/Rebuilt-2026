@@ -6,7 +6,6 @@ import frc.robot.subsystems.Intake;
 
 public class IntakeOutCommand extends Command{
     Intake m_intakeSubsystem;
-    private boolean pivotReady = false;
 
     public IntakeOutCommand(
         Intake intakeSubsystem
@@ -17,21 +16,17 @@ public class IntakeOutCommand extends Command{
 
     @Override
     public void initialize(){
-        pivotReady = false;
         m_intakeSubsystem.setIntakeAngle(IntakeConstants.INTAKE_OUT_ANGLE);
+        m_intakeSubsystem.setRollerSpeed(IntakeConstants.INTAKE_ROLLER_VELOCITY);
     }
 
     @Override
     public void execute(){
-        if (!pivotReady && m_intakeSubsystem.atSetpoint()) {
-            pivotReady = true;
-            m_intakeSubsystem.setRollerSpeed(IntakeConstants.INTAKE_ROLLER_VELOCITY);
-        }
     }
 
     @Override
     public boolean isFinished(){
-        return pivotReady;
+        return m_intakeSubsystem.atSetpoint();
     }
 
     @Override

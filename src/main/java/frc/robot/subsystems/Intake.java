@@ -26,7 +26,6 @@ public class Intake extends SubsystemBase {
     private final VelocityVoltage rollerMotionRequest;
 
     private Angle currentSetpoint = Degrees.of(0);
-    private boolean deployed = false;
 
     @Logged
     private double pivotPositionRot = 0.0;
@@ -148,8 +147,10 @@ public class Intake extends SubsystemBase {
     // MOTOR ACCESSORS (for FaultMonitor registration)
     // ==================
 
-    public boolean isDeployed() { return deployed; }
-    public void setDeployed(boolean deployed) { this.deployed = deployed; }
+    public boolean isOut() {
+        return pivotPositionRot > IntakeConstants.INTAKE_IN_ANGLE.in(Rotations)
+                + IntakeConstants.INTAKE_OUT_THRESHOLD_ROT;
+    }
 
     public void stop() {
         intakeMotor.stopMotor();
