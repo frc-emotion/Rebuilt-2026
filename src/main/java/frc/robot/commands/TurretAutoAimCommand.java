@@ -113,7 +113,7 @@ public class TurretAutoAimCommand extends Command {
                     // the setpoint until the next frame arrives.
                     // Flip sign below if turret tracks the wrong direction.
                     double currentPos = turret.getTurretMotor().getPosition().getValueAsDouble();
-                    encoderSetpointRot = currentPos + (kVisionP * tx);
+                    encoderSetpointRot = currentPos + (kVisionP * tx) + TurretConstants.TURRET_AIM_OFFSET;
                 }
             }
         }

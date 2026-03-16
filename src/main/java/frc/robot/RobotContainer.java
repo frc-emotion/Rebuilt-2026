@@ -253,10 +253,23 @@ public class RobotContainer {
                 // Driver right trigger: SHOOT — feeds indexer only when aimed + flywheel ready
                 joystick.rightTrigger().whileTrue(new ShootCommand(indexer, autoAimCommand));
 
-                // ===== TURRET TEST POSITIONS (range: -0.35 to 0.38, forward = 0.29) =====
-                operator.x().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(-0.25))));
-                operator.y().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.0))));
-                operator.b().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.25))));
+                // ===== FULL SUPERSTRUCTURE TEST (turret + hood + shooter + indexer) =====
+                // Each button: turret position + hood angle + shooter spin-up + indexer feed
+                operator.x().whileTrue(Commands.parallel(
+                        turret.run(() -> turret.moveTurret(Rotations.of(-0.45))),
+                        hood.run(() -> hood.setHoodAngle(Rotations.of(0.005))),
+                        shooter.run(() -> shooter.setShooterSpeed(RotationsPerSecond.of(20))),
+                        new frc.robot.commands.indexer.runIndexer(indexer)));   // left + hood low + shoot
+                operator.y().whileTrue(Commands.parallel(
+                        turret.run(() -> turret.moveTurret(Rotations.of(0.08))),
+                        hood.run(() -> hood.setHoodAngle(Rotations.of(0.0))),
+                        shooter.run(() -> shooter.setShooterSpeed(RotationsPerSecond.of(70))),
+                        new frc.robot.commands.indexer.runIndexer(indexer)));   // center + hood mid + shoot
+                operator.b().whileTrue(Commands.parallel(
+                        turret.run(() -> turret.moveTurret(Rotations.of(0.25))),
+                        hood.run(() -> hood.setHoodAngle(Rotations.of(0.070))),
+                        shooter.run(() -> shooter.setShooterSpeed(RotationsPerSecond.of(70))),
+                        new frc.robot.commands.indexer.runIndexer(indexer)));   // forward + hood high + shoot
                 // operator.povUp().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.35))));
                 // operator.povDown().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.0))));
                 // operator.povLeft().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(-0.30))));

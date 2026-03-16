@@ -47,6 +47,10 @@ public class Intake extends SubsystemBase {
     private double rollerCurrentAmps = 0.0;
     @Logged
     private double rollerVoltageVolts = 0.0;
+    @Logged
+    private boolean intakeIsOut = false;
+    @Logged
+    private double isOutThreshold = 0.0;
 
     public Intake(CANBus canBus) {
         intakeMotor = new TalonFX(IntakeConstants.intakeMotorID, canBus);
@@ -85,6 +89,8 @@ public class Intake extends SubsystemBase {
         rollerVelocityRPS = rollerMotor.getVelocity().getValueAsDouble();
         rollerCurrentAmps = rollerMotor.getSupplyCurrent().getValueAsDouble();
         rollerVoltageVolts = rollerMotor.getMotorVoltage().getValueAsDouble();
+        isOutThreshold = IntakeConstants.INTAKE_IN_ANGLE.in(Rotations) + IntakeConstants.INTAKE_OUT_THRESHOLD_ROT;
+        intakeIsOut = pivotPositionRot > isOutThreshold;
     }
 
     private void configurePivotEncoder() {

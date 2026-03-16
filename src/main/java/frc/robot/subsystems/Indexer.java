@@ -33,6 +33,12 @@ public class Indexer extends SubsystemBase {
     private double upwardVelocityRPS = 0.0;
     @Logged
     private double upwardVoltageVolts = 0.0;
+    @Logged
+    private double horizontalSetpointRPS = 0.0;
+    @Logged
+    private double verticalSetpointRPS = 0.0;
+    @Logged
+    private double upwardSetpointRPS = 0.0;
 
     public Indexer(CANBus canBus) {
         horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID, canBus);
@@ -106,12 +112,15 @@ public class Indexer extends SubsystemBase {
     public void setIndexerSpeed(double speed, IndexerType indexer) {
         switch (indexer) {
             case HORIZONTAL:
+                horizontalSetpointRPS = speed;
                 horizontalIndexerMotor.setControl(horizontalMotionController.withVelocity(speed));
                 break;
             case VERTICAL:
+                verticalSetpointRPS = speed;
                 verticalIndexerMotor.setControl(verticalMotionController.withVelocity(speed));
                 break;
             case UPWARD:
+                upwardSetpointRPS = speed;
                 upwardIndexerMotor.setControl(upwardMotionController.withVelocity(speed));
                 break;
         }

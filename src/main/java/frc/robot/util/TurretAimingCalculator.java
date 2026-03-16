@@ -75,28 +75,28 @@ public class TurretAimingCalculator {
      * TODO: Tune these interpolation values based on testing
      */
     public TurretAimingCalculator() {
-        // Initialize flywheel RPM interpolation table (distance -> RPM)
-        // RPM / 60 = RPS sent to shooter. Wide spread so speed change is audible/visible.
-        // TODO: tune each distance on the real robot
+        // Initialize flywheel RPM interpolation table (distance in meters -> RPM)
+        // RPM / 60 = RPS sent to shooter.
+        // TODO: populate with real tested values
         flywheelRPMTable = new InterpolatingDoubleTreeMap();
-        flywheelRPMTable.put(1.0, 1500.0); // 1m -> 25 RPS (gentle lob)
-        flywheelRPMTable.put(2.0, 2000.0); // 2m -> 33 RPS
-        flywheelRPMTable.put(3.0, 2700.0); // 3m -> 45 RPS
-        flywheelRPMTable.put(4.0, 3300.0); // 4m -> 55 RPS
-        flywheelRPMTable.put(5.0, 3900.0); // 5m -> 65 RPS
-        flywheelRPMTable.put(6.0, 4500.0); // 6m -> 75 RPS (max range)
+        flywheelRPMTable.put(1.0, 1200.0); // 1m -> 20 RPS (placeholder)
+        flywheelRPMTable.put(2.0, 1200.0); // 2m -> 20 RPS (placeholder)
+        flywheelRPMTable.put(3.0, 1200.0); // 3m -> 20 RPS (placeholder)
+        flywheelRPMTable.put(4.0, 1200.0); // 4m -> 20 RPS (placeholder)
+        flywheelRPMTable.put(5.0, 1200.0); // 5m -> 20 RPS (placeholder)
+        flywheelRPMTable.put(6.0, 1200.0); // 6m -> 20 RPS (placeholder)
 
-        // Initialize hood angle interpolation table (distance -> degrees)
-        // Degrees / 360 = rotations sent to hood encoder. Hood range: 0.0-0.5 rot.
-        // Close = steep (high angle), far = flat (low angle). Wide spread for visible motion.
-        // TODO: tune each distance on the real robot
+        // Initialize hood angle interpolation table (distance in meters -> mechanism rotations)
+        // Hood range: 0.0 (flat) to 0.08 (max angle). Zeroed at startup.
+        // Close = high angle, far = low angle.
+        // TODO: populate with real tested values at each distance
         hoodAngleTable = new InterpolatingDoubleTreeMap();
-        hoodAngleTable.put(1.0, 150.0); // 1m -> 0.417 rot (near max, steep lob)
-        hoodAngleTable.put(2.0, 130.0); // 2m -> 0.361 rot
-        hoodAngleTable.put(3.0, 110.0); // 3m -> 0.306 rot
-        hoodAngleTable.put(4.0,  85.0); // 4m -> 0.236 rot
-        hoodAngleTable.put(5.0,  60.0); // 5m -> 0.167 rot
-        hoodAngleTable.put(6.0,  40.0); // 6m -> 0.111 rot (flat shot)
+        hoodAngleTable.put(1.0, 0.060); // 1m (placeholder)
+        hoodAngleTable.put(2.0, 0.050); // 2m (placeholder)
+        hoodAngleTable.put(3.0, 0.040); // 3m (placeholder)
+        hoodAngleTable.put(4.0, 0.030); // 4m (placeholder)
+        hoodAngleTable.put(5.0, 0.020); // 5m (placeholder)
+        hoodAngleTable.put(6.0, 0.010); // 6m (placeholder)
     }
 
     /**
@@ -151,8 +151,8 @@ public class TurretAimingCalculator {
 
         // Look up shot parameters
         double flywheelRPM = flywheelRPMTable.get(distance);
-        double hoodAngleDegrees = hoodAngleTable.get(distance);
-        Rotation2d hoodAngle = Rotation2d.fromDegrees(hoodAngleDegrees);
+        double hoodAngleRot = hoodAngleTable.get(distance); // mechanism rotations (0-0.08)
+        Rotation2d hoodAngle = Rotation2d.fromRotations(hoodAngleRot);
 
         // Validate - ensure we're not too far or too close
         boolean isValid = distance >= 1.0 && distance <= 7.0;

@@ -20,6 +20,8 @@ public class Shooter extends SubsystemBase {
     private double shooterCurrentSetpoint;
 
     @Logged
+    private double shooterSetpointRPS = 0.0;
+    @Logged
     private double shooterVelocityRPS = 0.0;
     @Logged
     private double shooterCurrentAmps = 0.0;
@@ -60,7 +62,8 @@ public class Shooter extends SubsystemBase {
 
     public void setShooterSpeed(AngularVelocity speed) {
         shooterCurrentSetpoint = speed.in(RotationsPerSecond);
-        shooterMotor.setControl(shooterMotionRequest.withVelocity(speed.in(RotationsPerSecond)));
+        shooterSetpointRPS = shooterCurrentSetpoint;
+        shooterMotor.setControl(shooterMotionRequest.withVelocity(shooterCurrentSetpoint));
     }
 
     public boolean atShooterSetpoint() {

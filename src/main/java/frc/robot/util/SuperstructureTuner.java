@@ -20,8 +20,8 @@ public class SuperstructureTuner {
 
     // Turret PID — defaults MUST match TurretConstants.TURRET_CONFIG
     public final TunableNumber turretKP = new TunableNumber("Turret/kP", 20.0);
-    public final TunableNumber turretKI = new TunableNumber("Turret/kI", 5.0);
-    public final TunableNumber turretKD = new TunableNumber("Turret/kD", 0.0);
+    public final TunableNumber turretKI = new TunableNumber("Turret/kI", 7.5);
+    public final TunableNumber turretKD = new TunableNumber("Turret/kD", 1.52658);
     public final TunableNumber turretKS = new TunableNumber("Turret/kS", 0.0);
     public final TunableNumber turretKV = new TunableNumber("Turret/kV", 0.0);
 
@@ -32,7 +32,7 @@ public class SuperstructureTuner {
 
     // Hood PID — defaults MUST match TurretConstants.HOOD_CONFIG
     public final TunableNumber hoodKP = new TunableNumber("Hood/kP", 100.0);
-    public final TunableNumber hoodKI = new TunableNumber("Hood/kI", 0.0);
+    public final TunableNumber hoodKI = new TunableNumber("Hood/kI", 50.0);
     public final TunableNumber hoodKD = new TunableNumber("Hood/kD", 0.0);
     public final TunableNumber hoodKS = new TunableNumber("Hood/kS", 0.0);
     public final TunableNumber hoodKV = new TunableNumber("Hood/kV", 0.0);

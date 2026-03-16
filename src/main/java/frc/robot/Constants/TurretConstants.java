@@ -22,15 +22,16 @@ public final class TurretConstants {
     public static final double TURRET_GEAR_RATIO = 5.08;
     
     public static final double HOOD_GEAR_RATIO = 155.0 / 12.0; // SensorToMechanismRatio
-//-0.553955 
-//0.3884277
-    // Measured with corrected FusedCANcoder config (5.08:1, RotorToSensor=1.0).
-    // Physical hardstops at -0.37 and 0.4 mechanism rotations. Soft limits add 0.02 margin.
-    // In MECHANISM rotations (turret output). Used for both code-side clamping and firmware soft limits.
-    public static final double TURRET_REVERSE_LIMIT = -0.35;
-    public static final double TURRET_FORWARD_LIMIT = 0.38;
+
+    // Soft limits. Used for both code-side clamping and firmware soft limits.
+    public static final double TURRET_REVERSE_LIMIT = -0.50;
+    public static final double TURRET_FORWARD_LIMIT = 0.28;
     // Encoder reading (turret output rotations) when turret faces robot-forward.
-    public static final double TURRET_FORWARD_POSITION = 0.29;
+    public static final double TURRET_FORWARD_POSITION = 0.28;
+
+    // Offset applied to all turret aim setpoints. If the gear skips again,
+    // adjust this single value instead of recalibrating everything.
+    public static final double TURRET_AIM_OFFSET = 0.0;
 
     public static final double HOOD_ENCODER_OFFSET = 0.0;
 
@@ -42,7 +43,7 @@ public final class TurretConstants {
     public static final double turretTolerance = 0.005; // ~1.8° — tight enough for shooting
     public static final double hoodTolerance = 0.005; // ~1.8° — matches turret tolerance
 
-    public static final double MAX_SHOOTER_RPS = 100;
+    public static final double MAX_SHOOTER_RPS = 50;
 
     public static TalonFXConfiguration SHOOTER_CONFIG = new TalonFXConfiguration();
 
@@ -50,12 +51,12 @@ public final class TurretConstants {
         SHOOTER_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         SHOOTER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         SHOOTER_CONFIG.Slot0.kG = 0.0;
-        SHOOTER_CONFIG.Slot0.kS = 0.0;
-        SHOOTER_CONFIG.Slot0.kV = 0.0;
+        SHOOTER_CONFIG.Slot0.kS = 0.15;
+        SHOOTER_CONFIG.Slot0.kV = 0.12;
         SHOOTER_CONFIG.Slot0.kA = 0.0;
-        SHOOTER_CONFIG.Slot0.kP = 0.1;
+        SHOOTER_CONFIG.Slot0.kP = 0.3;
         SHOOTER_CONFIG.Slot0.kI = 0.0;
-        SHOOTER_CONFIG.Slot0.kD = 0.00;
+        SHOOTER_CONFIG.Slot0.kD = 0.0;
     }
 
     public static TalonFXConfiguration TURRET_CONFIG = new TalonFXConfiguration();
@@ -69,7 +70,7 @@ public final class TurretConstants {
         TURRET_CONFIG.Slot0.kA = 0.0;
         TURRET_CONFIG.Slot0.kP = 20;
         TURRET_CONFIG.Slot0.kI = 5;
-        TURRET_CONFIG.Slot0.kD = 0.0;
+        TURRET_CONFIG.Slot0.kD = 1.52658;
 
         TURRET_CONFIG.Feedback.FeedbackRemoteSensorID = turretEncoderID;
         TURRET_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
@@ -90,14 +91,15 @@ public final class TurretConstants {
     public static TalonFXConfiguration HOOD_CONFIG = new TalonFXConfiguration();
 
     static {
+
         HOOD_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         HOOD_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         HOOD_CONFIG.Slot0.kG = 0.0;
         HOOD_CONFIG.Slot0.kS = 0.0;
         HOOD_CONFIG.Slot0.kV = 0.0;
         HOOD_CONFIG.Slot0.kA = 0.0;
-        HOOD_CONFIG.Slot0.kP = 500;
-        HOOD_CONFIG.Slot0.kI = 750;
+        HOOD_CONFIG.Slot0.kP = 100;
+        HOOD_CONFIG.Slot0.kI = 50;
         HOOD_CONFIG.Slot0.kD = 0.00;
 
         HOOD_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;

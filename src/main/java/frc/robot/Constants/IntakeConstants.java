@@ -18,11 +18,11 @@ public final class IntakeConstants {
     public static final int intakePivotEncoderID = 22;
     public static final double IntakeCurrentSpike = 20;
 
-    public static final Angle INTAKE_IN_ANGLE = Rotations.of(-0.03);//Degrees.of(-8);
+    public static final Angle INTAKE_IN_ANGLE = Rotations.of(0.47);//Degrees.of(-8);
 
     // raw rotations: intake = 0.34 so we gotta multiply by 360
 
-    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.34);
+    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.82);
 
     public static final Angle TOLERANCE = Degrees.of(5);
 
@@ -55,7 +55,7 @@ public final class IntakeConstants {
         INTAKE_CONFIG.Feedback.SensorToMechanismRatio = 1.0; // CANcoder is 1:1 with pivot output
     }
 
-    public static final double INTAKE_ROLLER_VELOCITY = 45;
+    public static final double INTAKE_ROLLER_VELOCITY = 67;
 
     public static final TalonFXConfiguration ROLLER_CONFIG = new TalonFXConfiguration();
 
@@ -63,13 +63,9 @@ public final class IntakeConstants {
         ROLLER_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         ROLLER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
-        ROLLER_CONFIG.Slot0.kG = 0;
-        ROLLER_CONFIG.Slot0.kS = 0;
-        ROLLER_CONFIG.Slot0.kV = 0;
-        ROLLER_CONFIG.Slot0.kA = 0.0;
-        ROLLER_CONFIG.Slot0.kP = 0.4;
-        ROLLER_CONFIG.Slot0.kI = 0.0;
-        ROLLER_CONFIG.Slot0.kD = 0.00;
+        ROLLER_CONFIG.Slot0.kS = 0.15;
+        ROLLER_CONFIG.Slot0.kV = 0.12;
+        ROLLER_CONFIG.Slot0.kP = 0.3;
 
 
     }
