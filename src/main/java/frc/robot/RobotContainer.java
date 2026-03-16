@@ -42,9 +42,9 @@ import frc.robot.subsystems.Vision;
 @Logged
 public class RobotContainer {
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  ROBOT MODE — change this ONE enum to switch operating modes
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         public enum RobotMode {
                 /** Joystick-only turret/hood, trigger = indexers + shooter. For bench testing. */
                 MANUAL,
@@ -54,11 +54,11 @@ public class RobotContainer {
                 FULL_VISION
         }
 
-        private static final RobotMode ACTIVE_MODE = RobotMode.MANUAL;
+        private static final RobotMode ACTIVE_MODE = RobotMode.FULL_VISION;
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  DRIVE CONSTANTS
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         private final double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
         private final double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
 
@@ -67,17 +67,17 @@ public class RobotContainer {
                         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
         private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  CONTROLLERS
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         private final CommandXboxController joystick = new CommandXboxController(0);
         private final CommandXboxController operator = new CommandXboxController(1);
 
         private final CANBus mechanismBus = new CANBus("mechanisms");
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  SUBSYSTEMS
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
         @NotLogged
@@ -93,15 +93,15 @@ public class RobotContainer {
         @NotLogged
         public final Climb climb = null;
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  AUTO-AIM REFERENCES (null when mode doesn't use them)
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         @NotLogged private TurretAutoAimCommand visionAutoAimCommand;
         @NotLogged private OdometryAutoAimCommand odomAutoAimCommand;
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  LOGGING & TUNING
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         private final Telemetry logger = new Telemetry(MaxSpeed);
         @Logged public final FaultMonitor faultMonitor = new FaultMonitor();
         @Logged public final SuperstructureTuner tuner = new SuperstructureTuner();
@@ -158,9 +158,9 @@ public class RobotContainer {
                                 vision.getStdDevsTurret()));
         }
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  DRIVE (identical in all modes)
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         private void configureDriveBindings() {
                 drivetrain.setDefaultCommand(
                         drivetrain.applyRequest(() -> drive
@@ -177,9 +177,9 @@ public class RobotContainer {
                 drivetrain.registerTelemetry(logger::telemeterize);
         }
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  INTAKE (identical in all modes — operator A toggles in/out)
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         private void configureIntakeBindings() {
                 if (intake == null) return;
                 operator.a().onTrue(Commands.defer(() -> {
@@ -191,13 +191,13 @@ public class RobotContainer {
                 }, Set.of(intake)));
         }
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  MODE 1: MANUAL — pure joystick control
         //
         //  Operator right stick X → turret voltage
         //  Operator left stick Y  → hood voltage
         //  Operator right trigger → all 3 indexers + shooter (trigger-proportional)
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         private void configureManualBindings() {
                 turret.setDefaultCommand(new ManualTurretCommand(turret, () -> operator.getRightX()));
                 hood.setDefaultCommand(new ManualHoodCommand(hood, () -> operator.getLeftY()));
@@ -207,12 +207,12 @@ public class RobotContainer {
                         new ManualShooterCommand(shooter, () -> operator.getRightTriggerAxis())));
         }
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  MODE 2: NO_VISION — odometry-only auto-aim
         //
         //  Turret, hood, shooter all auto-set from odometry + interp tables.
         //  Operator right trigger → run all indexers (gated on aim).
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         private void configureNoVisionBindings() {
                 odomAutoAimCommand = new OdometryAutoAimCommand(drivetrain, turret, hood, shooter);
                 turret.setDefaultCommand(odomAutoAimCommand);
@@ -221,25 +221,30 @@ public class RobotContainer {
                         new ShootCommand(indexer, odomAutoAimCommand));
         }
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  MODE 3: FULL_VISION — odometry + vision Kalman-fused auto-aim
         //
         //  Vision feeds drivetrain pose estimator (Kalman filter in
         //  CommandSwerveDrivetrain). Turret camera additionally provides
         //  fine-grained tx correction on top of the odometry setpoint.
         //  Operator right trigger → run all indexers (gated on aim).
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         private void configureFullVisionBindings() {
                 visionAutoAimCommand = new TurretAutoAimCommand(drivetrain, vision, turret, hood, shooter);
                 turret.setDefaultCommand(visionAutoAimCommand);
 
                 operator.rightTrigger().whileTrue(
                         new ShootCommand(indexer, visionAutoAimCommand));
+
+                // Vision tracking test: turret-only tracking with wrap-around (no hood/shooter).
+                // Hold left bumper to test vision tracking independently.
+                operator.leftBumper().whileTrue(
+                        new frc.robot.commands.TurretVisionTrackingTest(vision, turret));
         }
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  FAULT MONITORING
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         private void registerMotorsForFaultMonitoring() {
                 for (int i = 0; i < 4; i++) {
                         var module = drivetrain.getModule(i);
@@ -260,9 +265,9 @@ public class RobotContainer {
                 // }
         }
 
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         //  AUTONOMOUS
-        // ════════════════════════════════════════════════════════════════
+        // ================================================================
         public Command getAutonomousCommand() {
                 final var idle = new SwerveRequest.Idle();
                 return Commands.sequence(

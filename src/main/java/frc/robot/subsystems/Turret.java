@@ -45,6 +45,8 @@ public class Turret extends SubsystemBase {
     @Logged
     private boolean faultReverseSoftLimit = false;
     @Logged
+    private boolean turretWrapped = false;
+    @Logged
     private double turretVelocityRPS = 0.0;
     @Logged
     private double turretCurrentAmps = 0.0;
@@ -113,6 +115,36 @@ public class Turret extends SubsystemBase {
         double clampedRot = MathUtil.clamp(setpoint.in(Rotations),
                 TurretConstants.TURRET_REVERSE_LIMIT, TurretConstants.TURRET_FORWARD_LIMIT);
         turretCurrentSetpoint = Rotations.of(clampedRot);
+        turretMotor.setControl(turretMotionRequest.withPosition(turretCurrentSetpoint).withFeedForward(feedforwardVolts));
+    }
+
+    /**
+     * Wraps a turret setpoint to stay within range. If the setpoint exceeds
+     * the forward or reverse limit, it snaps to the opposite end instead of
+     * clamping. This enables continuous tracking when the robot rotates past
+     * the turret's mechanical range.
+     *
+     * @param desiredRot desired turret position in mechanism rotations
+     * @return wrapped position within [REVERSE_LIMIT, FORWARD_LIMIT]
+     */
+    public static double wrapTurretSetpoint(double desiredRot) {
+        if (desiredRot > TurretConstants.TURRET_FORWARD_LIMIT) {
+            return TurretConstants.TURRET_REVERSE_LIMIT;
+        } else if (desiredRot < TurretConstants.TURRET_REVERSE_LIMIT) {
+            return TurretConstants.TURRET_FORWARD_LIMIT;
+        }
+        return desiredRot;
+    }
+
+    /**
+     * Commands the turret to a setpoint WITH wrap-around. If the setpoint
+     * exceeds the range, snaps to the opposite limit.
+     */
+    public void moveTurretWithWrap(Angle setpoint, double feedforwardVolts) {
+        double desiredRot = setpoint.in(Rotations);
+        double wrappedRot = wrapTurretSetpoint(desiredRot);
+        turretWrapped = (wrappedRot != desiredRot);
+        turretCurrentSetpoint = Rotations.of(wrappedRot);
         turretMotor.setControl(turretMotionRequest.withPosition(turretCurrentSetpoint).withFeedForward(feedforwardVolts));
     }
 

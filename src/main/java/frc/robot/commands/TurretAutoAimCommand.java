@@ -119,7 +119,7 @@ public class TurretAutoAimCommand extends Command {
                 .getAngularVelocityZWorld().getValueAsDouble() / 360.0;
         gyroFFVolts = kGyroFF * (-robotYawRPS);
 
-        turret.moveTurret(Rotations.of(encoderSetpointRot), gyroFFVolts);
+        turret.moveTurretWithWrap(Rotations.of(encoderSetpointRot), gyroFFVolts);
 
         // === Hood + Flywheel from interpolation tables ===
         hoodSetpointRot = params.hoodAngle().getRotations();
