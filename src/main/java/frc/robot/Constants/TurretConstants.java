@@ -23,11 +23,14 @@ public final class TurretConstants {
     
     public static final double HOOD_GEAR_RATIO = 155.0 / 12.0; // SensorToMechanismRatio
 
-    // Soft limits. Used for both code-side clamping and firmware soft limits.
-    public static final double TURRET_REVERSE_LIMIT = -0.50;
-    public static final double TURRET_FORWARD_LIMIT = 0.28;
-    // Encoder reading (turret output rotations) when turret faces robot-forward.
-    public static final double TURRET_FORWARD_POSITION = 0.28;
+    // Soft limits relative to boot position (zeroed at startup).
+    // Boot position = turret facing straight forward = 0.0.
+    // Old absolute: forward=0.08, reverse=-0.50, fwd_limit=0.28
+    // New zeroed:   forward=0.00, reverse=-0.58, fwd_limit=0.20
+    public static final double TURRET_REVERSE_LIMIT = -0.58;
+    public static final double TURRET_FORWARD_LIMIT = 0.20;
+    // Turret straight-forward is now 0.0 (zeroed at boot).
+    public static final double TURRET_FORWARD_POSITION = 0.0;
 
     // Offset applied to all turret aim setpoints. If the gear skips again,
     // adjust this single value instead of recalibrating everything.
@@ -72,10 +75,8 @@ public final class TurretConstants {
         TURRET_CONFIG.Slot0.kI = 5;
         TURRET_CONFIG.Slot0.kD = 1.52658;
 
-        TURRET_CONFIG.Feedback.FeedbackRemoteSensorID = turretEncoderID;
-        TURRET_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-        TURRET_CONFIG.Feedback.RotorToSensorRatio = 1.0;                // CANcoder is 1:1 with motor rotor
-        TURRET_CONFIG.Feedback.SensorToMechanismRatio = TURRET_GEAR_RATIO; // 5.08:1 CANcoder-to-turret output
+        TURRET_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
+        TURRET_CONFIG.Feedback.SensorToMechanismRatio = TURRET_GEAR_RATIO; // 5.08 rotor turns per turret turn
 
         // MotionMagic constraints — prevents turret from slamming. TODO: tune on robot.
         TURRET_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 1.0; // RPS

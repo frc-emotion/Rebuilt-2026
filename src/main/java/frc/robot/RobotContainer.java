@@ -1,7 +1,3 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot;
 
 import com.ctre.phoenix6.CANBus;
@@ -13,7 +9,6 @@ import edu.wpi.first.epilogue.NotLogged;
 import edu.wpi.first.math.geometry.Rotation2d;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import java.util.Set;
 
@@ -22,14 +17,10 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.CANID;
-import frc.robot.Constants.IntakeConstants;
-import frc.robot.commands.AimAtLeftCamera;
-import frc.robot.commands.AimAtRightCamera;
+import frc.robot.commands.OdometryAutoAimCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.TurretAutoAimCommand;
-import frc.robot.commands.climb.ManualClimbCommand;
 import frc.robot.commands.indexer.runIndexer;
 import frc.robot.commands.intake.IntakeInCommand;
 import frc.robot.commands.intake.IntakeOutCommand;
@@ -48,295 +39,238 @@ import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
 
-/**
- * Container for robot subsystems and commands.
- * 
- * <p>
- * All subsystems are instantiated here and automatically logged via Epilogue.
- */
 @Logged
 public class RobotContainer {
-        private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-        private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
 
-        /* Setting up bindings for necessary control of the swerve drive platform */
+        // ════════════════════════════════════════════════════════════════
+        //  ROBOT MODE — change this ONE enum to switch operating modes
+        // ════════════════════════════════════════════════════════════════
+        public enum RobotMode {
+                /** Joystick-only turret/hood, trigger = indexers + shooter. For bench testing. */
+                MANUAL,
+                /** Odometry-only auto-aim (no cameras). Turret tracks hub via atan2 on pose. */
+                NO_VISION,
+                /** Full vision + odometry Kalman-fused auto-aim. Requires cameras. */
+                FULL_VISION
+        }
+
+        private static final RobotMode ACTIVE_MODE = RobotMode.MANUAL;
+
+        // ════════════════════════════════════════════════════════════════
+        //  DRIVE CONSTANTS
+        // ════════════════════════════════════════════════════════════════
+        private final double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+        private final double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
+
         private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
                         .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1)
                         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
         private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-        private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
+        // ════════════════════════════════════════════════════════════════
+        //  CONTROLLERS
+        // ════════════════════════════════════════════════════════════════
         private final CommandXboxController joystick = new CommandXboxController(0);
         private final CommandXboxController operator = new CommandXboxController(1);
 
         private final CANBus mechanismBus = new CANBus("mechanisms");
 
-        // ===== HARDWARE ENABLE FLAGS =====
-        // Set to false when hardware is not connected to suppress error spam.
-        private static final boolean ENABLE_VISION = false;
-
-        // ===== SUBSYSTEMS (all automatically logged via Epilogue) =====
-        // Set to null to disable subsystems that don't have hardware connected
+        // ════════════════════════════════════════════════════════════════
+        //  SUBSYSTEMS
+        // ════════════════════════════════════════════════════════════════
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-        // Only turret cam enabled (ENABLE_RIGHT_CAM/LEFT_CAM = false).
-        // Re-disable if periodic overruns return with single camera.
+
         @NotLogged
-        public final Vision vision = ENABLE_VISION ? new Vision() : null;
-        // public final Climb climb = new Climb(mechanismBus);
-        public final Intake intake = new Intake(mechanismBus); // DISABLED: not installed
-        // public final Intake intake = null;
+        public final Vision vision = (ACTIVE_MODE == RobotMode.FULL_VISION) ? new Vision() : null;
+
+        public final Intake intake = new Intake(mechanismBus);
         public final Indexer indexer = new Indexer(mechanismBus);
         public final Turret turret = new Turret(mechanismBus);
         public final Hood hood = new Hood(mechanismBus);
         public final Shooter shooter = new Shooter(mechanismBus);
 
-        // public final Intake intake = null; // Disabled: no hardware connected
-        // public final Indexer indexer = null; // Disabled: no hardware connected
-        // public final Turret turret = null; // Disabled: no hardware connected
-        // public final Hood hood = null; // Disabled: no hardware connected
-        // public final Shooter shooter = null; // Disabled: no hardware connected
-        // public final Vision vision = null;
-        // public final Climb climb = null;
-
-        // ===== AUTONOMY TOGGLE =====
-        // Set to true for competition (auto-aim + gated shoot + intake toggle on
-        // driver).
-        // Set to false for testing (manual operator control of turret/hood/shooter).
-        private static final boolean FULL_AUTONOMOUS = true;
-
-        // Stored reference so ShootCommand can check isAimed() (only used when
-        // FULL_AUTONOMOUS)
-        // Not @Logged — null when FULL_AUTONOMOUS=false, which crashes Epilogue
-        @NotLogged
-        private TurretAutoAimCommand autoAimCommand;
-        // public final Intake intake = null; // Disabled: no hardware connected
-        // public final Indexer indexer = null; // Disabled: no hardware connected
-        // public final Turret turret = null; // Disabled: no hardware connected
-        // @NotLogged tells Epilogue annotation processor to skip this null field
+        // DISABLED hardware — kept as null so the references compile
         @NotLogged
         public final Climb climb = null;
-        // public final LED led = null; //i don't know if the hardware is connected
 
-        // ===== LOGGING & MONITORING =====
+        // ════════════════════════════════════════════════════════════════
+        //  AUTO-AIM REFERENCES (null when mode doesn't use them)
+        // ════════════════════════════════════════════════════════════════
+        @NotLogged private TurretAutoAimCommand visionAutoAimCommand;
+        @NotLogged private OdometryAutoAimCommand odomAutoAimCommand;
+
+        // ════════════════════════════════════════════════════════════════
+        //  LOGGING & TUNING
+        // ════════════════════════════════════════════════════════════════
         private final Telemetry logger = new Telemetry(MaxSpeed);
-        @Logged
-        public final FaultMonitor faultMonitor = new FaultMonitor();
-
-        // ===== DASHBOARD TUNER (all constants live in Elastic under /Tuning/) =====
-        @Logged
-        public final SuperstructureTuner tuner = new SuperstructureTuner();
+        @Logged public final FaultMonitor faultMonitor = new FaultMonitor();
+        @Logged public final SuperstructureTuner tuner = new SuperstructureTuner();
 
         public RobotContainer() {
                 edu.wpi.first.wpilibj.DriverStation.silenceJoystickConnectionWarning(true);
-                printStartupWarnings();
-                configureBindings();
+                System.out.println("[STARTUP] Active mode: " + ACTIVE_MODE);
+
+                configureDriveBindings();
+
+                switch (ACTIVE_MODE) {
+                        case MANUAL     -> configureManualBindings();
+                        case NO_VISION  -> configureNoVisionBindings();
+                        case FULL_VISION -> configureFullVisionBindings();
+                }
+
+                configureIntakeBindings();
                 registerMotorsForFaultMonitoring();
                 tuner.setSubsystems(turret, hood, shooter, intake);
+
                 if (vision != null && turret != null) {
                         vision.setTurretAngleSupplier(turret::getTurretPosition);
                 }
         }
 
-        private void printStartupWarnings() {
-                if (!ENABLE_VISION) System.out.println("[WARNING] Vision is DISABLED (ENABLE_VISION = false)");
-                if (intake == null)  System.out.println("[WARNING] Intake is DISABLED (set to null)");
-                if (climb == null)   System.out.println("[WARNING] Climb is DISABLED (set to null)");
-                if (!edu.wpi.first.wpilibj.DriverStation.isJoystickConnected(0))
-                        System.out.println("[WARNING] Driver controller (port 0) is NOT connected");
-                if (!edu.wpi.first.wpilibj.DriverStation.isJoystickConnected(1))
-                        System.out.println("[WARNING] Operator controller (port 1) is NOT connected");
+        /** @return true when FULL_VISION mode is active and vision should feed pose estimates. */
+        public boolean isVisionPoseEstimationEnabled() {
+                return ACTIVE_MODE == RobotMode.FULL_VISION && vision != null;
         }
 
         /**
-         * Registers all motors with the FaultMonitor for fault detection.
-         * Null-safe - skips subsystems that are disabled.
+         * Feeds vision pose estimates into the drivetrain's Kalman filter.
+         * Called every cycle from Robot.robotPeriodic() when FULL_VISION is active.
          */
+        public void updateVisionPoseEstimates() {
+                if (vision == null) return;
+
+                vision.getEstimatedPoseRight().ifPresent(estimate ->
+                        drivetrain.addVisionMeasurement(
+                                estimate.estimatedPose.toPose2d(),
+                                estimate.timestampSeconds,
+                                vision.getStdDevsRight()));
+
+                vision.getEstimatedPoseLeft().ifPresent(estimate ->
+                        drivetrain.addVisionMeasurement(
+                                estimate.estimatedPose.toPose2d(),
+                                estimate.timestampSeconds,
+                                vision.getStdDevsLeft()));
+
+                vision.getEstimatedPoseTurret().ifPresent(estimate ->
+                        drivetrain.addVisionMeasurement(
+                                estimate.estimatedPose.toPose2d(),
+                                estimate.timestampSeconds,
+                                vision.getStdDevsTurret()));
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  DRIVE (identical in all modes)
+        // ════════════════════════════════════════════════════════════════
+        private void configureDriveBindings() {
+                drivetrain.setDefaultCommand(
+                        drivetrain.applyRequest(() -> drive
+                                .withVelocityX(-joystick.getLeftY() * MaxSpeed)
+                                .withVelocityY(-joystick.getLeftX() * MaxSpeed)
+                                .withRotationalRate(-joystick.getRightX() * MaxAngularRate)));
+
+                final var idle = new SwerveRequest.Idle();
+                RobotModeTriggers.disabled().whileTrue(
+                        drivetrain.applyRequest(() -> idle).ignoringDisable(true));
+
+                joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
+                joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+                drivetrain.registerTelemetry(logger::telemeterize);
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  INTAKE (identical in all modes — operator A toggles in/out)
+        // ════════════════════════════════════════════════════════════════
+        private void configureIntakeBindings() {
+                if (intake == null) return;
+                operator.a().onTrue(Commands.defer(() -> {
+                        if (intake.isOut()) {
+                                return new IntakeInCommand(intake);
+                        } else {
+                                return new IntakeOutCommand(intake);
+                        }
+                }, Set.of(intake)));
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  MODE 1: MANUAL — pure joystick control
+        //
+        //  Operator right stick X → turret voltage
+        //  Operator left stick Y  → hood voltage
+        //  Operator right trigger → all 3 indexers + shooter (trigger-proportional)
+        // ════════════════════════════════════════════════════════════════
+        private void configureManualBindings() {
+                turret.setDefaultCommand(new ManualTurretCommand(turret, () -> operator.getRightX()));
+                hood.setDefaultCommand(new ManualHoodCommand(hood, () -> operator.getLeftY()));
+
+                operator.rightTrigger().whileTrue(new ParallelCommandGroup(
+                        new runIndexer(indexer),
+                        new ManualShooterCommand(shooter, () -> operator.getRightTriggerAxis())));
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  MODE 2: NO_VISION — odometry-only auto-aim
+        //
+        //  Turret, hood, shooter all auto-set from odometry + interp tables.
+        //  Operator right trigger → run all indexers (gated on aim).
+        // ════════════════════════════════════════════════════════════════
+        private void configureNoVisionBindings() {
+                odomAutoAimCommand = new OdometryAutoAimCommand(drivetrain, turret, hood, shooter);
+                turret.setDefaultCommand(odomAutoAimCommand);
+
+                operator.rightTrigger().whileTrue(
+                        new ShootCommand(indexer, odomAutoAimCommand));
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  MODE 3: FULL_VISION — odometry + vision Kalman-fused auto-aim
+        //
+        //  Vision feeds drivetrain pose estimator (Kalman filter in
+        //  CommandSwerveDrivetrain). Turret camera additionally provides
+        //  fine-grained tx correction on top of the odometry setpoint.
+        //  Operator right trigger → run all indexers (gated on aim).
+        // ════════════════════════════════════════════════════════════════
+        private void configureFullVisionBindings() {
+                visionAutoAimCommand = new TurretAutoAimCommand(drivetrain, vision, turret, hood, shooter);
+                turret.setDefaultCommand(visionAutoAimCommand);
+
+                operator.rightTrigger().whileTrue(
+                        new ShootCommand(indexer, visionAutoAimCommand));
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  FAULT MONITORING
+        // ════════════════════════════════════════════════════════════════
         private void registerMotorsForFaultMonitoring() {
-                // Swerve drive motors (always enabled)
                 for (int i = 0; i < 4; i++) {
                         var module = drivetrain.getModule(i);
                         faultMonitor.register(CANID.SWERVE_IDS[i][0], module.getDriveMotor());
                         faultMonitor.register(CANID.SWERVE_IDS[i][1], module.getSteerMotor());
                 }
-
-                // // Intake motors — DISABLED: not installed
-                // if (intake != null) {
-                // faultMonitor.register(CANID.INTAKE_MOTOR, intake.getIntakeMotor());
-                // faultMonitor.register(CANID.ROLLER_MOTOR, intake.getRollerMotor());
-                // }
-
-                // Indexer motors (if enabled)
                 if (indexer != null) {
                         faultMonitor.register(CANID.HORIZONTAL_INDEXER, indexer.getHorizontalMotor());
                         faultMonitor.register(CANID.VERTICAL_INDEXER, indexer.getVerticalMotor());
                         faultMonitor.register(CANID.UPWARD_INDEXER, indexer.getUpwardMotor());
                 }
-
-                // Turret motor (if enabled)
-                if (turret != null) {
-                        faultMonitor.register(CANID.TURRET_ROTATION, turret.getTurretMotor());
-                }
-
-                // Hood motor (if enabled)
-                if (hood != null) {
-                        faultMonitor.register(CANID.TURRET_ANGLE, hood.getHoodMotor());
-                }
-
-                // Shooter motor (if enabled)
-                if (shooter != null) {
-                        faultMonitor.register(CANID.SHOOTER_WHEEL, shooter.getShooterMotor());
-                }
-
-                // // Climb motors (always enabled since it's instantiated)
+                if (turret != null) faultMonitor.register(CANID.TURRET_ROTATION, turret.getTurretMotor());
+                if (hood != null)   faultMonitor.register(CANID.TURRET_ANGLE, hood.getHoodMotor());
+                if (shooter != null) faultMonitor.register(CANID.SHOOTER_WHEEL, shooter.getShooterMotor());
                 // if (climb != null) {
-                // faultMonitor.register(CANID.CLIMB_LEADER, climb.getLeaderMotor());
-                // faultMonitor.register(CANID.CLIMB_FOLLOWER, climb.getFollowerMotor());
+                //     faultMonitor.register(CANID.CLIMB_LEADER, climb.getLeaderMotor());
+                //     faultMonitor.register(CANID.CLIMB_FOLLOWER, climb.getFollowerMotor());
                 // }
         }
 
-        private void configureBindings() {
-                // ===== DRIVETRAIN (always the same) =====
-                drivetrain.setDefaultCommand(
-                                drivetrain.applyRequest(() -> drive
-                                                .withVelocityX(-joystick.getLeftY() * MaxSpeed)
-                                                .withVelocityY(-joystick.getLeftX() * MaxSpeed)
-                                                .withRotationalRate(-joystick.getRightX() * MaxAngularRate)));
-
-                final var idle = new SwerveRequest.Idle();
-                RobotModeTriggers.disabled().whileTrue(
-                                drivetrain.applyRequest(() -> idle).ignoringDisable(true));
-
-                joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-                joystick.b().whileTrue(drivetrain.applyRequest(
-                                () -> point.withModuleDirection(
-                                                new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))));
-                joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
-                drivetrain.registerTelemetry(logger::telemeterize);
-
-                // ===== SUPERSTRUCTURE =====
-                if (FULL_AUTONOMOUS) {
-                        System.out.println("[BINDINGS] FULL_AUTONOMOUS = true -> configureAutonomousBindings()");
-                        configureAutonomousBindings();
-                } else {
-                        System.out.println("[BINDINGS] FULL_AUTONOMOUS = false -> configureManualBindings()");
-                        configureManualBindings();
-                }
-
-                // ===== INTAKE TOGGLE (same in both modes) =====
-                // Position-based: if intake is out >5deg from stowed, retract. Otherwise deploy.
-                // Works correctly regardless of what state the intake was in at boot.
-                if (intake != null) {
-                        operator.a().onTrue(Commands.defer(() -> {
-                                if (intake.isOut()) {
-                                        return new IntakeInCommand(intake);
-                                } else {
-                                        return new IntakeOutCommand(intake);
-                                }
-                        }, Set.of(intake)));
-                }
-
-                // // Climb (uncomment when ready)
-                // operator.rightBumper().whileTrue(new ManualClimbCommand(climb, 6.0));
-                // operator.leftBumper().whileTrue(new ManualClimbCommand(climb, -6.0));
-        }
-
-        /**
-         * COMPETITION MODE: Turret auto-aims, driver shoots with gated indexer.
-         * Flip FULL_AUTONOMOUS to true to enable.
-         */
-        private void configureAutonomousBindings() {
-                // Turret + Hood + Shooter: always tracking hub
-                // Pass null for vision until cameras are mounted, then pass vision
-                autoAimCommand = new TurretAutoAimCommand(drivetrain, vision, turret, hood, shooter);
-                turret.setDefaultCommand(autoAimCommand);
-
-                // Driver right trigger: SHOOT — feeds indexer only when aimed + flywheel ready
-                joystick.rightTrigger().whileTrue(new ShootCommand(indexer, autoAimCommand));
-
-                // ===== FULL SUPERSTRUCTURE TEST (turret + hood + shooter + indexer) =====
-                // Each button: turret position + hood angle + shooter spin-up + indexer feed
-                operator.x().whileTrue(Commands.parallel(
-                        turret.run(() -> turret.moveTurret(Rotations.of(-0.45))),
-                        hood.run(() -> hood.setHoodAngle(Rotations.of(0.005))),
-                        shooter.run(() -> shooter.setShooterSpeed(RotationsPerSecond.of(20))),
-                        new frc.robot.commands.indexer.runIndexer(indexer)));   // left + hood low + shoot
-                operator.y().whileTrue(Commands.parallel(
-                        turret.run(() -> turret.moveTurret(Rotations.of(0.08))),
-                        hood.run(() -> hood.setHoodAngle(Rotations.of(0.0))),
-                        shooter.run(() -> shooter.setShooterSpeed(RotationsPerSecond.of(70))),
-                        new frc.robot.commands.indexer.runIndexer(indexer)));   // center + hood mid + shoot
-                operator.b().whileTrue(Commands.parallel(
-                        turret.run(() -> turret.moveTurret(Rotations.of(0.25))),
-                        hood.run(() -> hood.setHoodAngle(Rotations.of(0.070))),
-                        shooter.run(() -> shooter.setShooterSpeed(RotationsPerSecond.of(70))),
-                        new frc.robot.commands.indexer.runIndexer(indexer)));   // forward + hood high + shoot
-                // operator.povUp().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.35))));
-                // operator.povDown().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.0))));
-                // operator.povLeft().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(-0.30))));
-                // operator.povRight().whileTrue(turret.run(() -> turret.moveTurret(Rotations.of(0.38))));
-
-                // ===== HOOD TEST POSITIONS (range: 0.0 to 0.08, zeroed at startup) =====
-                operator.povUp().whileTrue(hood.run(() -> hood.setHoodAngle(Rotations.of(0.070))));    // near max (high)
-                operator.povDown().whileTrue(hood.run(() -> hood.setHoodAngle(Rotations.of(0.005))));  // near min (low)
-                operator.povLeft().whileTrue(hood.run(() -> hood.setHoodAngle(Rotations.of(0.025))));  // low-mid
-                operator.povRight().whileTrue(hood.run(() -> hood.setHoodAngle(Rotations.of(0.050)))); // high-mid
-        }
-
-        /**
-         * TESTING MODE: All manual operator control. Default when FULL_AUTONOMOUS =
-         * false.
-         */
-        private void configureManualBindings() {
-                System.out.println("[BINDINGS] turret=" + turret + " hood=" + hood + " indexer=" + indexer + " shooter="
-                                + shooter);
-                if (turret != null) {
-                        turret.setDefaultCommand(new ManualTurretCommand(turret, () -> operator.getRightX()));
-                        System.out.println("[BINDINGS] ManualTurretCommand set as default (operator right stick X)");
-                }
-                if (hood != null) {
-                        hood.setDefaultCommand(new ManualHoodCommand(hood, () -> operator.getLeftY()));
-                        System.out.println("[BINDINGS] ManualHoodCommand set as default (operator left stick Y)");
-                }
-                operator.rightTrigger().whileTrue(new ParallelCommandGroup(
-                                new runIndexer(indexer),
-                                new ManualShooterCommand(shooter, () -> operator.getRightTriggerAxis())));
-                System.out.println("[BINDINGS] Operator right ][\trigger -> runIndexer + ManualShooterCommand");
-        }
-
-        /**
-         * Updates vision pose estimates and feeds them to the drivetrain.
-         * Call this from Robot.periodic().
-         */
-        // public void updateVisionPoseEstimates() {
-        // // Update drivetrain with vision measurements from both cameras
-        // vision.getEstimatedPoseRight().ifPresent(estimate -> {
-        // drivetrain.addVisionMeasurement(
-        // estimate.estimatedPose.toPose2d(),
-        // estimate.timestampSeconds,
-        // vision.getStdDevsRight());
-        // });
-
-        // vision.getEstimatedPoseLeft().ifPresent(estimate -> {
-        // drivetrain.addVisionMeasurement(
-        // estimate.estimatedPose.toPose2d(),
-        // estimate.timestampSeconds,
-        // vision.getStdDevsLeft());
-        // });
-        // }
-
+        // ════════════════════════════════════════════════════════════════
+        //  AUTONOMOUS
+        // ════════════════════════════════════════════════════════════════
         public Command getAutonomousCommand() {
-                // Simple drive forward auton
                 final var idle = new SwerveRequest.Idle();
                 return Commands.sequence(
-                                // Reset our field centric heading to match the robot
-                                // facing away from our alliance station wall (0 deg).
-                                drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
-                                // Then slowly drive forward (away from us) for 5 seconds.
-                                drivetrain.applyRequest(() -> drive.withVelocityX(0.5)
-                                                .withVelocityY(0)
-                                                .withRotationalRate(0))
-                                                .withTimeout(5.0),
-                                // Finally idle for the rest of auton
-                                drivetrain.applyRequest(() -> idle));
+                        drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
+                        drivetrain.applyRequest(() -> drive.withVelocityX(0.5)
+                                .withVelocityY(0)
+                                .withRotationalRate(0))
+                                .withTimeout(5.0),
+                        drivetrain.applyRequest(() -> idle));
         }
 }

@@ -41,10 +41,6 @@ public class Turret extends SubsystemBase {
     @Logged
     private double rotorPositionRot = 0.0;
     @Logged
-    private boolean faultRemoteSensorInvalid = false;
-    @Logged
-    private boolean faultFusedOutOfSync = false;
-    @Logged
     private boolean faultForwardSoftLimit = false;
     @Logged
     private boolean faultReverseSoftLimit = false;
@@ -62,11 +58,10 @@ public class Turret extends SubsystemBase {
         configureTurretEncoder();
         configureTurretMotor();
 
-        // FusedCANcoder handles absolute position seeding from the CANcoder
-        // automatically — no manual setPosition() needed.
-        // CANcoder is 1:1 with rotor (RotorToSensorRatio = 1.0).
-        // SensorToMechanismRatio = 5.08 converts CANcoder rotations to
-        // turret output rotations. motor.getPosition() reports in turret rotations.
+        // Zero at current position (assumed straight-forward at boot, like hood).
+        // RotorSensor + SensorToMechanismRatio = 5.08 converts rotor ticks
+        // to turret output rotations.  motor.getPosition() reports in turret rotations.
+        turretMotor.setPosition(0);
 
         verifySoftLimitsApplied();
 
@@ -140,11 +135,9 @@ public class Turret extends SubsystemBase {
         turretPositionRot = turretMotor.getPosition().getValueAsDouble();
         turretSetpointRot = turretCurrentSetpoint.in(Rotations);
         turretErrorRot = turretSetpointRot - turretPositionRot;
-        turretPositionDegRelative = (turretPositionRot - TurretConstants.TURRET_FORWARD_POSITION) * 360.0;
+        turretPositionDegRelative = turretPositionRot * 360.0;
         cancoderAbsoluteRot = turretEncoder.getAbsolutePosition().getValueAsDouble();
         rotorPositionRot = turretMotor.getRotorPosition().getValueAsDouble();
-        faultRemoteSensorInvalid = turretMotor.getFault_RemoteSensorDataInvalid().getValue();
-        faultFusedOutOfSync = turretMotor.getFault_FusedSensorOutOfSync().getValue();
         faultForwardSoftLimit = turretMotor.getFault_ForwardSoftLimit().getValue();
         faultReverseSoftLimit = turretMotor.getFault_ReverseSoftLimit().getValue();
         turretVelocityRPS = turretMotor.getVelocity().getValueAsDouble();
@@ -160,18 +153,12 @@ public class Turret extends SubsystemBase {
         return turretMotor;
     }
 
-    /**
-     * Reads back the motor's actual applied config and prints soft limit status
-     * to console. If this doesn't match what we sent, the config didn't apply.
-     */
     private void verifySoftLimitsApplied() {
         var readback = new TalonFXConfiguration();
         var status = turretMotor.getConfigurator().refresh(readback, 0.1);
         if (status.isOK()) {
             System.out.println("[Turret] Config readback:");
             System.out.println("  FeedbackSource: " + readback.Feedback.FeedbackSensorSource);
-            System.out.println("  RemoteSensorID: " + readback.Feedback.FeedbackRemoteSensorID);
-            System.out.println("  RotorToSensor: " + readback.Feedback.RotorToSensorRatio);
             System.out.println("  SensorToMech: " + readback.Feedback.SensorToMechanismRatio);
             System.out.println("  FwdSoftLimit: enabled=" + readback.SoftwareLimitSwitch.ForwardSoftLimitEnable
                     + " threshold=" + readback.SoftwareLimitSwitch.ForwardSoftLimitThreshold);

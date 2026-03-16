@@ -14,89 +14,84 @@ import frc.robot.Constants.VisionConstants;
 
 /**
  * Calculates turret aiming parameters based on robot pose and target position.
- * 
- * <p>
- * This class handles the "position-based offset" problem by aiming at the hub
- * center
- * position rather than the AprilTag center. This automatically produces the
- * correct
- * angular offset based on robot position:
+ *
+ * Uses two {@link InterpolatingDoubleTreeMap} tables keyed by distance (meters):
  * <ul>
- * <li>Robot on LEFT of hub → turret aims LEFT of tag centerline</li>
- * <li>Robot on RIGHT of hub → turret aims RIGHT of tag centerline</li>
- * <li>Robot in CENTER → turret aims at tag center</li>
+ *   <li><b>Hood angle</b> (mechanism rotations, 0.0–0.08)</li>
+ *   <li><b>Flywheel speed</b> (RPS — rotations per second)</li>
  * </ul>
- * 
- * <p>
- * Usage:
- * 
- * <pre>{@code
- * TurretAimingCalculator calculator = new TurretAimingCalculator();
- * AimingParameters params = calculator.calculate(robotPose, robotHeading);
- * turret.setAngle(params.turretAngle());
- * }</pre>
+ *
+ * <h3>How the interpolation tables work</h3>
+ * {@code InterpolatingDoubleTreeMap} is WPILib's piecewise-linear lookup.
+ * You insert (key, value) pairs — here key = distance in meters, value = hood
+ * rotations or shooter RPS.  Between measured points the map linearly
+ * interpolates; outside the range it clamps to the nearest endpoint.
+ *
+ * <h3>How to collect data (calibration procedure)</h3>
+ * <ol>
+ *   <li>Place the robot centered on the hub at a known distance (use a tape
+ *       measure from bumper to hub base).</li>
+ *   <li>With the turret aimed dead-center, manually adjust hood angle and
+ *       flywheel speed until the ball consistently scores.</li>
+ *   <li>Record (distance, hoodRotations, shooterRPS) in the tables below.</li>
+ *   <li>Repeat at 0.5 m increments from 1 m to 6 m (≈11 data points).
+ *       More points near the transition zone (2–4 m) improve accuracy.
+ *       Minimum viable: 5–6 points across the range.</li>
+ *   <li>The map auto-interpolates between your measured points, so you do NOT
+ *       need a measurement at every possible distance.</li>
+ * </ol>
  */
 public class TurretAimingCalculator {
 
-    // Interpolation tables for distance-based shot parameters
-    private final InterpolatingDoubleTreeMap flywheelRPMTable;
+    private final InterpolatingDoubleTreeMap flywheelRPSTable;
     private final InterpolatingDoubleTreeMap hoodAngleTable;
 
-    // Cached alliance for hub selection
     private Alliance cachedAlliance = null;
 
     /**
-     * Container for all calculated aiming parameters.
+     * All outputs needed to command the superstructure for a given robot pose.
      */
     public record AimingParameters(
-            /** Field-relative angle to hub center (radians) */
             Rotation2d fieldRelativeAngle,
-
-            /** Turret angle relative to robot (radians, 0 = forward) */
             Rotation2d turretAngle,
-
-            /** Distance from robot to hub center (meters) */
             double distanceToHub,
-
-            /** Calculated flywheel RPM for this distance */
-            double flywheelRPM,
-
-            /** Calculated hood angle for this distance */
+            double flywheelRPS,
             Rotation2d hoodAngle,
-
-            /** Whether the target hub is valid based on alliance */
             boolean isValid) {
     }
 
-    /**
-     * Creates a new TurretAimingCalculator with default shot parameter tables.
-     * 
-     * <p>
-     * TODO: Tune these interpolation values based on testing
-     */
     public TurretAimingCalculator() {
-        // Initialize flywheel RPM interpolation table (distance in meters -> RPM)
-        // RPM / 60 = RPS sent to shooter.
-        // TODO: populate with real tested values
-        flywheelRPMTable = new InterpolatingDoubleTreeMap();
-        flywheelRPMTable.put(1.0, 1200.0); // 1m -> 20 RPS (placeholder)
-        flywheelRPMTable.put(2.0, 1200.0); // 2m -> 20 RPS (placeholder)
-        flywheelRPMTable.put(3.0, 1200.0); // 3m -> 20 RPS (placeholder)
-        flywheelRPMTable.put(4.0, 1200.0); // 4m -> 20 RPS (placeholder)
-        flywheelRPMTable.put(5.0, 1200.0); // 5m -> 20 RPS (placeholder)
-        flywheelRPMTable.put(6.0, 1200.0); // 6m -> 20 RPS (placeholder)
+        // ── Flywheel speed table (distance m → RPS) ──────────────────────
+        // PLACEHOLDER values — replace with real measurements from calibration.
+        // Close shots need less speed; far shots need more.
+        flywheelRPSTable = new InterpolatingDoubleTreeMap();
+        flywheelRPSTable.put(1.0, 20.0);
+        flywheelRPSTable.put(1.5, 25.0);
+        flywheelRPSTable.put(2.0, 30.0);
+        flywheelRPSTable.put(2.5, 35.0);
+        flywheelRPSTable.put(3.0, 40.0);
+        flywheelRPSTable.put(3.5, 45.0);
+        flywheelRPSTable.put(4.0, 50.0);
+        flywheelRPSTable.put(4.5, 55.0);
+        flywheelRPSTable.put(5.0, 60.0);
+        flywheelRPSTable.put(5.5, 65.0);
+        flywheelRPSTable.put(6.0, 70.0);
 
-        // Initialize hood angle interpolation table (distance in meters -> mechanism rotations)
-        // Hood range: 0.0 (flat) to 0.08 (max angle). Zeroed at startup.
-        // Close = high angle, far = low angle.
-        // TODO: populate with real tested values at each distance
+        // ── Hood angle table (distance m → mechanism rotations 0.0–0.08) ─
+        // PLACEHOLDER values — replace with real measurements from calibration.
+        // Close = steep angle (high value), far = shallow angle (low value).
         hoodAngleTable = new InterpolatingDoubleTreeMap();
-        hoodAngleTable.put(1.0, 0.060); // 1m (placeholder)
-        hoodAngleTable.put(2.0, 0.050); // 2m (placeholder)
-        hoodAngleTable.put(3.0, 0.040); // 3m (placeholder)
-        hoodAngleTable.put(4.0, 0.030); // 4m (placeholder)
-        hoodAngleTable.put(5.0, 0.020); // 5m (placeholder)
-        hoodAngleTable.put(6.0, 0.010); // 6m (placeholder)
+        hoodAngleTable.put(1.0, 0.070);
+        hoodAngleTable.put(1.5, 0.065);
+        hoodAngleTable.put(2.0, 0.058);
+        hoodAngleTable.put(2.5, 0.050);
+        hoodAngleTable.put(3.0, 0.042);
+        hoodAngleTable.put(3.5, 0.035);
+        hoodAngleTable.put(4.0, 0.028);
+        hoodAngleTable.put(4.5, 0.022);
+        hoodAngleTable.put(5.0, 0.016);
+        hoodAngleTable.put(5.5, 0.012);
+        hoodAngleTable.put(6.0, 0.008);
     }
 
     /**
@@ -149,28 +144,24 @@ public class TurretAimingCalculator {
         // Calculate distance to hub
         double distance = robotToHub.getNorm();
 
-        // Look up shot parameters
-        double flywheelRPM = flywheelRPMTable.get(distance);
-        double hoodAngleRot = hoodAngleTable.get(distance); // mechanism rotations (0-0.08)
+        // Look up shot parameters from interpolation tables
+        double flywheelRPS = flywheelRPSTable.get(distance);
+        double hoodAngleRot = hoodAngleTable.get(distance);
         Rotation2d hoodAngle = Rotation2d.fromRotations(hoodAngleRot);
 
-        // Validate - ensure we're not too far or too close
         boolean isValid = distance >= 1.0 && distance <= 7.0;
 
         return new AimingParameters(
                 fieldAngle,
                 turretAngle,
                 distance,
-                flywheelRPM,
+                flywheelRPS,
                 hoodAngle,
                 isValid);
     }
 
     /**
      * Calculate ONLY the turret angle for quick aiming updates.
-     * 
-     * @param robotPose Current robot pose
-     * @return Turret angle relative to robot (0 = forward)
      */
     public Rotation2d calculateTurretAngle(Pose2d robotPose) {
         Translation2d hubCenter = getTargetHubCenter();
@@ -181,13 +172,20 @@ public class TurretAimingCalculator {
 
     /**
      * Calculate distance to the current target hub.
-     * 
-     * @param robotPose Current robot pose
-     * @return Distance in meters
      */
     public double calculateDistance(Pose2d robotPose) {
         Translation2d hubCenter = getTargetHubCenter();
         return hubCenter.minus(robotPose.getTranslation()).getNorm();
+    }
+
+    /** Look up flywheel RPS from the interpolation table for a given distance. */
+    public double getFlywheelRPS(double distanceMeters) {
+        return flywheelRPSTable.get(distanceMeters);
+    }
+
+    /** Look up hood angle (mechanism rotations) from the interpolation table for a given distance. */
+    public double getHoodAngleRot(double distanceMeters) {
+        return hoodAngleTable.get(distanceMeters);
     }
 
     /**
