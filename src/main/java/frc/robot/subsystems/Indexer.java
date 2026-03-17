@@ -21,24 +21,9 @@ public class Indexer extends SubsystemBase {
     private final VelocityVoltage verticalMotionController;
     private final VelocityVoltage upwardMotionController;
 
-    @Logged
-    private double horizontalVelocityRPS = 0.0;
-    @Logged
-    private double horizontalVoltageVolts = 0.0;
-    @Logged
-    private double verticalVelocityRPS = 0.0;
-    @Logged
-    private double verticalVoltageVolts = 0.0;
-    @Logged
-    private double upwardVelocityRPS = 0.0;
-    @Logged
-    private double upwardVoltageVolts = 0.0;
-    @Logged
-    private double horizontalSetpointRPS = 0.0;
-    @Logged
-    private double verticalSetpointRPS = 0.0;
-    @Logged
-    private double upwardSetpointRPS = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double horizontalVelocityRPS = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double verticalVelocityRPS = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double upwardVelocityRPS = 0.0;
 
     public Indexer(CANBus canBus) {
         horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID, canBus);
@@ -55,22 +40,16 @@ public class Indexer extends SubsystemBase {
 
         // Disable all default status signals, then enable only what we need
         ParentDevice.optimizeBusUtilizationForAll(horizontalIndexerMotor, verticalIndexerMotor, upwardIndexerMotor);
-        horizontalIndexerMotor.getVelocity().setUpdateFrequency(10);     // telemetry
-        horizontalIndexerMotor.getMotorVoltage().setUpdateFrequency(10); // telemetry
-        verticalIndexerMotor.getVelocity().setUpdateFrequency(10);       // telemetry
-        verticalIndexerMotor.getMotorVoltage().setUpdateFrequency(10);   // telemetry
-        upwardIndexerMotor.getVelocity().setUpdateFrequency(10);         // telemetry
-        upwardIndexerMotor.getMotorVoltage().setUpdateFrequency(10);     // telemetry
+        horizontalIndexerMotor.getVelocity().setUpdateFrequency(10);
+        verticalIndexerMotor.getVelocity().setUpdateFrequency(10);
+        upwardIndexerMotor.getVelocity().setUpdateFrequency(10);
     }
 
     @Override
     public void periodic() {
         horizontalVelocityRPS = horizontalIndexerMotor.getVelocity().getValueAsDouble();
-        horizontalVoltageVolts = horizontalIndexerMotor.getMotorVoltage().getValueAsDouble();
         verticalVelocityRPS = verticalIndexerMotor.getVelocity().getValueAsDouble();
-        verticalVoltageVolts = verticalIndexerMotor.getMotorVoltage().getValueAsDouble();
         upwardVelocityRPS = upwardIndexerMotor.getVelocity().getValueAsDouble();
-        upwardVoltageVolts = upwardIndexerMotor.getMotorVoltage().getValueAsDouble();
     }
 
     private void configureHorizontalIndexerMotor() {
@@ -112,15 +91,12 @@ public class Indexer extends SubsystemBase {
     public void setIndexerSpeed(double speed, IndexerType indexer) {
         switch (indexer) {
             case HORIZONTAL:
-                horizontalSetpointRPS = speed;
                 horizontalIndexerMotor.setControl(horizontalMotionController.withVelocity(speed));
                 break;
             case VERTICAL:
-                verticalSetpointRPS = speed;
                 verticalIndexerMotor.setControl(verticalMotionController.withVelocity(speed));
                 break;
             case UPWARD:
-                upwardSetpointRPS = speed;
                 upwardIndexerMotor.setControl(upwardMotionController.withVelocity(speed));
                 break;
         }

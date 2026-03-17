@@ -49,28 +49,22 @@ public class FaultMonitor extends SubsystemBase {
     // EPILOGUE TELEMETRY FIELDS
     // ==================
 
-    /** List of currently faulted motor names */
-    @Logged
+    @Logged(importance = Logged.Importance.CRITICAL)
     private String[] activeFaults = new String[0];
 
-    /** Total number of faults detected this session */
-    @Logged
+    @Logged(importance = Logged.Importance.CRITICAL)
     private int totalFaultCount = 0;
 
-    /** Timestamp of last fault (FPGA time) */
-    @Logged
-    private double lastFaultTime = 0.0;
-
-    /** Name of the last motor that faulted */
-    @Logged
+    @Logged(importance = Logged.Importance.CRITICAL)
     private String lastFaultMotor = "None";
 
-    /** Description of the last fault */
-    @Logged
+    @Logged(importance = Logged.Importance.CRITICAL)
     private String lastFaultDescription = "None";
 
-    /** Number of motors being monitored */
-    @Logged
+    @Logged(importance = Logged.Importance.DEBUG)
+    private double lastFaultTime = 0.0;
+
+    @Logged(importance = Logged.Importance.DEBUG)
     private int monitoredMotorCount = 0;
 
     /**
@@ -229,12 +223,13 @@ public class FaultMonitor extends SubsystemBase {
     public void clearAllStickyFaults() {
         for (Map.Entry<CANID, TalonFX> entry : motors.entrySet()) {
             entry.getValue().clearStickyFaults();
-            DriverStation.reportWarning(
-                    "[FaultMonitor] Cleared sticky faults on " + entry.getKey().getName(),
-                    false);
         }
         previousFaults.replaceAll((k, v) -> 0);
         activeFaults = new String[0];
+        totalFaultCount = 0;
+        lastFaultMotor = "None";
+        lastFaultDescription = "None";
+        System.out.println("[FaultMonitor] Cleared all sticky faults on " + motors.size() + " motors");
     }
 
     /**

@@ -25,14 +25,10 @@ public class Hood extends SubsystemBase {
 
     private Angle hoodCurrentSetpoint = Rotations.of(0);
 
-    @Logged
-    private double hoodPositionRot = 0.0;
-    @Logged
-    private double hoodVelocityRPS = 0.0;
-    @Logged
-    private double hoodCurrentAmps = 0.0;
-    @Logged
-    private double hoodVoltageVolts = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double hoodPositionRot = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double hoodVelocityRPS = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double hoodCurrentAmps = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double hoodVoltageVolts = 0.0;
 
     public Hood(CANBus canBus) {
         hoodMotor = new TalonFX(TurretConstants.hoodMotorID, canBus);
@@ -49,10 +45,9 @@ public class Hood extends SubsystemBase {
         // Disable all default status signals, then enable only what we need
         ParentDevice.optimizeBusUtilizationForAll(hoodMotor, hoodEncoder);
         hoodMotor.getPosition().setUpdateFrequency(50);          // MotionMagic feedback
-        hoodMotor.getVelocity().setUpdateFrequency(10);          // telemetry
-        hoodMotor.getSupplyCurrent().setUpdateFrequency(10);     // telemetry
-        hoodMotor.getMotorVoltage().setUpdateFrequency(10);      // telemetry
-        hoodEncoder.getAbsolutePosition().setUpdateFrequency(10); // encoder health
+        hoodMotor.getVelocity().setUpdateFrequency(4);           // telemetry
+        hoodMotor.getSupplyCurrent().setUpdateFrequency(4);      // telemetry
+        hoodMotor.getMotorVoltage().setUpdateFrequency(4);       // telemetry
     }
 
     private void configureHoodMotor() {

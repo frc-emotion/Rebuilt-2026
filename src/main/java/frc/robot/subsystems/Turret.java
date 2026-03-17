@@ -28,30 +28,19 @@ public class Turret extends SubsystemBase {
 
     private Angle turretCurrentSetpoint = Rotations.of(0);
 
-    @Logged
-    private double turretSetpointRot = 0.0;
-    @Logged
-    private double turretPositionRot = 0.0;
-    @Logged
-    private double turretPositionDegRelative = 0.0;
-    @Logged
-    private double turretErrorRot = 0.0;
-    @Logged
-    private double cancoderAbsoluteRot = 0.0;
-    @Logged
-    private double rotorPositionRot = 0.0;
-    @Logged
-    private boolean faultForwardSoftLimit = false;
-    @Logged
-    private boolean faultReverseSoftLimit = false;
-    @Logged
-    private boolean turretWrapped = false;
-    @Logged
-    private double turretVelocityRPS = 0.0;
-    @Logged
-    private double turretCurrentAmps = 0.0;
-    @Logged
-    private double turretVoltageVolts = 0.0;
+    // CRITICAL: always on NT (match + debug)
+    @Logged(importance = Logged.Importance.CRITICAL) private double turretPositionRot = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double turretSetpointRot = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double turretErrorRot = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private boolean faultForwardSoftLimit = false;
+    @Logged(importance = Logged.Importance.CRITICAL) private boolean faultReverseSoftLimit = false;
+    @Logged(importance = Logged.Importance.CRITICAL) private boolean turretWrapped = false;
+
+    // DEBUG: only on NT during testing, always in log files
+    @Logged(importance = Logged.Importance.DEBUG) private double turretVelocityRPS = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double turretCurrentAmps = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double turretVoltageVolts = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double cancoderAbsoluteRot = 0.0;
 
     public Turret(CANBus canBus) {
         turretMotor = new TalonFX(TurretConstants.turretMotorID, canBus);
@@ -72,12 +61,11 @@ public class Turret extends SubsystemBase {
 
         // Disable all default status signals, then enable only what we need
         ParentDevice.optimizeBusUtilizationForAll(turretMotor, turretEncoder);
-        turretMotor.getPosition().setUpdateFrequency(50);         // MotionMagic feedback
-        turretMotor.getVelocity().setUpdateFrequency(10);         // telemetry
-        turretMotor.getSupplyCurrent().setUpdateFrequency(10);    // telemetry
-        turretMotor.getMotorVoltage().setUpdateFrequency(10);     // telemetry
-        turretMotor.getRotorPosition().setUpdateFrequency(10);    // verify FusedCANcoder
-        turretEncoder.getAbsolutePosition().setUpdateFrequency(10); // encoder health
+        turretMotor.getPosition().setUpdateFrequency(50);         // MotionMagic + VelocityVoltage feedback
+        turretMotor.getVelocity().setUpdateFrequency(50);         // VelocityVoltage feedback (TRACKING state)
+        turretMotor.getSupplyCurrent().setUpdateFrequency(4);     // DEBUG telemetry
+        turretMotor.getMotorVoltage().setUpdateFrequency(4);      // DEBUG telemetry
+        turretEncoder.getAbsolutePosition().setUpdateFrequency(4); // DEBUG telemetry
     }
 
     private void configureTurretMotor() {
@@ -167,14 +155,12 @@ public class Turret extends SubsystemBase {
         turretPositionRot = turretMotor.getPosition().getValueAsDouble();
         turretSetpointRot = turretCurrentSetpoint.in(Rotations);
         turretErrorRot = turretSetpointRot - turretPositionRot;
-        turretPositionDegRelative = turretPositionRot * 360.0;
-        cancoderAbsoluteRot = turretEncoder.getAbsolutePosition().getValueAsDouble();
-        rotorPositionRot = turretMotor.getRotorPosition().getValueAsDouble();
-        faultForwardSoftLimit = turretMotor.getFault_ForwardSoftLimit().getValue();
-        faultReverseSoftLimit = turretMotor.getFault_ReverseSoftLimit().getValue();
         turretVelocityRPS = turretMotor.getVelocity().getValueAsDouble();
         turretCurrentAmps = turretMotor.getSupplyCurrent().getValueAsDouble();
         turretVoltageVolts = turretMotor.getMotorVoltage().getValueAsDouble();
+        cancoderAbsoluteRot = turretEncoder.getAbsolutePosition().getValueAsDouble();
+        faultForwardSoftLimit = turretMotor.getFault_ForwardSoftLimit().getValue();
+        faultReverseSoftLimit = turretMotor.getFault_ReverseSoftLimit().getValue();
     }
 
     // ==================

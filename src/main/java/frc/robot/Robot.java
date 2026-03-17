@@ -33,38 +33,37 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
 
-    // NOT @Logged — RobotContainer has null fields (vision, intake, autoAimCommand)
-    // that cause Epilogue NPE spam every cycle, burning ~14ms of loop time.
-    // Individual subsystems log themselves via their own @Logged annotations.
+    /**
+     * MATCH_MODE controls telemetry depth on NetworkTables.
+     * - true  = CRITICAL only on NT (minimal bandwidth — competition matches)
+     * - false = DEBUG + CRITICAL on NT (full per-motor diagnostics — pit/practice)
+     *
+     * ALL data is ALWAYS written to WPILOG + HOOT files regardless of this flag.
+     */
+    private static final boolean MATCH_MODE = false;
+
     private final RobotContainer m_robotContainer;
 
-    /* log and replay timestamp and joystick data */
     private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
             .withTimestampReplay()
             .withJoystickReplay();
 
     public Robot() {
-        // Configure Epilogue with default NetworkTables backend for live viewing
-        // NOTE: HootEpilogueBackend only writes to HOOT files, NOT NetworkTables!
-        // Using default backend allows live data viewing in AdvantageScope
         Epilogue.configure(config -> {
-            // Default backend is NetworkTables - no need to set config.backend
             config.root = "Robot";
+            config.minimumImportance = MATCH_MODE
+                    ? Logged.Importance.CRITICAL
+                    : Logged.Importance.DEBUG;
         });
 
-        // Start DataLogManager to capture NetworkTables data to disk (.wpilog files)
-        // This provides post-match analysis capability for ALL telemetry
         DataLogManager.start();
-
-        // Start Phoenix 6 SignalLogger for high-fidelity CTRE device logging (.hoot
-        // files)
-        // This captures ALL Phoenix 6 status signals at full CAN rate with timestamps
         SignalLogger.start();
-
-        // Bind Epilogue to robot loop - runs at 50Hz, phase-offset from main loop
         Epilogue.bind(this);
 
         m_robotContainer = new RobotContainer();
+
+        System.out.println("[TELEMETRY] MATCH_MODE=" + MATCH_MODE
+                + " -> NT publishes " + (MATCH_MODE ? "CRITICAL only" : "ALL (DEBUG+CRITICAL)"));
     }
 
     @Override
@@ -114,6 +113,7 @@ public class Robot extends TimedRobot {
         if (m_autonomousCommand != null) {
             CommandScheduler.getInstance().cancel(m_autonomousCommand);
         }
+        m_robotContainer.faultMonitor.clearAllStickyFaults();
     }
 
     @Override

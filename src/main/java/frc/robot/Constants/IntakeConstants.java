@@ -35,6 +35,10 @@ public final class IntakeConstants {
     static{
         INTAKE_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         INTAKE_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        INTAKE_CONFIG.CurrentLimits.StatorCurrentLimitEnable = true;
+        INTAKE_CONFIG.CurrentLimits.StatorCurrentLimit = 60.0;
+        INTAKE_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
+        INTAKE_CONFIG.CurrentLimits.SupplyCurrentLimit = 40.0;
 
         INTAKE_CONFIG.Slot0.kG = 0;
         INTAKE_CONFIG.Slot0.kS = 0;
@@ -61,7 +65,11 @@ public final class IntakeConstants {
 
     static{
         ROLLER_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-        ROLLER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        ROLLER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+        ROLLER_CONFIG.CurrentLimits.StatorCurrentLimitEnable = true;
+        ROLLER_CONFIG.CurrentLimits.StatorCurrentLimit = 60.0;
+        ROLLER_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
+        ROLLER_CONFIG.CurrentLimits.SupplyCurrentLimit = 30.0;
 
         ROLLER_CONFIG.Slot0.kS = 0.15;
         ROLLER_CONFIG.Slot0.kV = 0.12;

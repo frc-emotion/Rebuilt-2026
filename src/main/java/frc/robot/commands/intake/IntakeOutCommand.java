@@ -7,9 +7,7 @@ import frc.robot.subsystems.Intake;
 public class IntakeOutCommand extends Command{
     Intake m_intakeSubsystem;
 
-    public IntakeOutCommand(
-        Intake intakeSubsystem
-    ){
+    public IntakeOutCommand(Intake intakeSubsystem){
         m_intakeSubsystem = intakeSubsystem;
         addRequirements(m_intakeSubsystem);
     }
@@ -21,18 +19,7 @@ public class IntakeOutCommand extends Command{
     }
 
     @Override
-    public void execute(){
-    }
-
-    @Override
     public boolean isFinished(){
-        return m_intakeSubsystem.atSetpoint();
-    }
-
-    @Override
-    public void end(boolean interrupted) {
-        if (interrupted) {
-            m_intakeSubsystem.stopRoller();
-        }
+        return true;
     }
 }

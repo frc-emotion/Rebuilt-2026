@@ -6,14 +6,11 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import static edu.wpi.first.units.Units.Rotations;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.TurretConstants;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Hood;
-import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
 import frc.robot.util.TurretAimingCalculator;
@@ -30,8 +27,9 @@ import frc.robot.util.TurretAimingCalculator.AimingParameters;
  * (Slot1) proportional to camera tx error. Motor PID automatically compensates for
  * cable tension and friction. Smooth, continuous, responsive.
  *
- * <p>Also commands hood angle and shooter speed from distance-based interpolation tables,
- * and applies gyro feedforward to counteract robot rotation lag during TRACKING.
+ * <p>Hood and shooter are NOT commanded here — they are handled by ShootCommand
+ * when the operator pulls the right trigger. Gyro feedforward counteracts robot
+ * rotation lag during TRACKING.
  */
 @Logged
 public class TurretAutoAimCommand extends Command {
@@ -47,23 +45,19 @@ public class TurretAutoAimCommand extends Command {
     private final CommandSwerveDrivetrain drivetrain;
     private final Vision vision; // nullable
     private final Turret turret;
-    private final Hood hood;
-    private final Shooter shooter;
     private final TurretAimingCalculator calculator;
 
     // ================================================================
     //  TELEMETRY (all @Logged for Elastic monitoring)
     // ================================================================
-    @Logged private String state = "SEEKING";
-    @Logged private double distanceToHubMeters = 0.0;
-    @Logged private double odomSetpointRot = 0.0;
-    @Logged private double visionTxDeg = 0.0;
-    @Logged private double commandedRPS = 0.0;
-    @Logged private double gyroFFVolts = 0.0;
-    @Logged private boolean visionActive = false;
-    @Logged private double hoodSetpointRot = 0.0;
-    @Logged private double shooterSetpointRPS = 0.0;
-    @Logged private int trackedTagId = -1;
+    @Logged(importance = Logged.Importance.CRITICAL) private String state = "SEEKING";
+    @Logged(importance = Logged.Importance.CRITICAL) private double distanceToHubMeters = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double visionTxDeg = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private boolean visionActive = false;
+    @Logged(importance = Logged.Importance.CRITICAL) private int trackedTagId = -1;
+    @Logged(importance = Logged.Importance.DEBUG) private double odomSetpointRot = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double commandedRPS = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double gyroFFVolts = 0.0;
 
     // ================================================================
     //  TUNING CONSTANTS
@@ -97,16 +91,12 @@ public class TurretAutoAimCommand extends Command {
     public TurretAutoAimCommand(
             CommandSwerveDrivetrain drivetrain,
             Vision vision,
-            Turret turret,
-            Hood hood,
-            Shooter shooter) {
+            Turret turret) {
         this.drivetrain = drivetrain;
         this.vision = vision;
         this.turret = turret;
-        this.hood = hood;
-        this.shooter = shooter;
         this.calculator = new TurretAimingCalculator();
-        addRequirements(turret, hood, shooter);
+        addRequirements(turret);
     }
 
     // ================================================================
@@ -235,20 +225,11 @@ public class TurretAutoAimCommand extends Command {
             }
         }
 
-        // ============================================================
-        //  ALWAYS: Hood + Shooter from interpolation tables
-        // ============================================================
-        hoodSetpointRot = params.hoodAngle().getRotations();
-        shooterSetpointRPS = params.flywheelRPS();
-        hood.setHoodAngle(Rotations.of(hoodSetpointRot));
-        shooter.setShooterSpeed(RotationsPerSecond.of(shooterSetpointRPS));
     }
 
     @Override
     public void end(boolean interrupted) {
         turret.stop();
-        hood.stop();
-        shooter.stop();
     }
 
     @Override
@@ -266,6 +247,10 @@ public class TurretAutoAimCommand extends Command {
 
     public double getDistanceToHub() {
         return distanceToHubMeters;
+    }
+
+    public TurretAimingCalculator getCalculator() {
+        return calculator;
     }
 
     public AimState getCurrentState() {

@@ -19,14 +19,10 @@ public class Shooter extends SubsystemBase {
 
     private double shooterCurrentSetpoint;
 
-    @Logged
-    private double shooterSetpointRPS = 0.0;
-    @Logged
-    private double shooterVelocityRPS = 0.0;
-    @Logged
-    private double shooterCurrentAmps = 0.0;
-    @Logged
-    private double shooterVoltageVolts = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double shooterSetpointRPS = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double shooterVelocityRPS = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double shooterCurrentAmps = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double shooterVoltageVolts = 0.0;
 
     public Shooter(CANBus canBus) {
         shooterMotor = new TalonFX(TurretConstants.shooterMotorID, canBus);

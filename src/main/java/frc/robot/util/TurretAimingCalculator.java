@@ -2,10 +2,7 @@ package frc.robot.util;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -160,24 +157,6 @@ public class TurretAimingCalculator {
                 isValid);
     }
 
-    /**
-     * Calculate ONLY the turret angle for quick aiming updates.
-     */
-    public Rotation2d calculateTurretAngle(Pose2d robotPose) {
-        Translation2d hubCenter = getTargetHubCenter();
-        Translation2d robotToHub = hubCenter.minus(robotPose.getTranslation());
-        Rotation2d fieldAngle = new Rotation2d(robotToHub.getX(), robotToHub.getY());
-        return normalizeAngle(fieldAngle.minus(robotPose.getRotation()));
-    }
-
-    /**
-     * Calculate distance to the current target hub.
-     */
-    public double calculateDistance(Pose2d robotPose) {
-        Translation2d hubCenter = getTargetHubCenter();
-        return hubCenter.minus(robotPose.getTranslation()).getNorm();
-    }
-
     /** Look up flywheel RPS from the interpolation table for a given distance. */
     public double getFlywheelRPS(double distanceMeters) {
         return flywheelRPSTable.get(distanceMeters);
@@ -186,35 +165,6 @@ public class TurretAimingCalculator {
     /** Look up hood angle (mechanism rotations) from the interpolation table for a given distance. */
     public double getHoodAngleRot(double distanceMeters) {
         return hoodAngleTable.get(distanceMeters);
-    }
-
-    /**
-     * Calculate the dynamic turret camera transform based on current turret angle.
-     * 
-     * <p>
-     * The turret camera position changes relative to robot center as the turret
-     * rotates:
-     * 
-     * <pre>
-     * Robot_to_TurretCam = Robot_to_TurretPivot ⊕ TurretRotation ⊕ TurretPivot_to_Camera
-     * </pre>
-     * 
-     * @param turretAngle Current turret angle from encoder (0 = turret forward
-     *                    matches robot forward)
-     * @return Transform3d from robot center to turret camera
-     */
-    public static Transform3d calculateTurretCameraTransform(Rotation2d turretAngle) {
-        // Get static transforms from constants
-        Transform3d robotToTurretPivot = VisionConstants.ROBOT_TO_TURRET_PIVOT;
-        Transform3d turretPivotToCam = VisionConstants.TURRET_PIVOT_TO_CAM;
-
-        // Create rotation transform for current turret angle (rotation around Z axis)
-        Transform3d turretRotation = new Transform3d(
-                new Translation3d(),
-                new Rotation3d(0, 0, turretAngle.getRadians()));
-
-        // Compose the transforms: robot → pivot → rotation → camera
-        return robotToTurretPivot.plus(turretRotation).plus(turretPivotToCam);
     }
 
     /**
@@ -229,16 +179,4 @@ public class TurretAimingCalculator {
         return new Rotation2d(radians);
     }
 
-    /**
-     * Check if a given turret angle is within safe rotation limits.
-     * 
-     * @param angle    Turret angle to check
-     * @param minAngle Minimum safe angle (degrees)
-     * @param maxAngle Maximum safe angle (degrees)
-     * @return true if angle is within limits
-     */
-    public static boolean isWithinLimits(Rotation2d angle, double minAngle, double maxAngle) {
-        double degrees = angle.getDegrees();
-        return degrees >= minAngle && degrees <= maxAngle;
-    }
 }

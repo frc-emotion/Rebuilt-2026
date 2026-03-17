@@ -27,30 +27,10 @@ public class Intake extends SubsystemBase {
 
     private Angle currentSetpoint = Degrees.of(0);
 
-    @Logged
-    private double pivotPositionRot = 0.0;
-    @Logged
-    private double pivotPositionDeg = 0.0;
-    @Logged
-    private double cancoderAbsoluteRot = 0.0;
-    @Logged
-    private double rotorPositionRot = 0.0;
-    @Logged
-    private double pivotVelocityRPS = 0.0;
-    @Logged
-    private double pivotCurrentAmps = 0.0;
-    @Logged
-    private double pivotVoltageVolts = 0.0;
-    @Logged
-    private double rollerVelocityRPS = 0.0;
-    @Logged
-    private double rollerCurrentAmps = 0.0;
-    @Logged
-    private double rollerVoltageVolts = 0.0;
-    @Logged
-    private boolean intakeIsOut = false;
-    @Logged
-    private double isOutThreshold = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private boolean intakeIsOut = false;
+    @Logged(importance = Logged.Importance.DEBUG) private double pivotPositionRot = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double rollerVelocityRPS = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double pivotCurrentAmps = 0.0;
 
     public Intake(CANBus canBus) {
         intakeMotor = new TalonFX(IntakeConstants.intakeMotorID, canBus);
@@ -67,30 +47,17 @@ public class Intake extends SubsystemBase {
         // Disable all default status signals, then enable only what we need
         ParentDevice.optimizeBusUtilizationForAll(intakeMotor, rollerMotor, pivotEncoder);
         intakeMotor.getPosition().setUpdateFrequency(50);          // MotionMagic feedback
-        intakeMotor.getVelocity().setUpdateFrequency(10);          // telemetry
-        intakeMotor.getSupplyCurrent().setUpdateFrequency(10);     // telemetry
-        intakeMotor.getMotorVoltage().setUpdateFrequency(10);      // telemetry
-        intakeMotor.getRotorPosition().setUpdateFrequency(10);     // verify gear ratio
+        intakeMotor.getSupplyCurrent().setUpdateFrequency(4);      // telemetry
         rollerMotor.getVelocity().setUpdateFrequency(10);          // telemetry
-        rollerMotor.getSupplyCurrent().setUpdateFrequency(10);     // telemetry
-        rollerMotor.getMotorVoltage().setUpdateFrequency(10);      // telemetry
-        pivotEncoder.getAbsolutePosition().setUpdateFrequency(10); // encoder health
     }
 
     @Override
     public void periodic() {
         pivotPositionRot = intakeMotor.getPosition().getValueAsDouble();
-        pivotPositionDeg = pivotPositionRot * 360.0;
-        cancoderAbsoluteRot = pivotEncoder.getAbsolutePosition().getValueAsDouble();
-        rotorPositionRot = intakeMotor.getRotorPosition().getValueAsDouble();
-        pivotVelocityRPS = intakeMotor.getVelocity().getValueAsDouble();
-        pivotCurrentAmps = intakeMotor.getSupplyCurrent().getValueAsDouble();
-        pivotVoltageVolts = intakeMotor.getMotorVoltage().getValueAsDouble();
+        intakeIsOut = pivotPositionRot > IntakeConstants.INTAKE_IN_ANGLE.in(Rotations)
+                + IntakeConstants.INTAKE_OUT_THRESHOLD_ROT;
         rollerVelocityRPS = rollerMotor.getVelocity().getValueAsDouble();
-        rollerCurrentAmps = rollerMotor.getSupplyCurrent().getValueAsDouble();
-        rollerVoltageVolts = rollerMotor.getMotorVoltage().getValueAsDouble();
-        isOutThreshold = IntakeConstants.INTAKE_IN_ANGLE.in(Rotations) + IntakeConstants.INTAKE_OUT_THRESHOLD_ROT;
-        intakeIsOut = pivotPositionRot > isOutThreshold;
+        pivotCurrentAmps = intakeMotor.getSupplyCurrent().getValueAsDouble();
     }
 
     private void configurePivotEncoder() {

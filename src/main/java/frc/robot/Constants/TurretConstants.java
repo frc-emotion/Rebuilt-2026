@@ -52,7 +52,12 @@ public final class TurretConstants {
 
     static {
         SHOOTER_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        SHOOTER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        SHOOTER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+
+        SHOOTER_CONFIG.CurrentLimits.StatorCurrentLimitEnable = true;
+        SHOOTER_CONFIG.CurrentLimits.StatorCurrentLimit = 80.0;
+        SHOOTER_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
+        SHOOTER_CONFIG.CurrentLimits.SupplyCurrentLimit = 60.0;
         SHOOTER_CONFIG.Slot0.kG = 0.0;
         SHOOTER_CONFIG.Slot0.kS = 0.15;
         SHOOTER_CONFIG.Slot0.kV = 0.12;
@@ -67,6 +72,11 @@ public final class TurretConstants {
     static {
         TURRET_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         TURRET_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+        TURRET_CONFIG.CurrentLimits.StatorCurrentLimitEnable = true;
+        TURRET_CONFIG.CurrentLimits.StatorCurrentLimit = 80.0;
+        TURRET_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
+        TURRET_CONFIG.CurrentLimits.SupplyCurrentLimit = 40.0;
         TURRET_CONFIG.Slot0.kG = 0.0;
         TURRET_CONFIG.Slot0.kS = 0.0;
         TURRET_CONFIG.Slot0.kV = 0.0;
@@ -101,6 +111,11 @@ public final class TurretConstants {
 
         HOOD_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         HOOD_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+        HOOD_CONFIG.CurrentLimits.StatorCurrentLimitEnable = true;
+        HOOD_CONFIG.CurrentLimits.StatorCurrentLimit = 40.0;
+        HOOD_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
+        HOOD_CONFIG.CurrentLimits.SupplyCurrentLimit = 20.0;
         HOOD_CONFIG.Slot0.kG = 0.0;
         HOOD_CONFIG.Slot0.kS = 0.0;
         HOOD_CONFIG.Slot0.kV = 0.0;
