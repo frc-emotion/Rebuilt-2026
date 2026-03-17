@@ -29,6 +29,7 @@ public class TurretVisionTrackingTest extends Command {
     private final Shooter shooter;
 
     @Logged private double visionTxDeg = 0.0;
+    @Logged private double filteredTxDeg = 0.0;
     @Logged private double commandedRPS = 0.0;
     @Logged private double actualVelocityRPS = 0.0;
     @Logged private double motorVoltage = 0.0;
@@ -40,7 +41,8 @@ public class TurretVisionTrackingTest extends Command {
     private static final double kTxToRPS = 0.06; // 10 deg off = 0.6 RPS
     private static final double MAX_TRACKING_RPS = 1.5; // cap turret speed
     private static final double DEADBAND_DEG = 1.0; // don't correct below this
-    private static final double TEST_SHOOTER_RPS = 20.0;
+    private static final double TX_FILTER_ALPHA = 0.3; // low-pass filter: 0.3 = responsive, 0.1 = very smooth
+    private static final double TEST_SHOOTER_RPS = 65.0;
 
     // VelocityVoltage uses Slot1 (velocity gains) instead of Slot0 (position/MotionMagic gains)
     private final VelocityVoltage trackingVelocityRequest = new VelocityVoltage(0).withSlot(1);
@@ -88,9 +90,12 @@ public class TurretVisionTrackingTest extends Command {
                         trackedTagId = tagId;
                         lastTrackingTimeSec = now;
 
-                        // Compute new velocity from fresh tx
-                        if (Math.abs(tx) > DEADBAND_DEG) {
-                            lastDesiredRPS = MathUtil.clamp(kTxToRPS * tx, -MAX_TRACKING_RPS, MAX_TRACKING_RPS);
+                        // Low-pass filter: smooths out driving vibration
+                        filteredTxDeg = TX_FILTER_ALPHA * tx + (1.0 - TX_FILTER_ALPHA) * filteredTxDeg;
+
+                        // Compute velocity from FILTERED tx (not raw)
+                        if (Math.abs(filteredTxDeg) > DEADBAND_DEG) {
+                            lastDesiredRPS = MathUtil.clamp(kTxToRPS * filteredTxDeg, -MAX_TRACKING_RPS, MAX_TRACKING_RPS);
                         } else {
                             lastDesiredRPS = 0.0;
                         }

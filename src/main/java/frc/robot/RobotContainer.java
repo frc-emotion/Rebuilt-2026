@@ -237,10 +237,24 @@ public class RobotContainer {
                 turret.setDefaultCommand(turret.run(() -> turret.moveTurret(
                         edu.wpi.first.units.Units.Rotations.of(turret.getTurretMotor().getPosition().getValueAsDouble()))));
 
-                // Vision tracking test: turret-only tracking with wrap-around (no hood/shooter).
+                // Vision tracking test: turret tracks hub tag with velocity control.
                 // Hold left bumper to test vision tracking independently.
                 visionTrackingTest = new frc.robot.commands.TurretVisionTrackingTest(vision, turret, hood, shooter);
                 operator.leftBumper().whileTrue(visionTrackingTest);
+
+                // Turret position test setpoints (range: -0.58 to 0.20)
+                operator.x().whileTrue(turret.run(() -> turret.moveTurret(
+                        edu.wpi.first.units.Units.Rotations.of(-0.50))));  // near reverse limit
+                operator.y().whileTrue(turret.run(() -> turret.moveTurret(
+                        edu.wpi.first.units.Units.Rotations.of(-0.23))));    // center (forward)
+                operator.b().whileTrue(turret.run(() -> turret.moveTurret(
+                        edu.wpi.first.units.Units.Rotations.of(0.18))));   // near forward limit
+
+                // Manual shoot test: right bumper revs shooter, right trigger feeds indexer
+                operator.rightBumper().whileTrue(shooter.runEnd(
+                        () -> shooter.setShooterSpeed(RotationsPerSecond.of(60)),
+                        () -> shooter.stop()));
+                operator.rightTrigger().whileTrue(new frc.robot.commands.indexer.runIndexer(indexer));
         }
 
         // ================================================================
