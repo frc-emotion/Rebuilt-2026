@@ -75,6 +75,12 @@ public final class TurretConstants {
         TURRET_CONFIG.Slot0.kI = 5;
         TURRET_CONFIG.Slot0.kD = 1.52658;
 
+        // Slot1: velocity gains for vision tracking mode (VelocityVoltage)
+        // kS low to prevent oscillation near center. kP high to adapt to cable friction.
+        TURRET_CONFIG.Slot1.kS = 0.2;   // just enough to start moving
+        TURRET_CONFIG.Slot1.kV = 0.5;   // voltage per RPS
+        TURRET_CONFIG.Slot1.kP = 1.0;   // aggressively corrects velocity error from friction
+
         TURRET_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
         TURRET_CONFIG.Feedback.SensorToMechanismRatio = TURRET_GEAR_RATIO; // 5.08 rotor turns per turret turn
 

@@ -136,9 +136,9 @@ public final class VisionConstants {
      */
     public static final Transform3d ROBOT_TO_TURRET_PIVOT = new Transform3d(
             new Translation3d(
-                    Units.inchesToMeters(0.0), // X: turret is at robot center (adjust as needed)
-                    Units.inchesToMeters(0.0), // Y: turret is centered (adjust as needed)
-                    Units.inchesToMeters(12.0) // Z: turret pivot height above floor
+                    Units.inchesToMeters(-6.0), // X: turret is behind robot center (TODO: measure exact)
+                    Units.inchesToMeters(-4.0), // Y: turret is right of center (TODO: measure exact)
+                    Units.inchesToMeters(12.0)  // Z: turret pivot height above floor (TODO: measure exact)
             ),
             new Rotation3d(0, 0, 0) // No rotation at pivot point
     );

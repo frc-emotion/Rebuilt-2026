@@ -98,6 +98,7 @@ public class RobotContainer {
         // ================================================================
         @NotLogged private TurretAutoAimCommand visionAutoAimCommand;
         @NotLogged private OdometryAutoAimCommand odomAutoAimCommand;
+        @Logged private frc.robot.commands.TurretVisionTrackingTest visionTrackingTest;
 
         // ================================================================
         //  LOGGING & TUNING
@@ -231,15 +232,15 @@ public class RobotContainer {
         // ================================================================
         private void configureFullVisionBindings() {
                 visionAutoAimCommand = new TurretAutoAimCommand(drivetrain, vision, turret, hood, shooter);
-                turret.setDefaultCommand(visionAutoAimCommand);
-
-                operator.rightTrigger().whileTrue(
-                        new ShootCommand(indexer, visionAutoAimCommand));
+                // Hold turret at current position by default (no auto-aim until odometry is calibrated).
+                // Re-enable auto-aim as default when ready: turret.setDefaultCommand(visionAutoAimCommand);
+                turret.setDefaultCommand(turret.run(() -> turret.moveTurret(
+                        edu.wpi.first.units.Units.Rotations.of(turret.getTurretMotor().getPosition().getValueAsDouble()))));
 
                 // Vision tracking test: turret-only tracking with wrap-around (no hood/shooter).
                 // Hold left bumper to test vision tracking independently.
-                operator.leftBumper().whileTrue(
-                        new frc.robot.commands.TurretVisionTrackingTest(vision, turret));
+                visionTrackingTest = new frc.robot.commands.TurretVisionTrackingTest(vision, turret, hood, shooter);
+                operator.leftBumper().whileTrue(visionTrackingTest);
         }
 
         // ================================================================

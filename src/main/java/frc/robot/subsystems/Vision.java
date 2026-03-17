@@ -137,10 +137,18 @@ public class Vision extends SubsystemBase {
     private double turretResultTimestamp = 0.0;
 
     // Diagnostic counters
+    @Logged
     private int periodicCallCount = 0;
     private int rightResultCount = 0;
     private int leftResultCount = 0;
+    @Logged
     private int turretResultCount = 0;
+    @Logged
+    private boolean turretCamConnected = false;
+    @Logged
+    private boolean turretFresh = false;
+    @Logged
+    private boolean turretHasTargets = false;
 
     /**
      * Creates a new Vision subsystem with three cameras (2 drivebase + 1 turret).
@@ -194,6 +202,11 @@ public class Vision extends SubsystemBase {
         if (cameraRight != null) updateCameraRight();
         if (cameraLeft != null) updateCameraLeft();
         if (cameraTurret != null) updateCameraTurret();
+
+        // Diagnostic fields
+        turretCamConnected = cameraTurret != null && cameraTurret.isConnected();
+        turretFresh = turretResultFreshThisCycle;
+        turretHasTargets = latestResultTurret != null && latestResultTurret.hasTargets();
 
         // Update Epilogue telemetry fields (logged automatically each cycle)
         updateTelemetryFields();
@@ -382,10 +395,8 @@ public class Vision extends SubsystemBase {
         latestEstimateTurret = Optional.empty();
         turretResultFreshThisCycle = false;
 
-        // Skip if pose estimator wasn't initialized (no field layout)
-        if (poseEstimatorTurret == null) {
-            return;
-        }
+        // Always read camera results for tracking (tx/yaw), even without a pose estimator.
+        if (cameraTurret == null) return;
 
         var results = cameraTurret.getAllUnreadResults();
         turretResultCount += results.size();
@@ -395,8 +406,8 @@ public class Vision extends SubsystemBase {
             turretResultFreshThisCycle = true;
             turretResultTimestamp = result.getTimestampSeconds();
 
-            // Skip if no targets
-            if (!result.hasTargets()) {
+            // Skip pose estimation if no targets or no pose estimator
+            if (!result.hasTargets() || poseEstimatorTurret == null) {
                 continue;
             }
 
