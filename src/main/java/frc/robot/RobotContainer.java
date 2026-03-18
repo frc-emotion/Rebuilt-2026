@@ -10,18 +10,25 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import static edu.wpi.first.units.Units.*;
 import java.util.Set;
 
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import frc.robot.Constants.CANID;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
+import frc.robot.commands.CalibrationShootCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.TurretAutoAimCommand;
 import frc.robot.commands.intake.IntakeInCommand;
 import frc.robot.commands.intake.IntakeIrrigateCommand;
 import frc.robot.commands.intake.IntakeOutCommand;
+import frc.robot.commands.indexer.runIndexer;
+import frc.robot.commands.indexer.stopIndexer;
 import frc.robot.commands.turret.ManualTurretCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.logging.FaultMonitor;
@@ -78,7 +85,7 @@ public class RobotContainer {
         // ================================================================
         //  AUTO-AIM COMMANDS (created once, swapped as default on mode change)
         // ================================================================
-        @NotLogged private final TurretAutoAimCommand visionAutoAim;
+        @Logged private final TurretAutoAimCommand visionAutoAim;
         @NotLogged private final ManualTurretCommand manualTurret;
 
         // ================================================================
@@ -87,6 +94,7 @@ public class RobotContainer {
         private final Telemetry logger = new Telemetry(MaxSpeed);
         @Logged public final FaultMonitor faultMonitor = new FaultMonitor();
         @Logged public final SuperstructureTuner tuner = new SuperstructureTuner();
+        @NotLogged private final SendableChooser<Command> autoChooser;
 
         // ================================================================
         //  MANUAL MODE CONSTANTS
@@ -112,7 +120,7 @@ public class RobotContainer {
 
                 // Hood default: always hold last commanded position via MotionMagic
                 hood.setDefaultCommand(hood.run(() ->
-                        hood.setHoodAngle(Rotations.of(hood.getHoodMotor().getPosition().getValueAsDouble()))));
+                        hood.setHoodAngle(Rotations.of(hood.getHoodPosition()))));
 
                 configureDriveBindings();
                 configureSharedBindings();
@@ -121,6 +129,12 @@ public class RobotContainer {
                 registerMotorsForFaultMonitoring();
                 tuner.setSubsystems(turret, hood, shooter, intake);
                 vision.setTurretAngleSupplier(turret::getTurretPosition);
+
+                // PathPlanner: configure path-following, register named commands, build auto chooser
+                drivetrain.configurePathPlanner();
+                registerNamedCommands();
+                autoChooser = AutoBuilder.buildAutoChooser();
+                SmartDashboard.putData("Auto Chooser", autoChooser);
 
                 System.out.println("[STARTUP] Mode: " + activeMode);
         }
@@ -139,9 +153,12 @@ public class RobotContainer {
                 vision.getEstimatedPoseLeft().ifPresent(est ->
                         drivetrain.addVisionMeasurement(est.estimatedPose.toPose2d(),
                                 est.timestampSeconds, vision.getStdDevsLeft()));
-                vision.getEstimatedPoseTurret().ifPresent(est ->
-                        drivetrain.addVisionMeasurement(est.estimatedPose.toPose2d(),
-                                est.timestampSeconds, vision.getStdDevsTurret()));
+                // Turret cam pose estimation DISABLED for isolation testing.
+                // Turret cam still provides tx for TRACKING — just not feeding pose.
+                // Re-enable once aaranc pose estimation is verified working correctly.
+                // vision.getEstimatedPoseTurret().ifPresent(est ->
+                //         drivetrain.addVisionMeasurement(est.estimatedPose.toPose2d(),
+                //                 est.timestampSeconds, vision.getStdDevsTurret()));
         }
 
         // ================================================================
@@ -178,6 +195,21 @@ public class RobotContainer {
 
                 joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
                 joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+
+                // -- Calibration shoot (driver B): hold to shoot with Elastic-tunable values --
+                joystick.b().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer));
+
+                // -- Seed pose facing hub (driver Y): sets odometry so hub is directly ahead --
+                // Places robot ~4m in front of red hub center, facing +X (toward hub).
+                // SEEKING mode then aims turret to 0° (forward), aligning camera with the tag.
+                joystick.y().onTrue(Commands.runOnce(() -> {
+                        var hubCenter = frc.robot.Constants.VisionConstants.RED_HUB_CENTER;
+                        drivetrain.resetPose(new edu.wpi.first.math.geometry.Pose2d(
+                                hubCenter.getX() - 4.0, hubCenter.getY(),
+                                new Rotation2d(0)));
+                        System.out.println("[POSE] Seeded facing red hub at ~4m distance");
+                }));
+
                 drivetrain.registerTelemetry(logger::telemeterize);
         }
 
@@ -223,9 +255,9 @@ public class RobotContainer {
                                 indexer));
 
                 // -- Intake irrigate (left bumper): oscillate to dislodge stuck balls --
-                if (intake != null) {
-                        operator.leftBumper().whileTrue(new IntakeIrrigateCommand(intake));
-                }
+                // if (intake != null) {
+                //         operator.leftBumper().whileTrue(new IntakeIrrigateCommand(intake));
+                // }
 
                 // -- Zero turret (right bumper) --
                 operator.rightBumper().onTrue(Commands.runOnce(() -> {
@@ -245,6 +277,17 @@ public class RobotContainer {
                         () -> turret.moveTurret(Rotations.of(TURRET_POS_LEFT))));
                 operator.povDown().whileTrue(turret.run(
                         () -> turret.moveTurret(Rotations.of(TURRET_POS_FAR_LEFT))));
+
+                // -- Reverse indexers (right stick click): clear jams while held --
+                operator.rightStick().whileTrue(
+                        Commands.startEnd(
+                                () -> {
+                                        indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED * 0.5, IndexerType.HORIZONTAL);
+                                        indexer.setIndexerSpeed(-IndexerConstants.VERTICAL_INDEXER_SPEED * 0.5, IndexerType.VERTICAL);
+                                        indexer.setIndexerSpeed(-IndexerConstants.UPWARD_INDEXER_SPEED * 0.5, IndexerType.UPWARD);
+                                },
+                                () -> indexer.stop(),
+                                indexer));
 
                 // -- Hood setpoints (X / Y / B) --
                 operator.x().whileTrue(hood.run(
@@ -269,6 +312,10 @@ public class RobotContainer {
                         faultMonitor.register(CANID.VERTICAL_INDEXER, indexer.getVerticalMotor());
                         faultMonitor.register(CANID.UPWARD_INDEXER, indexer.getUpwardMotor());
                 }
+                if (intake != null) {
+                        faultMonitor.register(CANID.INTAKE_MOTOR, intake.getIntakeMotor());
+                        faultMonitor.register(CANID.ROLLER_MOTOR, intake.getRollerMotor());
+                }
                 if (turret != null) faultMonitor.register(CANID.TURRET_ROTATION, turret.getTurretMotor());
                 if (hood != null)   faultMonitor.register(CANID.TURRET_ANGLE, hood.getHoodMotor());
                 if (shooter != null) faultMonitor.register(CANID.SHOOTER_WHEEL, shooter.getShooterMotor());
@@ -279,15 +326,135 @@ public class RobotContainer {
         }
 
         // ================================================================
+        //  NAMED COMMANDS (for PathPlanner event markers)
+        // ================================================================
+        private void registerNamedCommands() {
+                // -- Intake control --
+                NamedCommands.registerCommand("deployIntake",
+                        new IntakeOutCommand(intake));
+                NamedCommands.registerCommand("stowIntake",
+                        new IntakeInCommand(intake));
+
+                // -- Indexer control --
+                NamedCommands.registerCommand("runIndexers",
+                        new runIndexer(indexer));
+                NamedCommands.registerCommand("stopIndexers",
+                        new stopIndexer(indexer));
+
+                // -- Combo: deploy intake + run indexers (for collecting while driving) --
+                NamedCommands.registerCommand("startIntaking",
+                        Commands.sequence(
+                                new IntakeOutCommand(intake),
+                                new runIndexer(indexer)));
+
+                // -- Combo: stow intake + stop indexers --
+                NamedCommands.registerCommand("stopIntaking",
+                        Commands.parallel(
+                                new IntakeInCommand(intake),
+                                new stopIndexer(indexer)));
+
+                // -- Shooting (vision-based: uses turret auto-aim distance + interp tables) --
+                NamedCommands.registerCommand("visionShoot",
+                        new ShootCommand(indexer, hood, shooter,
+                                visionAutoAim::getDistanceToHub,
+                                visionAutoAim.getCalculator(),
+                                visionAutoAim::isAimed));
+
+                // -- Shooting (manual: fixed speed, no aim gate) --
+                NamedCommands.registerCommand("manualShoot",
+                        new ShootCommand(indexer, hood, shooter, MANUAL_SHOOTER_RPS));
+
+                // -- Pre-spin shooter flywheel (while driving to shooting position) --
+                NamedCommands.registerCommand("spinUpShooter",
+                        Commands.run(
+                                () -> shooter.setShooterSpeed(RotationsPerSecond.of(MANUAL_SHOOTER_RPS)),
+                                shooter));
+
+                // -- Mode control (enable vision auto-aim — add at start of auto) --
+                NamedCommands.registerCommand("enableVision",
+                        Commands.runOnce(() -> applyMode(RobotMode.FULL_VISION)));
+                NamedCommands.registerCommand("disableVision",
+                        Commands.runOnce(() -> applyMode(RobotMode.MANUAL)));
+
+                // -- Feed indexers, gated on shooter speed (only requires indexer).
+                //    Horizontal + vertical stage balls immediately.
+                //    Upward (feeder) ONLY runs when shooter.atShooterSetpoint() is true.
+                //    If shooter speed dips after a shot, upward pauses until recovered.
+                //    Use alongside spinUpShooter — they don't conflict (different subsystems). --
+                NamedCommands.registerCommand("feedWhenReady",
+                        new edu.wpi.first.wpilibj2.command.FunctionalCommand(
+                                () -> {},
+                                () -> {
+                                        indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
+                                        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
+                                        if (shooter.atShooterSetpoint()) {
+                                                indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
+                                        } else {
+                                                indexer.setIndexerSpeed(0, IndexerType.UPWARD);
+                                        }
+                                },
+                                interrupted -> indexer.stop(),
+                                () -> false,
+                                indexer));
+
+                // -- Continuous shoot (manual speed): stages balls with lower indexers,
+                //    only feeds upward indexer into flywheel once shooter is at speed.
+                //    Runs until interrupted — handles multiple game pieces. --
+                NamedCommands.registerCommand("revThenShoot",
+                        new edu.wpi.first.wpilibj2.command.FunctionalCommand(
+                                () -> {},
+                                () -> {
+                                        shooter.setShooterSpeed(RotationsPerSecond.of(MANUAL_SHOOTER_RPS));
+                                        // Stage balls with lower indexers immediately
+                                        indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
+                                        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
+                                        // Only feed into flywheel when at speed
+                                        if (shooter.atShooterSetpoint()) {
+                                                indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
+                                        } else {
+                                                indexer.setIndexerSpeed(0, IndexerType.UPWARD);
+                                        }
+                                },
+                                interrupted -> { shooter.stop(); indexer.stop(); },
+                                () -> false,
+                                shooter, indexer));
+
+                // -- Continuous shoot (vision): hood + shooter from interp tables,
+                //    stages balls with lower indexers, feeds upward only when aimed + at speed. --
+                NamedCommands.registerCommand("visionRevThenShoot",
+                        new edu.wpi.first.wpilibj2.command.FunctionalCommand(
+                                () -> {},
+                                () -> {
+                                        double dist = visionAutoAim.getDistanceToHub();
+                                        var calc = visionAutoAim.getCalculator();
+                                        hood.setHoodAngle(Rotations.of(calc.getHoodAngleRot(dist)));
+                                        shooter.setShooterSpeed(RotationsPerSecond.of(calc.getFlywheelRPS(dist)));
+                                        // Stage balls with lower indexers immediately
+                                        indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
+                                        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
+                                        // Only feed into flywheel when aimed AND at speed
+                                        if (shooter.atShooterSetpoint() && visionAutoAim.isAimed()) {
+                                                indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
+                                        } else {
+                                                indexer.setIndexerSpeed(0, IndexerType.UPWARD);
+                                        }
+                                },
+                                interrupted -> { shooter.stop(); indexer.stop(); },
+                                () -> false,
+                                hood, shooter, indexer));
+
+                // -- Stop all mechanisms --
+                NamedCommands.registerCommand("stopAll",
+                        Commands.parallel(
+                                Commands.runOnce(() -> shooter.stop(), shooter),
+                                Commands.runOnce(() -> indexer.stop(), indexer),
+                                new IntakeInCommand(intake)));
+        }
+
+        // ================================================================
         //  AUTONOMOUS
         // ================================================================
         public Command getAutonomousCommand() {
-                final var idle = new SwerveRequest.Idle();
-                return Commands.sequence(
-                        drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
-                        drivetrain.applyRequest(() -> drive.withVelocityX(0.5)
-                                .withVelocityY(0).withRotationalRate(0))
-                                .withTimeout(5.0),
-                        drivetrain.applyRequest(() -> idle));
+                return autoChooser.getSelected();
         }
 }

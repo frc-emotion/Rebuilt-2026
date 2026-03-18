@@ -31,6 +31,6 @@ public class ManualShooterCommand extends Command {
 
     @Override
     public void end(boolean interrupted){
-        m_shooterSubsystem.setShooterSpeed(RotationsPerSecond.of(0));
+        m_shooterSubsystem.stop();
     }
 }

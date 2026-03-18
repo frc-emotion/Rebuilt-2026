@@ -24,6 +24,7 @@ public class Intake extends SubsystemBase {
 
     private final MotionMagicVoltage intakeMotionRequest;
     private final VelocityVoltage rollerMotionRequest;
+    private final NeutralOut rollerNeutralRequest = new NeutralOut();
 
     private Angle currentSetpoint = Degrees.of(0);
 
@@ -107,12 +108,12 @@ public class Intake extends SubsystemBase {
     }
 
     public void stopRoller() {
-        rollerMotor.setControl(new NeutralOut());
+        rollerMotor.setControl(rollerNeutralRequest);
     }
 
     public boolean atSetpoint(){
 
-        return Math.abs(intakeMotor.getPosition().getValueAsDouble() * 360.0 - currentSetpoint.in(Degrees)) < IntakeConstants.TOLERANCE.in(Degrees);
+        return Math.abs(intakeMotor.getPosition().getValueAsDouble() - currentSetpoint.in(Rotations)) < IntakeConstants.TOLERANCE.in(Rotations);
 
     }
 

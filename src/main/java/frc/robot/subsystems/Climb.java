@@ -23,9 +23,7 @@ import frc.robot.Constants.ClimbConstants;
 @Logged
 public class Climb extends SubsystemBase {
     // Motors marked @Logged will have health data auto-logged via TalonFXLogger
-    @Logged
     private final TalonFX leaderMotor;
-    @Logged
     private final TalonFX followerMotor;
 
     private final CANcoder climbEncoder;
@@ -52,6 +50,7 @@ public class Climb extends SubsystemBase {
 
     }
 
+    @Override
     public void periodic() {
     }
 

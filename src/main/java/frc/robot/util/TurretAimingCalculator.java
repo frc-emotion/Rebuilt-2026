@@ -59,36 +59,26 @@ public class TurretAimingCalculator {
 
     public TurretAimingCalculator() {
         // ── Flywheel speed table (distance m → RPS) ──────────────────────
-        // PLACEHOLDER values — replace with real measurements from calibration.
-        // Close shots need less speed; far shots need more.
+        // Calibrated 2026-03-17 from field measurements (inches → meters).
         flywheelRPSTable = new InterpolatingDoubleTreeMap();
-        flywheelRPSTable.put(1.0, 20.0);
-        flywheelRPSTable.put(1.5, 25.0);
-        flywheelRPSTable.put(2.0, 30.0);
-        flywheelRPSTable.put(2.5, 35.0);
-        flywheelRPSTable.put(3.0, 40.0);
-        flywheelRPSTable.put(3.5, 45.0);
-        flywheelRPSTable.put(4.0, 50.0);
-        flywheelRPSTable.put(4.5, 55.0);
-        flywheelRPSTable.put(5.0, 60.0);
-        flywheelRPSTable.put(5.5, 65.0);
-        flywheelRPSTable.put(6.0, 70.0);
+        flywheelRPSTable.put(1.232, 45.0);  //  48.5"
+        flywheelRPSTable.put(2.216, 50.0);  //  87.25"
+        flywheelRPSTable.put(3.232, 55.0);  // 127.25"
+        flywheelRPSTable.put(4.191, 60.0);  // 165"
+        flywheelRPSTable.put(5.207, 63.0);  // 205"
+        flywheelRPSTable.put(6.223, 69.0);  // 245"
+        flywheelRPSTable.put(7.239, 74.0);  // 285"
 
         // ── Hood angle table (distance m → mechanism rotations 0.0–0.08) ─
-        // PLACEHOLDER values — replace with real measurements from calibration.
-        // Close = steep angle (high value), far = shallow angle (low value).
+        // Calibrated 2026-03-17 from field measurements (inches → meters).
         hoodAngleTable = new InterpolatingDoubleTreeMap();
-        hoodAngleTable.put(1.0, 0.070);
-        hoodAngleTable.put(1.5, 0.065);
-        hoodAngleTable.put(2.0, 0.058);
-        hoodAngleTable.put(2.5, 0.050);
-        hoodAngleTable.put(3.0, 0.042);
-        hoodAngleTable.put(3.5, 0.035);
-        hoodAngleTable.put(4.0, 0.028);
-        hoodAngleTable.put(4.5, 0.022);
-        hoodAngleTable.put(5.0, 0.016);
-        hoodAngleTable.put(5.5, 0.012);
-        hoodAngleTable.put(6.0, 0.008);
+        hoodAngleTable.put(1.232, 0.000);   //  48.5"
+        hoodAngleTable.put(2.216, 0.016);   //  87.25"
+        hoodAngleTable.put(3.232, 0.031);   // 127.25"
+        hoodAngleTable.put(4.191, 0.046);   // 165"
+        hoodAngleTable.put(5.207, 0.050);   // 205"
+        hoodAngleTable.put(6.223, 0.053);   // 245"
+        hoodAngleTable.put(7.239, 0.055);   // 285"
     }
 
     /**

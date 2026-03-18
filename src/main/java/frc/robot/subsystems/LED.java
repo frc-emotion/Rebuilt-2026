@@ -16,7 +16,7 @@ import com.ctre.phoenix6.signals.StripTypeValue;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-import frc.robot.Constants.LEDConstants;;
+import frc.robot.Constants.LEDConstants;
 
 public class LED extends SubsystemBase {
   /** Creates a new LED in terms of CANdle */
@@ -47,7 +47,7 @@ public class LED extends SubsystemBase {
     //initialization
     
   public LED(CANBus mechanisms) {
-    ledCANdle = new CANdle(0, mechanisms);
+    ledCANdle = new CANdle(LEDConstants.LED_PORT, mechanisms);
     ledSetter = new CANdleConfiguration();
   
     ledSetter.LED.StripType = StripTypeValue.GRB;

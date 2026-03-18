@@ -34,13 +34,13 @@ public final class VisionConstants {
     // ==================
     // Must match exactly what's configured in PhotonVision web UI
     public static final String CAMERA_NAME_RIGHT = "yurr"; //mugilanr
-    public static final String CAMERA_NAME_LEFT = "yurr2"; //aaranc
+    public static final String CAMERA_NAME_LEFT = "aaranc";
 
     // ==================
     // CAMERA ENABLE/DISABLE — set to true only for cameras physically connected
     // ==================
     public static final boolean ENABLE_RIGHT_CAM = false;
-    public static final boolean ENABLE_LEFT_CAM = false;
+    public static final boolean ENABLE_LEFT_CAM = true;
     public static final boolean ENABLE_TURRET_CAM = true;
 
     /** When true, turret auto-aim tracks ANY visible AprilTag (not just hub tags).
@@ -100,22 +100,20 @@ public final class VisionConstants {
             ));
 
     /**
-     * Left camera (aaranc) - Front left of robot
-     * Position: 11.25" forward, 9.25" left, 8" up
-     * Orientation: -30° pitch (tilted up), +40° yaw (angled left), 0° roll
-     *
-     * Note: Negative pitch = camera tilted up from horizontal
+     * Left camera (aaranc) - Rear of robot, fixed (not on turret)
+     * Position: 9" behind center, 7.125" left, 14" up from floor
+     * Orientation: facing straight backward (yaw = 180°), level pitch, no roll
      */
     public static final Transform3d ROBOT_TO_CAM_LEFT = new Transform3d(
             new Translation3d(
-                    Units.inchesToMeters(11.25), // X: forward
-                    Units.inchesToMeters(9.25), // Y: left (positive = left)
-                    Units.inchesToMeters(8.0) // Z: up from floor
+                    Units.inchesToMeters(-9.0),    // X: 9" behind robot center
+                    Units.inchesToMeters(7.125),   // Y: 7.125" left of center
+                    Units.inchesToMeters(14.0)     // Z: 14" above floor
             ),
             new Rotation3d(
-                    0, // Roll: 0°
-                    Units.degreesToRadians(-30), // Pitch: -30° (tilted up from horizontal)
-                    Units.degreesToRadians(40) // Yaw: +40° (angled toward left)
+                    0,                              // Roll: 0°
+                    0,                              // Pitch: 0° (level)
+                    Units.degreesToRadians(180)     // Yaw: 180° (facing backward, toward back bumper)
             ));
 
     // ==================
@@ -136,11 +134,11 @@ public final class VisionConstants {
      */
     public static final Transform3d ROBOT_TO_TURRET_PIVOT = new Transform3d(
             new Translation3d(
-                    Units.inchesToMeters(-6.0), // X: turret is behind robot center (TODO: measure exact)
-                    Units.inchesToMeters(-4.0), // Y: turret is right of center (TODO: measure exact)
-                    Units.inchesToMeters(12.0)  // Z: turret pivot height above floor (TODO: measure exact)
+                    Units.inchesToMeters(-5.5),   // X: turret pivot behind robot center (back bumper side)
+                    Units.inchesToMeters(6.5),    // Y: turret pivot left of robot center
+                    Units.inchesToMeters(18.064)  // Z: turret pivot height above floor
             ),
-            new Rotation3d(0, 0, 0) // No rotation at pivot point
+            new Rotation3d(0, 0, Units.degreesToRadians(180)) // Turret faces backward (-X) at position 0
     );
 
     /**
@@ -152,9 +150,9 @@ public final class VisionConstants {
      */
     public static final Transform3d TURRET_PIVOT_TO_CAM = new Transform3d(
             new Translation3d(
-                    Units.inchesToMeters(6.0), // X: camera is forward of pivot
-                    Units.inchesToMeters(0.0), // Y: camera is centered on turret
-                    Units.inchesToMeters(4.0) // Z: camera is above pivot point
+                    Units.inchesToMeters(0.0),    // X: camera is inline with pivot axis
+                    Units.inchesToMeters(5.25),   // Y: camera is 5.25" left of turret centerline
+                    Units.inchesToMeters(8.0)     // Z: camera is 8" above pivot point
             ),
             new Rotation3d(
                     0, // Roll: 0°
@@ -246,17 +244,17 @@ public final class VisionConstants {
     // Format: [x, y, theta] in meters and radians
 
     /** Single tag standard deviations (less accurate, higher = less trust) */
-    public static final Matrix<N3, N1> SINGLE_TAG_STD_DEVS = VecBuilder.fill(4, 4, 8);
+    public static final Matrix<N3, N1> SINGLE_TAG_STD_DEVS = VecBuilder.fill(1.5, 1.5, 3);
 
     /** Multi-tag standard deviations (more accurate due to multiple references) */
-    public static final Matrix<N3, N1> MULTI_TAG_STD_DEVS = VecBuilder.fill(0.5, 0.5, 1);
+    public static final Matrix<N3, N1> MULTI_TAG_STD_DEVS = VecBuilder.fill(0.3, 0.3, 0.5);
 
     // ==================
     // VISION TUNING PARAMETERS
     // ==================
 
     /** Maximum distance (meters) at which we trust vision measurements */
-    public static final double MAX_VISION_DISTANCE = 4.0;
+    public static final double MAX_VISION_DISTANCE = 7.0;
 
     /** Maximum pose ambiguity we'll accept (0-1, lower is better) */
     public static final double MAX_AMBIGUITY = 0.2;

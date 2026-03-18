@@ -57,7 +57,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public void setShooterSpeed(AngularVelocity speed) {
-        shooterCurrentSetpoint = speed.in(RotationsPerSecond);
+        shooterCurrentSetpoint = Math.min(speed.in(RotationsPerSecond), TurretConstants.MAX_SHOOTER_RPS);
         shooterSetpointRPS = shooterCurrentSetpoint;
         shooterMotor.setControl(shooterMotionRequest.withVelocity(shooterCurrentSetpoint));
     }

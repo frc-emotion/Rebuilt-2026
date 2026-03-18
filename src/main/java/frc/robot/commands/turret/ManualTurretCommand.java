@@ -19,7 +19,7 @@ public class ManualTurretCommand extends Command {
 
     @Override
     public void execute(){
-        double input = MathUtil.applyDeadband(x.getAsDouble(), 0.01);
+        double input = MathUtil.applyDeadband(x.getAsDouble(), 0.08);
         double clampedInput = MathUtil.clamp(input, -1, 1);
         m_turretSubsystem.setTurretVoltage(clampedInput);
     }

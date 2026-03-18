@@ -23,4 +23,9 @@ public class ManualClimbCommand extends Command {
     public boolean isFinished(){
         return false;
     }
+
+    @Override
+    public void end(boolean interrupted){
+        m_climbSubsystem.stop();
+    }
 }

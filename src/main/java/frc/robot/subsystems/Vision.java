@@ -7,7 +7,6 @@ import java.util.function.Supplier;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -168,27 +167,19 @@ public class Vision extends SubsystemBase {
             return;
         }
 
-        // Initialize pose estimators only for enabled cameras
+        // Initialize pose estimators only for enabled cameras (new 2-arg constructor)
         poseEstimatorRight = cameraRight != null ? new PhotonPoseEstimator(
                 VisionConstants.TAG_LAYOUT,
-                PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
                 VisionConstants.ROBOT_TO_CAM_RIGHT) : null;
 
         poseEstimatorLeft = cameraLeft != null ? new PhotonPoseEstimator(
                 VisionConstants.TAG_LAYOUT,
-                PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
                 VisionConstants.ROBOT_TO_CAM_LEFT) : null;
 
         // Turret camera uses dynamic transform - start with forward-facing
         poseEstimatorTurret = cameraTurret != null ? new PhotonPoseEstimator(
                 VisionConstants.TAG_LAYOUT,
-                PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
                 calculateTurretCameraTransform(new Rotation2d())) : null;
-
-        // Set fallback strategy for when only one tag is visible
-        if (poseEstimatorRight != null) poseEstimatorRight.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
-        if (poseEstimatorLeft != null) poseEstimatorLeft.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
-        if (poseEstimatorTurret != null) poseEstimatorTurret.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
     }
 
     @Override
@@ -291,36 +282,17 @@ public class Vision extends SubsystemBase {
                 continue;
             }
 
-            // Update the pose estimator with this result
-            Optional<EstimatedRobotPose> estimate = poseEstimatorRight.update(result);
+            // Try multi-tag first, fall back to lowest-ambiguity single-tag
+            Optional<EstimatedRobotPose> estimate = poseEstimatorRight.estimateCoprocMultiTagPose(result);
+            if (estimate.isEmpty()) {
+                estimate = poseEstimatorRight.estimateLowestAmbiguityPose(result);
+            }
 
             if (estimate.isPresent()) {
-                // Validate the estimate before accepting
                 boolean valid = isValidEstimate(estimate.get(), result.getTargets());
-
                 if (valid) {
                     latestEstimateRight = estimate;
                     currentStdDevsRight = calculateStdDevs(estimate.get(), result.getTargets());
-                }
-            } else {
-                // FALLBACK: If estimator fails but we have a tag in the layout, calculate
-                // manually
-                PhotonTrackedTarget bestTarget = result.getBestTarget();
-                int tagId = bestTarget.getFiducialId();
-                var tagPoseOpt = VisionConstants.TAG_LAYOUT.getTagPose(tagId);
-
-                if (tagPoseOpt.isPresent()) {
-                    Transform3d camToTarget = bestTarget.getBestCameraToTarget();
-                    Pose3d tagPose = tagPoseOpt.get();
-                    Pose3d cameraPose = tagPose.transformBy(camToTarget.inverse());
-                    Pose3d robotPose = cameraPose.transformBy(VisionConstants.ROBOT_TO_CAM_RIGHT.inverse());
-
-                    latestEstimateRight = Optional.of(new EstimatedRobotPose(
-                            robotPose,
-                            result.getTimestampSeconds(),
-                            result.getTargets(),
-                            PoseStrategy.LOWEST_AMBIGUITY));
-                    currentStdDevsRight = VisionConstants.SINGLE_TAG_STD_DEVS;
                 }
             }
         }
@@ -348,36 +320,17 @@ public class Vision extends SubsystemBase {
                 continue;
             }
 
-            // Update the pose estimator with this result
-            Optional<EstimatedRobotPose> estimate = poseEstimatorLeft.update(result);
+            // Try multi-tag first, fall back to lowest-ambiguity single-tag
+            Optional<EstimatedRobotPose> estimate = poseEstimatorLeft.estimateCoprocMultiTagPose(result);
+            if (estimate.isEmpty()) {
+                estimate = poseEstimatorLeft.estimateLowestAmbiguityPose(result);
+            }
 
             if (estimate.isPresent()) {
-                // Validate the estimate before accepting
                 boolean valid = isValidEstimate(estimate.get(), result.getTargets());
-
                 if (valid) {
                     latestEstimateLeft = estimate;
                     currentStdDevsLeft = calculateStdDevs(estimate.get(), result.getTargets());
-                }
-            } else {
-                // FALLBACK: If estimator fails but we have a tag in the layout, calculate
-                // manually
-                PhotonTrackedTarget bestTarget = result.getBestTarget();
-                int tagId = bestTarget.getFiducialId();
-                var tagPoseOpt = VisionConstants.TAG_LAYOUT.getTagPose(tagId);
-
-                if (tagPoseOpt.isPresent()) {
-                    Transform3d camToTarget = bestTarget.getBestCameraToTarget();
-                    Pose3d tagPose = tagPoseOpt.get();
-                    Pose3d cameraPose = tagPose.transformBy(camToTarget.inverse());
-                    Pose3d robotPose = cameraPose.transformBy(VisionConstants.ROBOT_TO_CAM_LEFT.inverse());
-
-                    latestEstimateLeft = Optional.of(new EstimatedRobotPose(
-                            robotPose,
-                            result.getTimestampSeconds(),
-                            result.getTargets(),
-                            PoseStrategy.LOWEST_AMBIGUITY));
-                    currentStdDevsLeft = VisionConstants.SINGLE_TAG_STD_DEVS;
                 }
             }
         }
@@ -411,38 +364,17 @@ public class Vision extends SubsystemBase {
                 continue;
             }
 
-            // Update the pose estimator with this result
-            Optional<EstimatedRobotPose> estimate = poseEstimatorTurret.update(result);
+            // Try multi-tag first, fall back to lowest-ambiguity single-tag
+            Optional<EstimatedRobotPose> estimate = poseEstimatorTurret.estimateCoprocMultiTagPose(result);
+            if (estimate.isEmpty()) {
+                estimate = poseEstimatorTurret.estimateLowestAmbiguityPose(result);
+            }
 
             if (estimate.isPresent()) {
-                // Validate the estimate before accepting
                 boolean valid = isValidEstimate(estimate.get(), result.getTargets());
-
                 if (valid) {
                     latestEstimateTurret = estimate;
                     currentStdDevsTurret = calculateStdDevs(estimate.get(), result.getTargets());
-                }
-            } else {
-                // FALLBACK: If estimator fails but we have a tag in the layout, calculate
-                // manually
-                PhotonTrackedTarget bestTarget = result.getBestTarget();
-                int tagId = bestTarget.getFiducialId();
-                var tagPoseOpt = VisionConstants.TAG_LAYOUT.getTagPose(tagId);
-
-                if (tagPoseOpt.isPresent()) {
-                    Transform3d camToTarget = bestTarget.getBestCameraToTarget();
-                    Pose3d tagPose = tagPoseOpt.get();
-                    Pose3d cameraPose = tagPose.transformBy(camToTarget.inverse());
-                    // Use current turret camera transform
-                    Transform3d currentTurretTransform = calculateTurretCameraTransform(turretAngleSupplier.get());
-                    Pose3d robotPose = cameraPose.transformBy(currentTurretTransform.inverse());
-
-                    latestEstimateTurret = Optional.of(new EstimatedRobotPose(
-                            robotPose,
-                            result.getTimestampSeconds(),
-                            result.getTargets(),
-                            PoseStrategy.LOWEST_AMBIGUITY));
-                    currentStdDevsTurret = VisionConstants.SINGLE_TAG_STD_DEVS;
                 }
             }
         }
@@ -608,7 +540,7 @@ public class Vision extends SubsystemBase {
             double distance = target.getBestCameraToTarget().getTranslation().getNorm();
             double ambiguity = target.getPoseAmbiguity();
 
-            double scaleFactor = distance * (1 + ambiguity * 5);
+            double scaleFactor = Math.sqrt(distance) * (1 + ambiguity * 2);
 
             return VecBuilder.fill(
                     VisionConstants.SINGLE_TAG_STD_DEVS.get(0, 0) * scaleFactor,
@@ -800,19 +732,8 @@ public class Vision extends SubsystemBase {
     public boolean hasTargets() {
         boolean rightHas = latestResultRight != null && latestResultRight.hasTargets();
         boolean leftHas = latestResultLeft != null && latestResultLeft.hasTargets();
-        return rightHas || leftHas;
-    }
-
-    /**
-     * Sets the reference pose for CLOSEST_TO_REFERENCE_POSE strategy.
-     */
-    public void setReferencePose(Pose2d pose) {
-        if (poseEstimatorRight != null) {
-            poseEstimatorRight.setReferencePose(pose);
-        }
-        if (poseEstimatorLeft != null) {
-            poseEstimatorLeft.setReferencePose(pose);
-        }
+        boolean turretHas = latestResultTurret != null && latestResultTurret.hasTargets();
+        return rightHas || leftHas || turretHas;
     }
 
     /**

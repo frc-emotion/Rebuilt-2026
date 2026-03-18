@@ -19,8 +19,8 @@ import frc.robot.subsystems.Turret;
 public class SuperstructureTuner {
 
     // Turret PID — defaults MUST match TurretConstants.TURRET_CONFIG
-    public final TunableNumber turretKP = new TunableNumber("Turret/kP", 20.0);
-    public final TunableNumber turretKI = new TunableNumber("Turret/kI", 7.5);
+    public final TunableNumber turretKP = new TunableNumber("Turret/kP", 5.0);
+    public final TunableNumber turretKI = new TunableNumber("Turret/kI", 0.5);
     public final TunableNumber turretKD = new TunableNumber("Turret/kD", 1.52658);
     public final TunableNumber turretKS = new TunableNumber("Turret/kS", 0.0);
     public final TunableNumber turretKV = new TunableNumber("Turret/kV", 0.0);
@@ -43,11 +43,11 @@ public class SuperstructureTuner {
     public final TunableNumber hoodMMJerk = new TunableNumber("Hood/MotionMagic/Jerk", 20.0);
 
     // Shooter PID — defaults MUST match TurretConstants.SHOOTER_CONFIG
-    public final TunableNumber shooterKP = new TunableNumber("Shooter/kP", 0.1);
+    public final TunableNumber shooterKP = new TunableNumber("Shooter/kP", 0.3);
     public final TunableNumber shooterKI = new TunableNumber("Shooter/kI", 0.0);
     public final TunableNumber shooterKD = new TunableNumber("Shooter/kD", 0.0);
-    public final TunableNumber shooterKS = new TunableNumber("Shooter/kS", 0.0);
-    public final TunableNumber shooterKV = new TunableNumber("Shooter/kV", 0.0);
+    public final TunableNumber shooterKS = new TunableNumber("Shooter/kS", 0.15);
+    public final TunableNumber shooterKV = new TunableNumber("Shooter/kV", 0.12);
 
     // Intake PID — defaults MUST match IntakeConstants.INTAKE_CONFIG
     public final TunableNumber intakeKP = new TunableNumber("Intake/kP", 13.0);

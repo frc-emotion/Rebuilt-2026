@@ -75,8 +75,10 @@ public class Hood extends SubsystemBase {
     }
 
     public void setHoodAngle(Angle setpoint) {
-        hoodCurrentSetpoint = setpoint;
-        hoodMotor.setControl(hoodMotionRequest.withPosition(setpoint));
+        double clampedRot = edu.wpi.first.math.MathUtil.clamp(setpoint.in(Rotations),
+                TurretConstants.HOOD_REVERSE_HARD_STOP, TurretConstants.HOOD_FORWARD_HARD_STOP);
+        hoodCurrentSetpoint = Rotations.of(clampedRot);
+        hoodMotor.setControl(hoodMotionRequest.withPosition(hoodCurrentSetpoint));
     }
 
     public boolean atHoodSetpoint() {
@@ -90,6 +92,10 @@ public class Hood extends SubsystemBase {
         hoodVelocityRPS = hoodMotor.getVelocity().getValueAsDouble();
         hoodCurrentAmps = hoodMotor.getSupplyCurrent().getValueAsDouble();
         hoodVoltageVolts = hoodMotor.getMotorVoltage().getValueAsDouble();
+    }
+
+    public double getHoodPosition() {
+        return hoodPositionRot;
     }
 
     public TalonFX getHoodMotor() {

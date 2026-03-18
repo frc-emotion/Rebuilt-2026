@@ -18,12 +18,12 @@ public final class IntakeConstants {
     public static final int intakePivotEncoderID = 22;
     public static final double IntakeCurrentSpike = 20;
 
-    public static final Angle INTAKE_IN_ANGLE = Rotations.of(0.47);
-    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.834);
+    public static final Angle INTAKE_IN_ANGLE = Rotations.of(-0.52);
+    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(-0.16);
 
     // Soft limits — prevent motor from commanding past safe range
-    public static final double INTAKE_REVERSE_SOFT_LIMIT = 0.45;  // slightly before stowed (margin)
-    public static final double INTAKE_FORWARD_SOFT_LIMIT = 0.85;  // slightly past deployed (margin)
+    public static final double INTAKE_REVERSE_SOFT_LIMIT = -0.55;  // slightly before stowed (margin)
+    public static final double INTAKE_FORWARD_SOFT_LIMIT = -0.15;  // slightly past deployed (margin)
 
     public static final Angle TOLERANCE = Degrees.of(5);
 
