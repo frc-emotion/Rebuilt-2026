@@ -57,8 +57,10 @@ public class TurretAutoAimCommand extends Command {
     @Logged(importance = Logged.Importance.CRITICAL) private double visionTxDeg = 0.0;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean visionActive = false;
     @Logged(importance = Logged.Importance.CRITICAL) private int trackedTagId = -1;
-    @Logged(importance = Logged.Importance.DEBUG) private double targetPositionRot = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double currentPositionRot = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double targetPositionRot = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double currentPositionRot = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double turretErrorRot = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double gyroFeedforwardRot = 0.0;
 
     // ================================================================
     //  TUNING CONSTANTS
@@ -79,6 +81,12 @@ public class TurretAutoAimCommand extends Command {
     // Manual joystick deadband
     private static final double MANUAL_DEADBAND = 0.08;
 
+    // Gyro feedforward: when the robot rotates, pre-compensate the turret
+    // so vision only needs to correct the residual error.
+    // Set to false to disable during initial testing.
+    private static final boolean GYRO_FF_ENABLED = false;
+    private static final double LOOP_PERIOD_SEC = 0.02; // 50 Hz main loop
+
     // ================================================================
     //  INTERNAL STATE
     // ================================================================
@@ -86,6 +94,8 @@ public class TurretAutoAimCommand extends Command {
     private double lastVisionTimestamp = 0.0;
     private double lastTagSeenTimeSec = 0.0;
     private double lastCameraDistance = 0.0;
+    private double persistentTargetRot = 0.0;
+    private boolean freshVisionThisCycle = false;
 
     // ================================================================
     //  CONSTRUCTOR
@@ -93,7 +103,7 @@ public class TurretAutoAimCommand extends Command {
     /**
      * Creates a unified turret command.
      *
-     * @param drivetrain        swerve drivetrain (unused for now, kept for future gyro FF)
+     * @param drivetrain        swerve drivetrain (provides gyro yaw rate for feedforward)
      * @param vision            vision subsystem (turret camera)
      * @param turret            turret subsystem
      * @param joystickSupplier  operator right-X axis for manual turret control
@@ -122,6 +132,8 @@ public class TurretAutoAimCommand extends Command {
         lastTagSeenTimeSec = 0.0;
         lastCameraDistance = 0.0;
         visionTxDeg = 0.0;
+        persistentTargetRot = turret.getTurretMotor().getPosition().getValueAsDouble();
+        freshVisionThisCycle = false;
     }
 
     @Override
@@ -131,6 +143,7 @@ public class TurretAutoAimCommand extends Command {
         // ============================================================
         //  Step 1: Read fresh vision data (tx yaw + distance)
         // ============================================================
+        freshVisionThisCycle = false;
         if (vision != null
                 && vision.isTurretResultFresh()
                 && vision.turretCameraHasTargets()) {
@@ -142,11 +155,12 @@ public class TurretAutoAimCommand extends Command {
                 if (target.isPresent()) {
                     int tagId = target.get().getFiducialId();
 
-                    if (VisionConstants.BENCH_TEST_ANY_TAG || VisionConstants.isHubTag(tagId)) {
+                    if (VisionConstants.BENCH_TEST_ANY_TAG || VisionConstants.isDSFacingHubTag(tagId)) {
                         visionTxDeg = target.get().getYaw();
                         trackedTagId = tagId;
                         lastTagSeenTimeSec = now;
                         lastCameraDistance = vision.getTurretCameraDistanceToTarget();
+                        freshVisionThisCycle = true;
                     }
                 }
             }
@@ -191,31 +205,50 @@ public class TurretAutoAimCommand extends Command {
                 double input = MathUtil.applyDeadband(joystickSupplier.getAsDouble(), MANUAL_DEADBAND);
                 double clampedInput = MathUtil.clamp(input, -1, 1);
                 turret.setTurretVoltage(clampedInput);
+                // Keep persistent target in sync so TRACKING starts from current pos
+                persistentTargetRot = turretPos;
                 targetPositionRot = turretPos;
                 break;
             }
 
             case TRACKING: {
-                // Convert camera tx to a turret position offset.
-                // PhotonVision tx: positive = target is left of camera center.
-                // Motor: Clockwise_Positive → positive rotation = CW (looking down).
-                // Target to the LEFT → turret must rotate LEFT (CCW) → negative offset.
-                // So: offset = -(tx / 360)
-                double txOffsetRot = 0.0;
-                if (Math.abs(visionTxDeg) > DEADBAND_DEG) {
-                    txOffsetRot = -(visionTxDeg / 360.0) * TX_TO_ROT_GAIN;
+                // --- Gyro feedforward: counter-rotate for robot yaw ---
+                // Applied every cycle (not just on fresh vision frames) so the
+                // turret tracks even between camera frames.
+                gyroFeedforwardRot = 0.0;
+                if (GYRO_FF_ENABLED && drivetrain != null) {
+                    // getAngularVelocityZWorld returns deg/s; positive = CCW
+                    // Robot rotating CCW means turret must rotate CW (positive
+                    // in Clockwise_Positive motor convention) to stay aimed.
+                    double gyroRateDegPerSec = drivetrain.getPigeon2()
+                            .getAngularVelocityZWorld().getValueAsDouble();
+                    gyroFeedforwardRot = (gyroRateDegPerSec / 360.0) * LOOP_PERIOD_SEC;
+                    persistentTargetRot += gyroFeedforwardRot;
                 }
 
-                double desiredPos = turretPos + txOffsetRot;
-                targetPositionRot = desiredPos;
+                // --- Vision correction: only on fresh frames ---
+                // persistentTargetRot accumulates corrections — it is NOT
+                // re-read from the motor each cycle, preventing the base
+                // from shifting while the motor is still catching up.
+                if (freshVisionThisCycle && Math.abs(visionTxDeg) > DEADBAND_DEG) {
+                    double txOffsetRot = -(visionTxDeg / 360.0) * TX_TO_ROT_GAIN;
+                    persistentTargetRot += txOffsetRot;
+                }
+
+                persistentTargetRot = MathUtil.clamp(persistentTargetRot,
+                        frc.robot.Constants.TurretConstants.TURRET_REVERSE_LIMIT,
+                        frc.robot.Constants.TurretConstants.TURRET_FORWARD_LIMIT);
+
+                targetPositionRot = persistentTargetRot;
 
                 // MotionMagic handles acceleration, deceleration, and holding.
-                // Slot 0 already has tuned P/I gains. Soft limits in config
-                // prevent exceeding range.
-                turret.moveTurret(Rotations.of(desiredPos));
+                // Commands every cycle so turret holds position between frames.
+                turret.moveTurret(Rotations.of(persistentTargetRot));
                 break;
             }
         }
+
+        turretErrorRot = targetPositionRot - turretPos;
     }
 
     @Override

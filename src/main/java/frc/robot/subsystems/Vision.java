@@ -13,8 +13,6 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -150,6 +148,18 @@ public class Vision extends SubsystemBase {
     @Logged
     private boolean turretHasTargets = false;
 
+    // ==================
+    // TURRET CAMERA DIAGNOSTIC TELEMETRY
+    // ==================
+    @Logged(importance = Logged.Importance.CRITICAL) private double rawCameraDist3d = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double horizontalCameraDist = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double correctedBumperDist = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double cameraToTargetX = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double cameraToTargetY = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double cameraToTargetZ = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double visionLatencyMs = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double timeSinceLastFrameMs = 0.0;
+
     /**
      * Creates a new Vision subsystem with three cameras (2 drivebase + 1 turret).
      */
@@ -199,6 +209,9 @@ public class Vision extends SubsystemBase {
         turretCamConnected = cameraTurret != null && cameraTurret.isConnected();
         turretFresh = turretResultFreshThisCycle;
         turretHasTargets = latestResultTurret != null && latestResultTurret.hasTargets();
+
+        // Turret camera distance + latency diagnostics
+        updateTurretDiagnostics();
 
         // Update Epilogue telemetry fields (logged automatically each cycle)
         updateTelemetryFields();
@@ -446,21 +459,50 @@ public class Vision extends SubsystemBase {
     }
 
     /**
-     * Gets the distance to the best target seen by the turret camera.
-     * Uses the 3D norm of the camera-to-target transform, minus a bumper
-     * offset (3 inches) to approximate bumper-to-hub distance for the
+     * Gets the distance to the best target seen by the turret camera,
+     * converted to an approximate bumper-to-hub ground distance for the
      * interpolation tables.
      *
-     * @return distance in meters (0 if no target visible)
+     * <p>Conversion: extract horizontal distance (ignore Z/height), then add
+     * a constant offset to translate from camera position to front bumper.
+     *
+     * @return bumper-to-hub ground distance in meters (0 if no target visible)
      */
     public double getTurretCameraDistanceToTarget() {
         if (latestResultTurret != null && latestResultTurret.hasTargets()) {
-            double dist3d = latestResultTurret.getBestTarget()
-                    .getBestCameraToTarget().getTranslation().getNorm();
-            // Subtract 3" bumper offset to approximate bumper-to-hub distance
-            return Math.max(0.0, dist3d - Units.inchesToMeters(3.0));
+            Translation3d camToTag = latestResultTurret.getBestTarget()
+                    .getBestCameraToTarget().getTranslation();
+            double hDist = Math.sqrt(camToTag.getX() * camToTag.getX()
+                    + camToTag.getY() * camToTag.getY());
+            return hDist + VisionConstants.CAMERA_TO_BUMPER_OFFSET_METERS;
         }
         return 0.0;
+    }
+
+    /**
+     * Updates turret camera diagnostic telemetry fields each cycle.
+     * Populates raw/horizontal/corrected distances and latency metrics.
+     */
+    private void updateTurretDiagnostics() {
+        if (latestResultTurret != null && latestResultTurret.hasTargets()) {
+            Translation3d camToTag = latestResultTurret.getBestTarget()
+                    .getBestCameraToTarget().getTranslation();
+            cameraToTargetX = camToTag.getX();
+            cameraToTargetY = camToTag.getY();
+            cameraToTargetZ = camToTag.getZ();
+            rawCameraDist3d = camToTag.getNorm();
+            horizontalCameraDist = Math.sqrt(camToTag.getX() * camToTag.getX()
+                    + camToTag.getY() * camToTag.getY());
+            correctedBumperDist = horizontalCameraDist + VisionConstants.CAMERA_TO_BUMPER_OFFSET_METERS;
+        }
+        // Latency: time since last fresh turret frame
+        if (turretResultTimestamp > 0) {
+            timeSinceLastFrameMs = (edu.wpi.first.wpilibj.Timer.getFPGATimestamp() - turretResultTimestamp) * 1000.0;
+        }
+        // Pipeline latency from the result metadata
+        if (turretResultFreshThisCycle && latestResultTurret != null) {
+            visionLatencyMs = latestResultTurret.metadata.getLatencyMillis();
+        }
     }
 
     /**

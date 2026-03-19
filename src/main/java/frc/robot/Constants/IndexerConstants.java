@@ -31,7 +31,9 @@ public final class IndexerConstants {
         HORIZONTAL_INDEXER_CONFIG.Slot0.kS = 0.15;
         HORIZONTAL_INDEXER_CONFIG.Slot0.kV = 0.12;
         HORIZONTAL_INDEXER_CONFIG.Slot0.kP = 0.3;
-        
+
+        HORIZONTAL_INDEXER_CONFIG.Voltage.PeakForwardVoltage = 10.0;
+        HORIZONTAL_INDEXER_CONFIG.Voltage.PeakReverseVoltage = -10.0;
     }
 
 
@@ -50,7 +52,9 @@ public final class IndexerConstants {
         VERTICAL_INDEXER_CONFIG.Slot0.kS = 0.15;
         VERTICAL_INDEXER_CONFIG.Slot0.kV = 0.12;
         VERTICAL_INDEXER_CONFIG.Slot0.kP = 0.3;
-        
+
+        VERTICAL_INDEXER_CONFIG.Voltage.PeakForwardVoltage = 10.0;
+        VERTICAL_INDEXER_CONFIG.Voltage.PeakReverseVoltage = -10.0;
     }
 
     public static final TalonFXConfiguration UPWARD_INDEXER_CONFIG = new TalonFXConfiguration();
@@ -67,7 +71,9 @@ public final class IndexerConstants {
         UPWARD_INDEXER_CONFIG.Slot0.kS = 0.15;
         UPWARD_INDEXER_CONFIG.Slot0.kV = 0.12;
         UPWARD_INDEXER_CONFIG.Slot0.kP = 0.3;
-        
+
+        UPWARD_INDEXER_CONFIG.Voltage.PeakForwardVoltage = 10.0;
+        UPWARD_INDEXER_CONFIG.Voltage.PeakReverseVoltage = -10.0;
     }
 
 

@@ -49,6 +49,9 @@ public final class IntakeConstants {
         INTAKE_CONFIG.Slot0.kI = 0.0;
         INTAKE_CONFIG.Slot0.kD = 0.0;
 
+        INTAKE_CONFIG.Voltage.PeakForwardVoltage = 10.0;
+        INTAKE_CONFIG.Voltage.PeakReverseVoltage = -10.0;
+
         // MotionMagic constraints — prevents slapdown from slamming. TODO: tune on robot.
         INTAKE_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 2.0; // RPS
         INTAKE_CONFIG.MotionMagic.MotionMagicAcceleration = 4.0;   // RPS^2
@@ -82,7 +85,8 @@ public final class IntakeConstants {
         ROLLER_CONFIG.Slot0.kV = 0.12;
         ROLLER_CONFIG.Slot0.kP = 0.3;
 
-
+        ROLLER_CONFIG.Voltage.PeakForwardVoltage = 10.0;
+        ROLLER_CONFIG.Voltage.PeakReverseVoltage = -10.0;
     }
 
     // ==================

@@ -75,6 +75,9 @@ public final class ClimbConstants {
         CLIMB_CONFIG.Slot0.kG = 0.5;
         CLIMB_CONFIG.Slot0.GravityType = GravityTypeValue.Elevator_Static;
 
+        CLIMB_CONFIG.Voltage.PeakForwardVoltage = 10.0;
+        CLIMB_CONFIG.Voltage.PeakReverseVoltage = -10.0;
+
         // Motion Magic constraints
         // CLIMB_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 80.0; // RPS
         // CLIMB_CONFIG.MotionMagic.MotionMagicAcceleration = 160.0; // RPS^2

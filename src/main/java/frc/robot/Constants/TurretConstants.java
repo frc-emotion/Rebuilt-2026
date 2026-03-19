@@ -65,6 +65,9 @@ public final class TurretConstants {
         SHOOTER_CONFIG.Slot0.kP = 0.3;
         SHOOTER_CONFIG.Slot0.kI = 0.0;
         SHOOTER_CONFIG.Slot0.kD = 0.0;
+
+        SHOOTER_CONFIG.Voltage.PeakForwardVoltage = 10.0;  // cap at 10V to protect motor/battery
+        SHOOTER_CONFIG.Voltage.PeakReverseVoltage = 0.0;   // never apply reverse voltage — let friction stop it
     }
 
     public static TalonFXConfiguration TURRET_CONFIG = new TalonFXConfiguration();
@@ -85,11 +88,8 @@ public final class TurretConstants {
         TURRET_CONFIG.Slot0.kI = 5;
         TURRET_CONFIG.Slot0.kD = 0;
 
-        // Slot1: velocity gains for vision tracking mode (VelocityVoltage)
-        // kS low to prevent oscillation near center. kP high to adapt to cable friction.
-        TURRET_CONFIG.Slot1.kS = 0.13;   // just enough to start moving
-        TURRET_CONFIG.Slot1.kV = 0.4;   // voltage per RPS
-        TURRET_CONFIG.Slot1.kP = 0.67;   // aggressively corrects velocity error from friction
+        TURRET_CONFIG.Voltage.PeakForwardVoltage = 10.0;
+        TURRET_CONFIG.Voltage.PeakReverseVoltage = -10.0;
 
         TURRET_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
         TURRET_CONFIG.Feedback.SensorToMechanismRatio = TURRET_GEAR_RATIO; // 5.08 rotor turns per turret turn
@@ -123,6 +123,9 @@ public final class TurretConstants {
         HOOD_CONFIG.Slot0.kP = 100;
         HOOD_CONFIG.Slot0.kI = 50;
         HOOD_CONFIG.Slot0.kD = 0.00;
+
+        HOOD_CONFIG.Voltage.PeakForwardVoltage = 10.0;
+        HOOD_CONFIG.Voltage.PeakReverseVoltage = -10.0;
 
         HOOD_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
 

@@ -163,6 +163,16 @@ public final class VisionConstants {
     /** Height of the turret camera lens from the floor in meters */
     public static final double CAM_TURRET_HEIGHT_METERS = Units.inchesToMeters(16.0);
 
+    /**
+     * Horizontal offset from turret camera to front bumper along the shooting axis.
+     * Added to the camera's horizontal distance to approximate bumper-to-hub distance
+     * (which is how the interpolation table was calibrated).
+     *
+     * PLACEHOLDER — measure on robot: distance from camera lens to front bumper
+     * along the turret's forward axis when turret is aimed at hub.
+     */
+    public static final double CAMERA_TO_BUMPER_OFFSET_METERS = Units.inchesToMeters(20.0);
+
     // ==================
     // HUB TARGETING CONFIGURATION
     // ==================
@@ -208,6 +218,19 @@ public final class VisionConstants {
     public static final int[] BLUE_HUB_TAG_IDS = { 18, 19, 20, 21, 24, 25, 26, 27 };
 
     /**
+     * DRIVER-STATION-FACING hub tags only. These are the tags visible when
+     * shooting from your scoring zone. Using only these avoids locking onto
+     * tags on the far side of the hub which give bad tx readings.
+     *
+     * PLACEHOLDER — verify these IDs on the physical field.
+     * Analysis from FRC2026_WELDED.json quaternion orientations:
+     *   Red tags 9,10 face +X (toward red DS at x≈16.5)
+     *   Blue tags 25,26 face -X (toward blue DS at x≈0)
+     */
+    public static final int[] RED_DS_FACING_TAG_IDS = { 9, 10 };
+    public static final int[] BLUE_DS_FACING_TAG_IDS = { 25, 26 };
+
+    /**
      * Checks if a tag ID belongs to the red hub.
      */
     public static boolean isRedHubTag(int tagId) {
@@ -234,6 +257,20 @@ public final class VisionConstants {
      */
     public static boolean isHubTag(int tagId) {
         return isRedHubTag(tagId) || isBlueHubTag(tagId);
+    }
+
+    /**
+     * Checks if a tag ID is a driver-station-facing hub tag (either alliance).
+     * Use this for turret tracking to avoid locking onto far-side tags.
+     */
+    public static boolean isDSFacingHubTag(int tagId) {
+        for (int id : RED_DS_FACING_TAG_IDS) {
+            if (id == tagId) return true;
+        }
+        for (int id : BLUE_DS_FACING_TAG_IDS) {
+            if (id == tagId) return true;
+        }
+        return false;
     }
 
     // ==================

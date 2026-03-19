@@ -75,7 +75,7 @@ public class Robot extends TimedRobot {
         CommandScheduler.getInstance().run();
 
         // Hot-reload any constants changed in Elastic dashboard
-        // m_robotContainer.tuner.checkForChanges();
+        m_robotContainer.tuner.checkForChanges();
 
         if (m_robotContainer.isVisionPoseEstimationEnabled()) {
             m_robotContainer.updateVisionPoseEstimates();
