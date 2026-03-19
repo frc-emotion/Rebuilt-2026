@@ -40,7 +40,7 @@ public final class VisionConstants {
     // CAMERA ENABLE/DISABLE — set to true only for cameras physically connected
     // ==================
     public static final boolean ENABLE_RIGHT_CAM = false;
-    public static final boolean ENABLE_LEFT_CAM = true;
+    public static final boolean ENABLE_LEFT_CAM = false;
     public static final boolean ENABLE_TURRET_CAM = true;
 
     /** When true, turret auto-aim tracks ANY visible AprilTag (not just hub tags).

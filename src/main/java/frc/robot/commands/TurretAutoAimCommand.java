@@ -1,11 +1,11 @@
 package frc.robot.commands;
 
+import java.util.function.DoubleSupplier;
+
 import com.ctre.phoenix6.controls.VelocityVoltage;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
-import static edu.wpi.first.units.Units.Rotations;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.TurretConstants;
@@ -14,28 +14,24 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
 import frc.robot.util.TurretAimingCalculator;
-import frc.robot.util.TurretAimingCalculator.AimingParameters;
 
 /**
- * Production turret auto-aim with 3-state machine:
+ * Unified turret command with 2-state machine:
  *
- * <p><b>SEEKING</b> — No tag visible for a prolonged period ({@code COAST_TO_SEEK_SEC}).
- * Uses fused odometry pose to compute atan2(hub − robot) and pre-aims the turret
- * via MotionMagic (Slot 0) to get the camera's FOV onto the hub.
+ * <p><b>MANUAL</b> — No hub tag visible. Operator controls turret via joystick.
+ * This is the default state.
  *
  * <p><b>TRACKING</b> — Turret camera sees a hub tag. Uses closed-loop VelocityVoltage
- * (Slot 1) proportional to camera tx error.  Gyro feed-forward counteracts
- * robot rotation lag.
+ * (Slot 1) proportional to camera tx error. Gyro feed-forward counteracts
+ * robot rotation lag. Distance from camera feeds interpolation tables for
+ * hood angle and shooter speed.
  *
- * <p><b>COASTING</b> — Tag was visible recently but dropped for a short time
- * (missed frames, vibration, brief occlusion).  Holds the turret at its last
- * known position via MotionMagic so the camera stays in the neighbourhood of
- * the tag.  Prevents the violent jerk that used to happen when the system
- * fell straight from TRACKING → SEEKING on a single missed frame.
+ * <p>Transition MANUAL → TRACKING: instant when a hub tag is detected.
+ * Transition TRACKING → MANUAL: after 0.15s of no tag (prevents single-frame drops).
  *
- * <p>No wrapping — turret clamps at soft limits.  When the robot rotates the
- * tag into the turret's dead zone the turret waits at the nearest limit until
- * the geometry brings the tag back into range.
+ * <p>SEEKING (odometry pre-aim) and COASTING are commented out for now.
+ *
+ * <p>No wrapping — turret clamps at soft limits.
  */
 @Logged
 public class TurretAutoAimCommand extends Command {
@@ -43,72 +39,98 @@ public class TurretAutoAimCommand extends Command {
     // ================================================================
     //  STATE ENUM
     // ================================================================
-    public enum AimState { SEEKING, TRACKING, COASTING }
+    public enum AimState {
+        MANUAL,     // operator joystick controls turret
+        TRACKING,   // vision auto-tracking a hub tag
+        // SEEKING,  // odometry pre-aim — commented out
+        // COASTING, // hold position after tag loss — commented out
+    }
 
     // ================================================================
-    //  SUBSYSTEMS & CALCULATORS
+    //  SUBSYSTEMS & INPUTS
     // ================================================================
     private final CommandSwerveDrivetrain drivetrain;
     private final Vision vision; // nullable
     private final Turret turret;
     private final TurretAimingCalculator calculator;
+    private final DoubleSupplier joystickSupplier;
 
     // ================================================================
     //  TELEMETRY (all @Logged for Elastic monitoring)
+    //  Operator: check "visionActive" or "state" on Elastic dashboard
+    //  to know whether the turret is auto-tracking or awaiting manual input.
     // ================================================================
-    @Logged(importance = Logged.Importance.CRITICAL) private String state = "SEEKING";
+    @Logged(importance = Logged.Importance.CRITICAL) private String state = "MANUAL";
     @Logged(importance = Logged.Importance.CRITICAL) private double distanceToHubMeters = 0.0;
     @Logged(importance = Logged.Importance.CRITICAL) private double visionTxDeg = 0.0;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean visionActive = false;
     @Logged(importance = Logged.Importance.CRITICAL) private int trackedTagId = -1;
-    @Logged(importance = Logged.Importance.DEBUG) private double odomSetpointRot = 0.0;
     @Logged(importance = Logged.Importance.DEBUG) private double commandedRPS = 0.0;
     @Logged(importance = Logged.Importance.DEBUG) private double gyroFFVolts = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double coastHoldRot = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double leadAngleDeg = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double effectiveDistanceMeters = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double robotSpeedMPS = 0.0;
 
     // ================================================================
     //  TUNING CONSTANTS
     // ================================================================
     // Vision tracking (TRACKING state)
-    private static final double kTxToRPS = 0.06;        // RPS per degree of camera tx error
+    private static final double kTxToRPS = 0.12;        // RPS per degree of camera tx error
     private static final double MAX_TRACKING_RPS = 2.0;  // cap turret tracking speed
-    private static final double DEADBAND_DEG = 1.0;      // don't correct below this
+    private static final double DEADBAND_DEG = 0.5;      // don't correct below this
+    private static final double MIN_TRACKING_RPS = 0.25;  // minimum velocity to overcome friction
 
     // Gyro feedforward — counteracts robot rotation so turret holds on target
     private static final double kGyroFF = 0.25;           // volts per RPS of robot yaw rate
 
-    // TRACKING → COASTING: persist last velocity this long after the last fresh frame,
-    // then latch current position and hold.  Short = responsive, but prevents 1-frame drops.
+    // TRACKING → MANUAL: persist tracking this long after last fresh frame.
+    // Prevents single-frame drops from jerking back to manual.
     private static final double TRACKING_PERSIST_SEC = 0.15;
 
-    // COASTING → SEEKING: hold position this long before giving up and using odometry.
-    // Long enough to survive a brief occlusion or camera hiccup.
-    private static final double COAST_TO_SEEK_SEC = 2.0;
+    // Manual joystick deadband
+    private static final double MANUAL_DEADBAND = 0.08;
 
     // Soft limit margin — stop tracking velocity within this distance of range limits
     private static final double SOFT_LIMIT_MARGIN = 0.03;
+
+    // Moving shot compensation — offsets turret aim and effective distance
+    // to account for robot velocity during ball flight.
+    private static final boolean MOVING_SHOT_ENABLED = true;
+    private static final double BALL_EXIT_SPEED_MPS = 12.0; // approximate ball speed (tune on robot)
+    private static final double MOVING_SHOT_GAIN = 1.0;     // 0 = disabled, 1 = full compensation
 
     // ================================================================
     //  INTERNAL STATE
     // ================================================================
     private final VelocityVoltage trackingVelocityRequest = new VelocityVoltage(0).withSlot(1);
-    private AimState currentState = AimState.SEEKING;
+    private AimState currentState = AimState.MANUAL;
     private double lastVisionTimestamp = 0.0;
     private double lastTagSeenTimeSec = 0.0;    // last time a hub tag was actually seen
     private double lastDesiredRPS = 0.0;
-    private double coastPositionRot = 0.0;      // turret position when we entered COASTING
+    private double lastCameraDistance = 0.0;    // last distance from camera (persists after tag loss)
+    private double lastAdjustedTx = 0.0;        // lead-compensated tx (used by isAimed)
 
     // ================================================================
     //  CONSTRUCTOR
     // ================================================================
+    /**
+     * Creates a unified turret command.
+     *
+     * @param drivetrain    swerve drivetrain (for gyro FF)
+     * @param vision        vision subsystem (turret camera)
+     * @param turret        turret subsystem
+     * @param joystickSupplier  operator right-X axis for manual turret control
+     */
     public TurretAutoAimCommand(
             CommandSwerveDrivetrain drivetrain,
             Vision vision,
-            Turret turret) {
+            Turret turret,
+            DoubleSupplier joystickSupplier) {
         this.drivetrain = drivetrain;
         this.vision = vision;
         this.turret = turret;
         this.calculator = new TurretAimingCalculator();
+        this.joystickSupplier = joystickSupplier;
         addRequirements(turret);
     }
 
@@ -118,11 +140,12 @@ public class TurretAutoAimCommand extends Command {
     @Override
     public void initialize() {
         calculator.clearAllianceCache();
-        currentState = AimState.SEEKING;
+        currentState = AimState.MANUAL;
         lastVisionTimestamp = 0.0;
         lastTagSeenTimeSec = 0.0;
         lastDesiredRPS = 0.0;
-        coastPositionRot = 0.0;
+        lastCameraDistance = 0.0;
+        lastAdjustedTx = 0.0;
     }
 
     @Override
@@ -130,21 +153,8 @@ public class TurretAutoAimCommand extends Command {
         double now = Timer.getFPGATimestamp();
 
         // ============================================================
-        //  ALWAYS: Compute odometry-based aiming parameters
+        //  Step 1: Capture fresh vision frames (raw tx + distance)
         // ============================================================
-        Pose2d robotPose = drivetrain.getState().Pose;
-        AimingParameters params = calculator.calculate(robotPose);
-        distanceToHubMeters = params.distanceToHub();
-
-        odomSetpointRot = TurretConstants.TURRET_FORWARD_POSITION
-                - params.turretAngle().getRotations()
-                + TurretConstants.TURRET_AIM_OFFSET;
-
-        // ============================================================
-        //  ALWAYS: Process fresh vision frames
-        // ============================================================
-        visionActive = false;
-
         if (vision != null
                 && vision.isTurretResultFresh()
                 && vision.turretCameraHasTargets()) {
@@ -157,32 +167,95 @@ public class TurretAutoAimCommand extends Command {
                     int tagId = target.get().getFiducialId();
 
                     if (VisionConstants.BENCH_TEST_ANY_TAG || VisionConstants.isHubTag(tagId)) {
-                        double tx = target.get().getYaw();
-                        visionTxDeg = tx;
-                        visionActive = true;
+                        visionTxDeg = target.get().getYaw();
                         trackedTagId = tagId;
                         lastTagSeenTimeSec = now;
-
-                        if (Math.abs(tx) > DEADBAND_DEG) {
-                            lastDesiredRPS = MathUtil.clamp(kTxToRPS * tx, -MAX_TRACKING_RPS, MAX_TRACKING_RPS);
-                        } else {
-                            lastDesiredRPS = 0.0;
-                        }
+                        lastCameraDistance = vision.getTurretCameraDistanceToTarget();
                     }
                 }
             }
         }
 
         // ============================================================
-        //  STATE TRANSITIONS
+        //  Step 2: Moving shot compensation (runs every cycle)
+        //  Decomposes robot velocity into turret-relative radial/tangential,
+        //  then computes a lead angle offset and effective distance.
+        //  At rest (v=0): lead=0, effectiveDist=cameraDistance → standard shot.
         // ============================================================
-        double timeSinceTag = now - lastTagSeenTimeSec;
-        boolean tagFresh = timeSinceTag < TRACKING_PERSIST_SEC;
-        boolean tagRecent = timeSinceTag < COAST_TO_SEEK_SEC;
+        double leadOffsetDeg = 0.0;
+        double effectiveDist = lastCameraDistance;
 
+        if (MOVING_SHOT_ENABLED && lastCameraDistance > 0.5) {
+            var speeds = drivetrain.getState().Speeds;
+
+            // Turret aiming direction in WPILib convention (CCW+).
+            // Motor positive = CW, so negate for WPILib.
+            double turretDirRad = -turret.getTurretPosition().getRadians();
+            double aimCos = Math.cos(turretDirRad);
+            double aimSin = Math.sin(turretDirRad);
+
+            // ChassisSpeeds: vx = forward (+X), vy = left (+Y) — robot-relative
+            // Project onto turret aiming axis and its perpendicular
+            double vRadial = speeds.vxMetersPerSecond * aimCos
+                    + speeds.vyMetersPerSecond * aimSin;     // positive = approaching hub
+            double vTangential = -speeds.vxMetersPerSecond * aimSin
+                    + speeds.vyMetersPerSecond * aimCos;     // positive = moving left rel. to aim
+
+            double flightTime = lastCameraDistance / BALL_EXIT_SPEED_MPS;
+
+            // Turret lead angle: compensate for lateral ball drift during flight.
+            // Robot moves left (vTangential>0) → ball drifts left → aim turret RIGHT
+            // → tag appears LEFT of camera center → negative leadOffsetDeg.
+            // At steady state: visionTxDeg = leadOffsetDeg (negative) → turret right of tag ✓
+            leadOffsetDeg = -Math.toDegrees(
+                    Math.atan2(vTangential * flightTime, lastCameraDistance))
+                    * MOVING_SHOT_GAIN;
+
+            // Effective distance: if approaching hub, ball needs less energy.
+            effectiveDist = lastCameraDistance - vRadial * flightTime;
+            effectiveDist = MathUtil.clamp(effectiveDist, 1.0, 8.0);
+
+            robotSpeedMPS = Math.sqrt(
+                    speeds.vxMetersPerSecond * speeds.vxMetersPerSecond
+                    + speeds.vyMetersPerSecond * speeds.vyMetersPerSecond);
+        } else {
+            robotSpeedMPS = 0.0;
+        }
+
+        leadAngleDeg = leadOffsetDeg;
+        effectiveDistanceMeters = effectiveDist;
+        distanceToHubMeters = effectiveDist;
+
+        // ============================================================
+        //  Step 3: Compute adjusted tx and tracking velocity (every cycle)
+        //  Uses lead-compensated tx so the turret aims ahead of the target
+        //  when the robot is moving, and exactly at the target when stationary.
+        // ============================================================
+        double adjustedTx = visionTxDeg - leadOffsetDeg;
+        lastAdjustedTx = adjustedTx;
+
+        double timeSinceTag = now - lastTagSeenTimeSec;
+        boolean tagFresh = lastTagSeenTimeSec > 0 && timeSinceTag < TRACKING_PERSIST_SEC;
+        visionActive = tagFresh;
+
+        if (tagFresh) {
+            if (Math.abs(adjustedTx) > DEADBAND_DEG) {
+                double rawRPS = kTxToRPS * (-adjustedTx);
+                // Ensure minimum velocity to overcome turret friction/cable drag
+                if (Math.abs(rawRPS) < MIN_TRACKING_RPS) {
+                    rawRPS = Math.copySign(MIN_TRACKING_RPS, rawRPS);
+                }
+                lastDesiredRPS = MathUtil.clamp(rawRPS, -MAX_TRACKING_RPS, MAX_TRACKING_RPS);
+            } else {
+                lastDesiredRPS = 0.0;
+            }
+        }
+
+        // ============================================================
+        //  Step 4: State transitions
+        // ============================================================
         switch (currentState) {
-            case SEEKING:
-                // Any fresh tag → jump straight to TRACKING
+            case MANUAL:
                 if (tagFresh) {
                     currentState = AimState.TRACKING;
                 }
@@ -190,48 +263,39 @@ public class TurretAutoAimCommand extends Command {
 
             case TRACKING:
                 if (!tagFresh) {
-                    // Tag lost briefly → COASTING (hold position, don't jerk to odom)
-                    coastPositionRot = turret.getTurretMotor().getPosition().getValueAsDouble();
-                    currentState = AimState.COASTING;
+                    currentState = AimState.MANUAL;
                 }
                 break;
 
-            case COASTING:
-                if (tagFresh) {
-                    // Tag re-acquired → back to TRACKING (smooth, no jerk)
-                    currentState = AimState.TRACKING;
-                } else if (!tagRecent) {
-                    // Tag gone for >2s → give up, use odometry
-                    currentState = AimState.SEEKING;
-                }
-                break;
+            // SEEKING and COASTING commented out — not used in this architecture
+            // case SEEKING: ...
+            // case COASTING: ...
         }
         state = currentState.name();
-        coastHoldRot = coastPositionRot;
 
         // ============================================================
-        //  STATE EXECUTION
+        //  Step 5: State execution
         // ============================================================
         double turretPos = turret.getTurretMotor().getPosition().getValueAsDouble();
 
         switch (currentState) {
-            case SEEKING: {
-                // Odometry pre-aim via MotionMagic (Slot 0). Clamp to range.
-                double clampedSetpoint = MathUtil.clamp(odomSetpointRot,
-                        TurretConstants.TURRET_REVERSE_LIMIT, TurretConstants.TURRET_FORWARD_LIMIT);
-                turret.moveTurret(Rotations.of(clampedSetpoint));
+            case MANUAL: {
+                // Pass through operator joystick input
+                double input = MathUtil.applyDeadband(joystickSupplier.getAsDouble(), MANUAL_DEADBAND);
+                double clampedInput = MathUtil.clamp(input, -1, 1);
+                turret.setTurretVoltage(clampedInput);
                 commandedRPS = 0.0;
+                gyroFFVolts = 0.0;
                 break;
             }
 
             case TRACKING: {
-                // Velocity control proportional to camera tx error (Slot 1).
                 double desiredRPS = lastDesiredRPS;
 
                 // Gyro feedforward: counteract robot rotation
                 double robotYawRPS = drivetrain.getPigeon2()
                         .getAngularVelocityZWorld().getValueAsDouble() / 360.0;
-                gyroFFVolts = kGyroFF * (-robotYawRPS);
+                gyroFFVolts = kGyroFF * robotYawRPS;
 
                 // Soft-limit clamp: don't spin into a limit
                 if (turretPos > TurretConstants.TURRET_FORWARD_LIMIT - SOFT_LIMIT_MARGIN && desiredRPS > 0) {
@@ -244,18 +308,6 @@ public class TurretAutoAimCommand extends Command {
                 commandedRPS = desiredRPS;
                 turret.getTurretMotor().setControl(
                         trackingVelocityRequest.withVelocity(desiredRPS).withFeedForward(gyroFFVolts));
-                break;
-            }
-
-            case COASTING: {
-                // Hold the position we were at when the tag was lost.
-                // No jerk — camera stays pointed at where the tag was.
-                // Gyro FF keeps compensating for robot rotation while coasting.
-                double robotYawRPS = drivetrain.getPigeon2()
-                        .getAngularVelocityZWorld().getValueAsDouble() / 360.0;
-                double coastFF = kGyroFF * (-robotYawRPS);
-                turret.moveTurret(Rotations.of(coastPositionRot), coastFF);
-                commandedRPS = 0.0;
                 break;
             }
         }
@@ -274,11 +326,21 @@ public class TurretAutoAimCommand extends Command {
     // ================================================================
     //  PUBLIC ACCESSORS
     // ================================================================
+    /** Returns true when TRACKING and lead-compensated tx is within deadband. */
     public boolean isAimed() {
         if (currentState != AimState.TRACKING) return false;
-        return Math.abs(visionTxDeg) < DEADBAND_DEG;
+        return Math.abs(lastAdjustedTx) < DEADBAND_DEG;
     }
 
+    /** Returns true when the turret is in TRACKING state (camera sees hub tag). */
+    public boolean isTracking() {
+        return currentState == AimState.TRACKING;
+    }
+
+    /**
+     * Distance to hub in meters from camera measurement.
+     * Persists the last seen value after tag loss (stale but usable for mid-shot).
+     */
     public double getDistanceToHub() {
         return distanceToHubMeters;
     }

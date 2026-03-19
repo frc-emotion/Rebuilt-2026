@@ -70,9 +70,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             new SysIdRoutine.Config(
                     null, // Use default ramp rate (1 V/s)
                     Volts.of(4), // Reduce dynamic step voltage to 4 V to prevent brownout
-                    null, // Use default timeout (10 s)
-                    // Log state with SignalLogger class
-                    state -> SignalLogger.writeString("SysIdTranslation_State", state.toString())),
+                    null  // Use default timeout (10 s)
+                    // No custom state logger — uses WPILib DataLog (WPILOG) by default
+            ),
             new SysIdRoutine.Mechanism(
                     output -> setControl(m_translationCharacterization.withVolts(output)),
                     null,

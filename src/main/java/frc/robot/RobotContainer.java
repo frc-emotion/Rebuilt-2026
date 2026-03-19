@@ -29,7 +29,7 @@ import frc.robot.commands.intake.IntakeIrrigateCommand;
 import frc.robot.commands.intake.IntakeOutCommand;
 import frc.robot.commands.indexer.runIndexer;
 import frc.robot.commands.indexer.stopIndexer;
-import frc.robot.commands.turret.ManualTurretCommand;
+// import frc.robot.commands.turret.ManualTurretCommand; // replaced by unified TurretAutoAimCommand
 import frc.robot.generated.TunerConstants;
 import frc.robot.logging.FaultMonitor;
 import frc.robot.util.SuperstructureTuner;
@@ -46,12 +46,9 @@ import frc.robot.subsystems.Vision;
 public class RobotContainer {
 
         // ================================================================
-        //  ROBOT MODE — toggleable at runtime via operator left stick click
+        //  ROBOT MODE — unified: turret auto-switches between MANUAL and TRACKING
+        //  based on whether the turret camera sees a hub tag.
         // ================================================================
-        public enum RobotMode { MANUAL, FULL_VISION }
-
-        @Logged(importance = Logged.Importance.CRITICAL)
-        private RobotMode activeMode = RobotMode.MANUAL;
 
         // ================================================================
         //  DRIVE
@@ -86,7 +83,6 @@ public class RobotContainer {
         //  AUTO-AIM COMMANDS (created once, swapped as default on mode change)
         // ================================================================
         @Logged private final TurretAutoAimCommand visionAutoAim;
-        @NotLogged private final ManualTurretCommand manualTurret;
 
         // ================================================================
         //  LOGGING & TUNING
@@ -115,8 +111,7 @@ public class RobotContainer {
         public RobotContainer() {
                 edu.wpi.first.wpilibj.DriverStation.silenceJoystickConnectionWarning(true);
 
-                visionAutoAim = new TurretAutoAimCommand(drivetrain, vision, turret);
-                manualTurret = new ManualTurretCommand(turret, () -> operator.getRightX());
+                visionAutoAim = new TurretAutoAimCommand(drivetrain, vision, turret, () -> operator.getRightX());
 
                 // Hood default: always hold last commanded position via MotionMagic
                 hood.setDefaultCommand(hood.run(() ->
@@ -124,7 +119,7 @@ public class RobotContainer {
 
                 configureDriveBindings();
                 configureSharedBindings();
-                applyMode(activeMode);
+                turret.setDefaultCommand(visionAutoAim);
 
                 registerMotorsForFaultMonitoring();
                 tuner.setSubsystems(turret, hood, shooter, intake);
@@ -136,49 +131,26 @@ public class RobotContainer {
                 autoChooser = AutoBuilder.buildAutoChooser();
                 SmartDashboard.putData("Auto Chooser", autoChooser);
 
-                System.out.println("[STARTUP] Mode: " + activeMode);
+                System.out.println("[STARTUP] Turret unified command active (MANUAL/TRACKING)");
         }
 
         // ================================================================
-        //  VISION POSE ESTIMATION (called from Robot.robotPeriodic)
+        //  VISION POSE ESTIMATION — disabled, only turret cam active for tracking
         // ================================================================
         public boolean isVisionPoseEstimationEnabled() {
-                return activeMode == RobotMode.FULL_VISION;
+                return false;
         }
 
         public void updateVisionPoseEstimates() {
-                vision.getEstimatedPoseRight().ifPresent(est ->
-                        drivetrain.addVisionMeasurement(est.estimatedPose.toPose2d(),
-                                est.timestampSeconds, vision.getStdDevsRight()));
-                vision.getEstimatedPoseLeft().ifPresent(est ->
-                        drivetrain.addVisionMeasurement(est.estimatedPose.toPose2d(),
-                                est.timestampSeconds, vision.getStdDevsLeft()));
-                // Turret cam pose estimation DISABLED for isolation testing.
-                // Turret cam still provides tx for TRACKING — just not feeding pose.
-                // Re-enable once aaranc pose estimation is verified working correctly.
-                // vision.getEstimatedPoseTurret().ifPresent(est ->
-                //         drivetrain.addVisionMeasurement(est.estimatedPose.toPose2d(),
-                //                 est.timestampSeconds, vision.getStdDevsTurret()));
+                // All drivebase cameras disabled. Turret camera is used for
+                // turret tracking + distance only, not pose estimation.
+                // Re-enable here when drivebase cameras come back online.
         }
 
         // ================================================================
-        //  MODE SWITCHING — operator left stick click toggles modes
+        //  MODE SWITCHING — removed. Turret auto-switches MANUAL ↔ TRACKING
+        //  based on turret camera seeing a hub tag.
         // ================================================================
-        private void toggleMode() {
-                applyMode(activeMode == RobotMode.MANUAL ? RobotMode.FULL_VISION : RobotMode.MANUAL);
-        }
-
-        private void applyMode(RobotMode mode) {
-                activeMode = mode;
-                Command currentDefault = turret.getDefaultCommand();
-                if (currentDefault != null) currentDefault.cancel();
-
-                switch (mode) {
-                        case MANUAL      -> turret.setDefaultCommand(manualTurret);
-                        case FULL_VISION -> turret.setDefaultCommand(visionAutoAim);
-                }
-                System.out.println("[MODE] Switched to " + mode);
-        }
 
         // ================================================================
         //  DRIVE BINDINGS (always active)
@@ -211,6 +183,20 @@ public class RobotContainer {
                 }));
 
                 drivetrain.registerTelemetry(logger::telemeterize);
+
+                // -- SysId characterization (driver D-pad) — TEMPORARY, remove after tuning --
+                joystick.povUp().onTrue(Commands.runOnce(() -> System.out.println("[SYSID] D-pad UP pressed — starting Quasistatic Forward")));
+                joystick.povUp().whileTrue(drivetrain.sysIdQuasistatic(
+                        edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kForward));
+                joystick.povDown().onTrue(Commands.runOnce(() -> System.out.println("[SYSID] D-pad DOWN pressed — starting Quasistatic Reverse")));
+                joystick.povDown().whileTrue(drivetrain.sysIdQuasistatic(
+                        edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kReverse));
+                joystick.povRight().onTrue(Commands.runOnce(() -> System.out.println("[SYSID] D-pad RIGHT pressed — starting Dynamic Forward")));
+                joystick.povRight().whileTrue(drivetrain.sysIdDynamic(
+                        edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kForward));
+                joystick.povLeft().onTrue(Commands.runOnce(() -> System.out.println("[SYSID] D-pad LEFT pressed — starting Dynamic Reverse")));
+                joystick.povLeft().whileTrue(drivetrain.sysIdDynamic(
+                        edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kReverse));
         }
 
         // ================================================================
@@ -236,14 +222,16 @@ public class RobotContainer {
                 }
 
                 // -- SHOOT (right trigger): ShootCommand handles hood + shooter + indexers --
+                // If turret is TRACKING a hub tag → interp-table shot (distance from camera)
+                // If turret is in MANUAL (no tag) → fixed RPS, hood to 0
                 operator.rightTrigger().whileTrue(Commands.defer(() -> {
-                        if (activeMode == RobotMode.MANUAL) {
-                                return new ShootCommand(indexer, hood, shooter, MANUAL_SHOOTER_RPS);
-                        } else {
+                        if (visionAutoAim.isTracking()) {
                                 return new ShootCommand(indexer, hood, shooter,
                                         visionAutoAim::getDistanceToHub,
                                         visionAutoAim.getCalculator(),
                                         visionAutoAim::isAimed);
+                        } else {
+                                return new ShootCommand(indexer, hood, shooter, MANUAL_SHOOTER_RPS);
                         }
                 }, Set.of(indexer, hood, shooter)));
 
@@ -265,8 +253,8 @@ public class RobotContainer {
                         System.out.println("[TURRET] Zeroed at current position");
                 }));
 
-                // -- Toggle mode (left stick click) --
-                operator.leftStick().onTrue(Commands.runOnce(this::toggleMode));
+                // -- Left stick click: unused (mode toggle removed) --
+                // operator.leftStick().onTrue(Commands.runOnce(this::toggleMode));
 
                 // -- Turret setpoints (D-pad) — interrupt default while held --
                 operator.povUp().whileTrue(turret.run(
@@ -370,11 +358,11 @@ public class RobotContainer {
                                 () -> shooter.setShooterSpeed(RotationsPerSecond.of(MANUAL_SHOOTER_RPS)),
                                 shooter));
 
-                // -- Mode control (enable vision auto-aim — add at start of auto) --
+                // -- Mode control: no-ops (unified command auto-switches) --
                 NamedCommands.registerCommand("enableVision",
-                        Commands.runOnce(() -> applyMode(RobotMode.FULL_VISION)));
+                        Commands.none());
                 NamedCommands.registerCommand("disableVision",
-                        Commands.runOnce(() -> applyMode(RobotMode.MANUAL)));
+                        Commands.none());
 
                 // -- Feed indexers, gated on shooter speed (only requires indexer).
                 //    Horizontal + vertical stage balls immediately.

@@ -47,6 +47,7 @@ public class Intake extends SubsystemBase {
 
         // Disable all default status signals, then enable only what we need
         ParentDevice.optimizeBusUtilizationForAll(intakeMotor, rollerMotor, pivotEncoder);
+        pivotEncoder.getPosition().setUpdateFrequency(100);        // RemoteCANcoder source — TalonFX needs this to read remote sensor
         intakeMotor.getPosition().setUpdateFrequency(50);          // MotionMagic feedback
         intakeMotor.getSupplyCurrent().setUpdateFrequency(4);      // telemetry
         rollerMotor.getVelocity().setUpdateFrequency(10);          // telemetry

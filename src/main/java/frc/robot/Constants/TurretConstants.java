@@ -55,7 +55,7 @@ public final class TurretConstants {
         SHOOTER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Coast;
 
         SHOOTER_CONFIG.CurrentLimits.StatorCurrentLimitEnable = true;
-        SHOOTER_CONFIG.CurrentLimits.StatorCurrentLimit = 80.0;
+        SHOOTER_CONFIG.CurrentLimits.StatorCurrentLimit = 120.0;
         SHOOTER_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
         SHOOTER_CONFIG.CurrentLimits.SupplyCurrentLimit = 60.0;
         SHOOTER_CONFIG.Slot0.kG = 0.0;

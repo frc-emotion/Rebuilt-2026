@@ -18,12 +18,12 @@ public final class IntakeConstants {
     public static final int intakePivotEncoderID = 22;
     public static final double IntakeCurrentSpike = 20;
 
-    public static final Angle INTAKE_IN_ANGLE = Rotations.of(-0.52);
-    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(-0.16);
+    public static final Angle INTAKE_IN_ANGLE = Rotations.of(0.3);
+    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.653);
 
     // Soft limits — prevent motor from commanding past safe range
-    public static final double INTAKE_REVERSE_SOFT_LIMIT = -0.55;  // slightly before stowed (margin)
-    public static final double INTAKE_FORWARD_SOFT_LIMIT = -0.15;  // slightly past deployed (margin)
+    public static final double INTAKE_REVERSE_SOFT_LIMIT = 0.25;   // slightly before stowed (margin)
+    public static final double INTAKE_FORWARD_SOFT_LIMIT = 0.70;   // slightly past deployed (margin)
 
     public static final Angle TOLERANCE = Degrees.of(5);
 
@@ -37,9 +37,9 @@ public final class IntakeConstants {
         INTAKE_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         INTAKE_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         INTAKE_CONFIG.CurrentLimits.StatorCurrentLimitEnable = true;
-        INTAKE_CONFIG.CurrentLimits.StatorCurrentLimit = 60.0;
+        INTAKE_CONFIG.CurrentLimits.StatorCurrentLimit = 80.0;
         INTAKE_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
-        INTAKE_CONFIG.CurrentLimits.SupplyCurrentLimit = 40.0;
+        INTAKE_CONFIG.CurrentLimits.SupplyCurrentLimit = 30.0;
 
         INTAKE_CONFIG.Slot0.kG = 0;
         INTAKE_CONFIG.Slot0.kS = 0;

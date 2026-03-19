@@ -14,6 +14,7 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -440,6 +441,24 @@ public class Vision extends SubsystemBase {
     public double getTurretCameraTargetYaw() {
         if (latestResultTurret != null && latestResultTurret.hasTargets()) {
             return latestResultTurret.getBestTarget().getYaw();
+        }
+        return 0.0;
+    }
+
+    /**
+     * Gets the distance to the best target seen by the turret camera.
+     * Uses the 3D norm of the camera-to-target transform, minus a bumper
+     * offset (3 inches) to approximate bumper-to-hub distance for the
+     * interpolation tables.
+     *
+     * @return distance in meters (0 if no target visible)
+     */
+    public double getTurretCameraDistanceToTarget() {
+        if (latestResultTurret != null && latestResultTurret.hasTargets()) {
+            double dist3d = latestResultTurret.getBestTarget()
+                    .getBestCameraToTarget().getTranslation().getNorm();
+            // Subtract 3" bumper offset to approximate bumper-to-hub distance
+            return Math.max(0.0, dist3d - Units.inchesToMeters(3.0));
         }
         return 0.0;
     }

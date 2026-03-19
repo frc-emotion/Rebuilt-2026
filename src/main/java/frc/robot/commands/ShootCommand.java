@@ -76,6 +76,7 @@ public class ShootCommand extends Command {
             shooter.setShooterSpeed(RotationsPerSecond.of(calculator.getFlywheelRPS(dist)));
         } else {
             shooter.setShooterSpeed(RotationsPerSecond.of(manualShooterRPS));
+            hood.setHoodAngle(Rotations.of(0.0)); // hood flat in manual mode
         }
 
         if (isAimed.getAsBoolean()) {
