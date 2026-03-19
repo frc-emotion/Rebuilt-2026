@@ -10,6 +10,7 @@ This folder contains every test needed to get the robot's hub-targeting and shoo
 |---|---|---|---|
 | 0 | `00-HARDWARE-CHECK.md` | All motors, cameras, CAN devices online | 10 min |
 | 1 | `01-TURRET-POSITION.md` | Turret PID tuning — setpoints, soft limits, response | 20 min |
+| 1B | `01B-POWER-AND-CURRENT.md` | Current draw, brownout test, breaker vs supply limits | 10 min |
 | 2 | `02-HOOD-AND-SHOOTER.md` | Hood position + shooter velocity PID tuning | 15 min |
 | 3 | `03-CAMERA-BASICS.md` | Turret camera sees AprilTags, latency is acceptable | 10 min |
 | 4 | `04-TAG-ID-VERIFY.md` | Confirm DS-facing hub tag IDs on the physical field | 15 min |
