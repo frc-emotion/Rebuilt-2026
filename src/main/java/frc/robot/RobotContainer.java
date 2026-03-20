@@ -24,6 +24,7 @@ import frc.robot.Constants.IndexerConstants.IndexerType;
 import frc.robot.commands.CalibrationShootCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.TurretAutoAimCommand;
+import frc.robot.commands.climb.VoltageClimbCommand;
 import frc.robot.commands.intake.IntakeInCommand;
 import frc.robot.commands.intake.IntakeIrrigateCommand;
 import frc.robot.commands.intake.IntakeOutCommand;
@@ -77,7 +78,7 @@ public class RobotContainer {
         public final Turret turret = new Turret(mechanismBus);
         public final Hood hood = new Hood(mechanismBus);
         public final Shooter shooter = new Shooter(mechanismBus);
-        @NotLogged public final Climb climb = null;
+        public final Climb climb = new Climb(mechanismBus);
 
         // ================================================================
         //  AUTO-AIM COMMANDS (created once, swapped as default on mode change)
@@ -121,6 +122,7 @@ public class RobotContainer {
 
                 configureDriveBindings();
                 configureSharedBindings();
+                configureClimbBindings();
                 turret.setDefaultCommand(visionAutoAim);
 
                 registerMotorsForFaultMonitoring();
@@ -190,6 +192,22 @@ public class RobotContainer {
         }
 
         // ================================================================
+        //  CLIMB BINDINGS (driver controller)
+        //
+        //  Default command: VoltageClimbCommand reads driver triggers.
+        //    Right trigger (held) = climb UP   (CCW, positive voltage)
+        //    Left trigger  (held) = climb DOWN (CW, negative voltage)
+        //    Both released         = gravity comp only (holds position via brake)
+        // ================================================================
+        private void configureClimbBindings() {
+                if (climb != null) {
+                        // Combined triggers: right = up (+), left = down (-)
+                        climb.setDefaultCommand(new VoltageClimbCommand(climb,
+                                () -> joystick.getRightTriggerAxis() - joystick.getLeftTriggerAxis()));
+                }
+        }
+
+        // ================================================================
         //  SHARED BINDINGS (active in ALL modes)
         //
         //  A          = intake toggle
@@ -243,8 +261,8 @@ public class RobotContainer {
                         System.out.println("[TURRET] Zeroed at current position");
                 }));
 
-                // -- Calibration shoot (operator left stick click): hold to shoot with Elastic-tunable values --
-                operator.leftStick().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer));
+                // -- Calibration shoot (driver B): hold to shoot with Elastic-tunable values --
+                joystick.b().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer));
 
                 // -- Turret setpoints (D-pad) — interrupt default while held --
                 operator.povUp().whileTrue(turret.run(
@@ -297,10 +315,9 @@ public class RobotContainer {
                 if (turret != null) faultMonitor.register(CANID.TURRET_ROTATION, turret.getTurretMotor());
                 if (hood != null)   faultMonitor.register(CANID.TURRET_ANGLE, hood.getHoodMotor());
                 if (shooter != null) faultMonitor.register(CANID.SHOOTER_WHEEL, shooter.getShooterMotor());
-                // if (climb != null) {
-                //     faultMonitor.register(CANID.CLIMB_LEADER, climb.getLeaderMotor());
-                //     faultMonitor.register(CANID.CLIMB_FOLLOWER, climb.getFollowerMotor());
-                // }
+                if (climb != null) {
+                    faultMonitor.register(CANID.CLIMB_FOLLOWER, climb.getClimbMotor());
+                }
         }
 
         // ================================================================

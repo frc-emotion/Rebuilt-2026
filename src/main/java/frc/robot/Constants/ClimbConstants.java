@@ -14,8 +14,9 @@ import com.ctre.phoenix6.signals.GravityTypeValue;
 public final class ClimbConstants {
     // IDs - Defined locally here to match subsystem style, mirrored in CANID for
     // documentation
-    public static final int CLIMB_LEADER_ID = 40;
-    public static final int CLIMB_FOLLOWER_ID = 41;
+    public static final int CLIMB_LEADER_ID = 40;   // old leader (removed)
+    public static final int CLIMB_FOLLOWER_ID = 41;  // old follower
+    public static final int CLIMB_MOTOR_ID = 41;     // single climb motor
 
     public static final double CLIMB_GEAR_RATIO = 1.0;
 
@@ -27,6 +28,11 @@ public final class ClimbConstants {
     public static final double TOLERANCE = 0.5;
 
     public static final double manual_kG = 0.5;
+
+    // Manual voltage climb constants
+    public static final double MANUAL_CLIMB_VOLTAGE = 6.0;  // Peak voltage for manual up/down
+    public static final double MANUAL_CLIMB_DEADBAND = 0.1;  // Joystick deadband
+    public static final double CLIMB_GRAVITY_COMP_VOLTS = 0.5; // Gravity compensation (holds against gravity when idle)
 
     public static final TalonFXConfiguration CLIMB_CONFIG = new TalonFXConfiguration();
 
@@ -60,11 +66,9 @@ public final class ClimbConstants {
         // Feedback
         CLIMB_CONFIG.Feedback.SensorToMechanismRatio = 1.0;
 
-        // Soft Limits (Safety)
-        CLIMB_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitThreshold = MAX_HEIGHT_ROTATIONS;
-        CLIMB_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        CLIMB_CONFIG.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0.0;
-        CLIMB_CONFIG.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+        // Soft Limits (Disabled — manual voltage control, operator stops manually)
+        CLIMB_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitEnable = false;
+        CLIMB_CONFIG.SoftwareLimitSwitch.ReverseSoftLimitEnable = false;
 
         // Motion Magic PID Slots
         // Slot 0: Position Control
@@ -83,8 +87,9 @@ public final class ClimbConstants {
         // CLIMB_CONFIG.MotionMagic.MotionMagicAcceleration = 160.0; // RPS^2
         // CLIMB_CONFIG.MotionMagic.MotionMagicJerk = 1600.0; // Smoothing
 
-        CLIMB_CONFIG.Feedback.FeedbackRemoteSensorID = CLIMB_ENCODER_ID;
-        CLIMB_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
+        // CANcoder removed — using rotor sensor for feedback
+        // CLIMB_CONFIG.Feedback.FeedbackRemoteSensorID = CLIMB_ENCODER_ID;
+        // CLIMB_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
         CLIMB_CONFIG.Feedback.SensorToMechanismRatio = CLIMB_GEAR_RATIO;
         CLIMB_CONFIG.Feedback.RotorToSensorRatio = 1.0;
     }
