@@ -74,8 +74,8 @@ public class Robot extends TimedRobot {
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run();
 
-        // Hot-reload any constants changed in Elastic dashboard
-        m_robotContainer.tuner.checkForChanges();
+        // SuperstructureTuner REMOVED — PID values come from TurretConstants/IntakeConstants directly
+        // m_robotContainer.tuner.checkForChanges();
 
         if (m_robotContainer.isVisionPoseEstimationEnabled()) {
             m_robotContainer.updateVisionPoseEstimates();

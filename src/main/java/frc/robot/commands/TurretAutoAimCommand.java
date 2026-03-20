@@ -4,6 +4,7 @@ import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.VisionConstants;
@@ -13,6 +14,7 @@ import frc.robot.subsystems.Vision;
 import frc.robot.util.TurretAimingCalculator;
 
 import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.Degrees;
 
 /**
  * Simplified turret command with 2-state machine:
@@ -222,7 +224,7 @@ public class TurretAutoAimCommand extends Command {
                     // in Clockwise_Positive motor convention) to stay aimed.
                     double gyroRateDegPerSec = drivetrain.getPigeon2()
                             .getAngularVelocityZWorld().getValueAsDouble();
-                    gyroFeedforwardRot = (gyroRateDegPerSec / 360.0) * LOOP_PERIOD_SEC;
+                    gyroFeedforwardRot = -(gyroRateDegPerSec / 360.0) * LOOP_PERIOD_SEC;
                     persistentTargetRot += gyroFeedforwardRot;
                 }
 
@@ -230,20 +232,20 @@ public class TurretAutoAimCommand extends Command {
                 // persistentTargetRot accumulates corrections — it is NOT
                 // re-read from the motor each cycle, preventing the base
                 // from shifting while the motor is still catching up.
+                Angle newSetpoint = Rotations.of(turretPos);
                 if (freshVisionThisCycle && Math.abs(visionTxDeg) > DEADBAND_DEG) {
                     double txOffsetRot = -(visionTxDeg / 360.0) * TX_TO_ROT_GAIN;
                     persistentTargetRot += txOffsetRot;
+                    newSetpoint = newSetpoint.plus(Degrees.of(visionTxDeg));
                 }
 
                 persistentTargetRot = MathUtil.clamp(persistentTargetRot,
                         frc.robot.Constants.TurretConstants.TURRET_REVERSE_LIMIT,
                         frc.robot.Constants.TurretConstants.TURRET_FORWARD_LIMIT);
 
-                targetPositionRot = persistentTargetRot;
-
                 // MotionMagic handles acceleration, deceleration, and holding.
                 // Commands every cycle so turret holds position between frames.
-                turret.moveTurret(Rotations.of(persistentTargetRot));
+                turret.moveTurret(newSetpoint);
                 break;
             }
         }

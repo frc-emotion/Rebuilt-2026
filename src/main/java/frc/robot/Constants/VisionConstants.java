@@ -45,7 +45,7 @@ public final class VisionConstants {
 
     /** When true, turret auto-aim tracks ANY visible AprilTag (not just hub tags).
      *  Set to false for competition so the turret only locks onto the hub. */
-    public static final boolean BENCH_TEST_ANY_TAG = false;
+    public static final boolean BENCH_TEST_ANY_TAG = true; // PIT TESTING — set false before matches!
 
     /** Which camera name is physically on the turret. Change to match your wiring. */
     public static final String TURRET_CAM_NAME = "mugilanr"; // "aaranc"

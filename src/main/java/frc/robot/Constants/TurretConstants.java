@@ -27,8 +27,8 @@ public final class TurretConstants {
     // Boot position = turret facing straight forward = 0.0.
     // Old absolute: forward=0.08, reverse=-0.50, fwd_limit=0.28
     // New zeroed:   forward=0.00, reverse=-0.58, fwd_limit=0.20
-    public static final double TURRET_REVERSE_LIMIT = -0.58;
-    public static final double TURRET_FORWARD_LIMIT = 0.20;
+    public static final double TURRET_REVERSE_LIMIT = -0.8;
+    public static final double TURRET_FORWARD_LIMIT = 0.05;
     // Turret straight-forward is now 0.0 (zeroed at boot).
     public static final double TURRET_FORWARD_POSITION = 0.0;
 
@@ -81,12 +81,12 @@ public final class TurretConstants {
         TURRET_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
         TURRET_CONFIG.CurrentLimits.SupplyCurrentLimit = 40.0;
         TURRET_CONFIG.Slot0.kG = 0.0;
-        TURRET_CONFIG.Slot0.kS = 0.0;
+        TURRET_CONFIG.Slot0.kS = 0.1;
         TURRET_CONFIG.Slot0.kV = 0.0;
         TURRET_CONFIG.Slot0.kA = 0.0;
-        TURRET_CONFIG.Slot0.kP = 20;
+        TURRET_CONFIG.Slot0.kP = 30;
         TURRET_CONFIG.Slot0.kI = 5;
-        TURRET_CONFIG.Slot0.kD = 0;
+        TURRET_CONFIG.Slot0.kD = 0.00;
 
         TURRET_CONFIG.Voltage.PeakForwardVoltage = 10.0;
         TURRET_CONFIG.Voltage.PeakReverseVoltage = -10.0;
@@ -95,9 +95,9 @@ public final class TurretConstants {
         TURRET_CONFIG.Feedback.SensorToMechanismRatio = TURRET_GEAR_RATIO; // 5.08 rotor turns per turret turn
 
         // MotionMagic constraints — prevents turret from slamming. TODO: tune on robot.
-        TURRET_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 1.0; // RPS
-        TURRET_CONFIG.MotionMagic.MotionMagicAcceleration = 4.0; // RPS^2
-        TURRET_CONFIG.MotionMagic.MotionMagicJerk = 40.0; // Smoothing
+        TURRET_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 0.5; // RPS
+        TURRET_CONFIG.MotionMagic.MotionMagicAcceleration = 2.0; // RPS^2
+        TURRET_CONFIG.MotionMagic.MotionMagicJerk = 20.0; // Smoothing
 
         TURRET_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         TURRET_CONFIG.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;

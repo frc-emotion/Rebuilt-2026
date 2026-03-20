@@ -32,7 +32,7 @@ import frc.robot.commands.indexer.stopIndexer;
 // import frc.robot.commands.turret.ManualTurretCommand; // replaced by unified TurretAutoAimCommand
 import frc.robot.generated.TunerConstants;
 import frc.robot.logging.FaultMonitor;
-import frc.robot.util.SuperstructureTuner;
+// import frc.robot.util.SuperstructureTuner; // REMOVED — tuner defaults conflicted with TurretConstants
 import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Indexer;
@@ -89,7 +89,7 @@ public class RobotContainer {
         // ================================================================
         private final Telemetry logger = new Telemetry(MaxSpeed);
         @Logged public final FaultMonitor faultMonitor = new FaultMonitor();
-        @Logged public final SuperstructureTuner tuner = new SuperstructureTuner();
+        // @Logged public final SuperstructureTuner tuner = new SuperstructureTuner(); // REMOVED — use TurretConstants directly
         @NotLogged private final SendableChooser<Command> autoChooser;
 
         // ================================================================
@@ -97,11 +97,13 @@ public class RobotContainer {
         // ================================================================
         private static final double MANUAL_SHOOTER_RPS = 40.0;
 
-        // Turret setpoints (D-pad): 0=forward, spread across range [-0.58, 0.20]
-        private static final double TURRET_POS_CENTER = 0.0;
-        private static final double TURRET_POS_RIGHT  = 0.15;
-        private static final double TURRET_POS_LEFT   = -0.20;
-        private static final double TURRET_POS_FAR_LEFT = -0.45;
+        // Turret setpoints (D-pad): clean degree values for testing
+        // Soft limits: -0.74 (reverse) to +0.05 (forward) — 270° range, mostly leftward
+        // Up=0° (forward), Right=+18° CW (near fwd limit), Left=-180° (backward), Down=-90° (perpendicular left)
+        private static final double TURRET_POS_CENTER   =  0.0;     //   0° (forward)
+        private static final double TURRET_POS_RIGHT    =  0.05;    // +18° CW  (forward limit)
+        private static final double TURRET_POS_LEFT     = -0.500;   // -180° CCW (straight backward)
+        private static final double TURRET_POS_FAR_LEFT = -0.250;   // -90° CCW (perpendicular left)
 
         // Hood setpoints (X/Y/B): range [0.0, 0.08]
         private static final double HOOD_POS_DOWN = 0.005;
@@ -122,7 +124,7 @@ public class RobotContainer {
                 turret.setDefaultCommand(visionAutoAim);
 
                 registerMotorsForFaultMonitoring();
-                tuner.setSubsystems(turret, hood, shooter, intake);
+                // tuner.setSubsystems(turret, hood, shooter, intake); // REMOVED — SuperstructureTuner disabled
                 vision.setTurretAngleSupplier(turret::getTurretPosition);
 
                 // PathPlanner: configure path-following, register named commands, build auto chooser
@@ -168,8 +170,8 @@ public class RobotContainer {
                 joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
                 joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-                // -- Calibration shoot (driver B): hold to shoot with Elastic-tunable values --
-                joystick.b().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer));
+                // -- Calibration shoot REMOVED from driver B — accidental press takes over all mechanisms --
+                // joystick.b().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer));
 
                 // -- Seed pose facing hub (driver Y): sets odometry so hub is directly ahead --
                 // Places robot ~4m in front of red hub center, facing +X (toward hub).
@@ -184,19 +186,7 @@ public class RobotContainer {
 
                 drivetrain.registerTelemetry(logger::telemeterize);
 
-                // -- SysId characterization (driver D-pad) — TEMPORARY, remove after tuning --
-                joystick.povUp().onTrue(Commands.runOnce(() -> System.out.println("[SYSID] D-pad UP pressed — starting Quasistatic Forward")));
-                joystick.povUp().whileTrue(drivetrain.sysIdQuasistatic(
-                        edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kForward));
-                joystick.povDown().onTrue(Commands.runOnce(() -> System.out.println("[SYSID] D-pad DOWN pressed — starting Quasistatic Reverse")));
-                joystick.povDown().whileTrue(drivetrain.sysIdQuasistatic(
-                        edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kReverse));
-                joystick.povRight().onTrue(Commands.runOnce(() -> System.out.println("[SYSID] D-pad RIGHT pressed — starting Dynamic Forward")));
-                joystick.povRight().whileTrue(drivetrain.sysIdDynamic(
-                        edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kForward));
-                joystick.povLeft().onTrue(Commands.runOnce(() -> System.out.println("[SYSID] D-pad LEFT pressed — starting Dynamic Reverse")));
-                joystick.povLeft().whileTrue(drivetrain.sysIdDynamic(
-                        edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kReverse));
+                // -- SysId characterization REMOVED — was on driver D-pad, dangerous during matches --
         }
 
         // ================================================================
@@ -253,8 +243,8 @@ public class RobotContainer {
                         System.out.println("[TURRET] Zeroed at current position");
                 }));
 
-                // -- Left stick click: unused (mode toggle removed) --
-                // operator.leftStick().onTrue(Commands.runOnce(this::toggleMode));
+                // -- Calibration shoot (operator left stick click): hold to shoot with Elastic-tunable values --
+                operator.leftStick().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer));
 
                 // -- Turret setpoints (D-pad) — interrupt default while held --
                 operator.povUp().whileTrue(turret.run(
