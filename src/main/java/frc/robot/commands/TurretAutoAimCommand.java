@@ -4,7 +4,11 @@ import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.VisionConstants;
@@ -63,6 +67,10 @@ public class TurretAutoAimCommand extends Command {
     @Logged(importance = Logged.Importance.CRITICAL) private double currentPositionRot = 0.0;
     @Logged(importance = Logged.Importance.CRITICAL) private double turretErrorRot = 0.0;
     @Logged(importance = Logged.Importance.DEBUG) private double gyroFeedforwardRot = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double leadAngleRot = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double effectiveDistanceMeters = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double shooterRPSOffset = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private double robotSpeedMPS = 0.0;
 
     // ================================================================
     //  TUNING CONSTANTS
@@ -83,11 +91,29 @@ public class TurretAutoAimCommand extends Command {
     // Manual joystick deadband
     private static final double MANUAL_DEADBAND = 0.08;
 
+    // Bench test: bypass aim gate so indexers fire even when not tracking/aimed.
+    // SET TO FALSE FOR COMPETITION.
+    private static final boolean BENCH_TEST_BYPASS_AIM_GATE = false;
+
     // Gyro feedforward: when the robot rotates, pre-compensate the turret
     // so vision only needs to correct the residual error.
     // Set to false to disable during initial testing.
     private static final boolean GYRO_FF_ENABLED = false;
     private static final double LOOP_PERIOD_SEC = 0.02; // 50 Hz main loop
+
+    // ── Shoot-on-the-move (SOTM) constants ──
+    // Master enable: set false to revert to stationary-only aiming
+    private static final boolean SOTM_ENABLED = false;
+    // Flywheel wheel radius for ball exit speed estimation
+    private static final double FLYWHEEL_RADIUS_METERS = edu.wpi.first.math.util.Units.inchesToMeters(2.0);
+    // Fraction of flywheel surface speed transferred to the ball
+    private static final double BALL_EXIT_EFFICIENCY = 0.7;
+    // Disable SOTM compensation above this robot speed (m/s) — too unreliable
+    private static final double MAX_SOTM_SPEED_MPS = 2.0;
+    // Relaxed aim tolerance for moving shots (degrees)
+    private static final double SOTM_AIM_TOLERANCE_DEG = 3.0;
+    // Estimated vision pipeline latency for latency compensation (seconds)
+    private static final double VISION_LATENCY_SEC = 0.05;
 
     // ================================================================
     //  INTERNAL STATE
@@ -239,12 +265,26 @@ public class TurretAutoAimCommand extends Command {
                     newSetpoint = newSetpoint.plus(Degrees.of(visionTxDeg));
                 }
 
+                // --- Shoot-on-the-move: effective distance + shooter compensation ---
+                // Lead angle is NOT applied to the turret here (SOTM_ENABLED = false).
+                // When enabled, lead will be added to newSetpoint in turret-frame degrees.
+                leadAngleRot = 0.0;
+                effectiveDistanceMeters = distanceToHubMeters;
+                shooterRPSOffset = 0.0;
+                robotSpeedMPS = 0.0;
+                if (SOTM_ENABLED && drivetrain != null && distanceToHubMeters > 0.5) {
+                    computeSOTMCompensation(turretPos);
+                    // Add lead angle to newSetpoint in degrees (same frame as tx)
+                    newSetpoint = newSetpoint.plus(Degrees.of(leadAngleRot * 360.0));
+                }
+
                 persistentTargetRot = MathUtil.clamp(persistentTargetRot,
                         frc.robot.Constants.TurretConstants.TURRET_REVERSE_LIMIT,
                         frc.robot.Constants.TurretConstants.TURRET_FORWARD_LIMIT);
 
                 // MotionMagic handles acceleration, deceleration, and holding.
                 // Commands every cycle so turret holds position between frames.
+                targetPositionRot = turretPos;
                 turret.moveTurret(newSetpoint);
                 break;
             }
@@ -266,10 +306,13 @@ public class TurretAutoAimCommand extends Command {
     // ================================================================
     //  PUBLIC ACCESSORS
     // ================================================================
-    /** Returns true when TRACKING and tx is within deadband. */
+    /** Returns true when TRACKING and tx is within deadband, or always true in bench test mode. */
     public boolean isAimed() {
+        if (BENCH_TEST_BYPASS_AIM_GATE) return true;
         if (currentState != AimState.TRACKING) return false;
-        return Math.abs(visionTxDeg) < DEADBAND_DEG;
+        double tolerance = (SOTM_ENABLED && robotSpeedMPS > 0.3)
+                ? SOTM_AIM_TOLERANCE_DEG : DEADBAND_DEG;
+        return Math.abs(visionTxDeg) < tolerance;
     }
 
     /** Returns true when the turret is in TRACKING state (camera sees hub tag). */
@@ -291,5 +334,84 @@ public class TurretAutoAimCommand extends Command {
 
     public AimState getCurrentState() {
         return currentState;
+    }
+
+    /**
+     * Effective distance to hub, compensated for robot radial velocity when SOTM is active.
+     * Use this instead of getDistanceToHub() for interp table lookups in ShootCommand.
+     */
+    public double getEffectiveDistance() {
+        return effectiveDistanceMeters;
+    }
+
+    /** Shooter RPS offset from SOTM. Add to base interp table value. */
+    public double getShooterRPSOffset() {
+        return shooterRPSOffset;
+    }
+
+    /** Whether SOTM compensation is currently active. */
+    public boolean isSOTMActive() {
+        return SOTM_ENABLED && robotSpeedMPS > 0.3 && currentState == AimState.TRACKING;
+    }
+
+    // ================================================================
+    //  SOTM COMPUTATION
+    // ================================================================
+    /**
+     * Computes lead angle, effective distance, and shooter speed offset
+     * based on robot velocity relative to the hub.
+     */
+    private void computeSOTMCompensation(double turretPosRot) {
+        // Get robot velocity in field frame
+        var driveState = drivetrain.getState();
+        if (driveState == null || driveState.Speeds == null || driveState.Pose == null) return;
+        ChassisSpeeds robotSpeeds = driveState.Speeds;
+        Rotation2d heading = driveState.Pose.getRotation();
+        ChassisSpeeds fieldSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(robotSpeeds, heading);
+
+        double vx = fieldSpeeds.vxMetersPerSecond;
+        double vy = fieldSpeeds.vyMetersPerSecond;
+        robotSpeedMPS = Math.hypot(vx, vy);
+
+        // Skip if robot is barely moving or too fast
+        if (robotSpeedMPS < 0.3 || robotSpeedMPS > MAX_SOTM_SPEED_MPS) {
+            return;
+        }
+
+        // Vector from robot to hub center (field frame)
+        Translation2d hubCenter = calculator.getTargetHubCenter();
+        if (hubCenter == null) return;
+        Translation2d robotPos = drivetrain.getState().Pose.getTranslation();
+        Translation2d robotToHub = hubCenter.minus(robotPos);
+        double dist = robotToHub.getNorm();
+        if (dist < 0.5) return;
+
+        // Unit vector toward hub
+        Translation2d unitToHub = robotToHub.div(dist);
+
+        // Decompose velocity into radial (toward hub) and tangential components
+        double vRadial = vx * unitToHub.getX() + vy * unitToHub.getY();
+        double vTangential = -vx * unitToHub.getY() + vy * unitToHub.getX();
+
+        // Estimate ball flight time using camera distance (matches interp table calibration)
+        double baseShooterRPS = calculator.getFlywheelRPS(distanceToHubMeters);
+        double ballExitSpeedMPS = baseShooterRPS * 2.0 * Math.PI * FLYWHEEL_RADIUS_METERS * BALL_EXIT_EFFICIENCY;
+        if (ballExitSpeedMPS < 1.0) return;
+        double flightTimeSec = distanceToHubMeters / ballExitSpeedMPS;
+
+        // Lead angle: aim ahead so ball arrives at hub
+        double leadAngleRad = Math.atan2(vTangential * flightTimeSec, dist);
+        // Convert to turret rotations (turret gear ratio handled by motor config)
+        leadAngleRot = leadAngleRad / (2.0 * Math.PI);
+
+        // Effective distance: use camera distance (matches interp table calibration)
+        // and adjust for radial motion during flight
+        effectiveDistanceMeters = distanceToHubMeters - vRadial * flightTimeSec;
+        effectiveDistanceMeters = Math.max(effectiveDistanceMeters, 1.0);
+
+        // Shooter speed offset: compensate for radial velocity
+        // If approaching hub, ball needs less speed; if retreating, more
+        double wheelCircumference = 2.0 * Math.PI * FLYWHEEL_RADIUS_METERS;
+        shooterRPSOffset = -(vRadial / wheelCircumference) / BALL_EXIT_EFFICIENCY;
     }
 }

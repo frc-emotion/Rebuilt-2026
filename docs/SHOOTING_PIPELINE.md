@@ -432,6 +432,66 @@ When the operator releases the trigger, `ShootCommand.end()` stops the shooter a
 
 ---
 
+## Shoot-On-The-Move (SOTM)
+
+**Status**: Implemented but disabled (`SOTM_ENABLED = false` in `TurretAutoAimCommand.java:101`).
+Enable only after gyro feedforward and stationary tracking are verified on the robot.
+
+### Prerequisites
+1. Gyro feedforward verified (`GYRO_FF_ENABLED = true`, sign confirmed)
+2. Stationary shooting works reliably at 2-5m
+3. Odometry pose is roughly correct (within ~0.5m)
+
+### How It Works (3-Layer Compensation)
+
+```
+Layer 1: LEAD ANGLE (turret aims ahead of hub)
+  Robot tangential velocity × flight time → atan2 → turret rotation offset
+  Applied as delta to persistentTargetRot each cycle
+
+Layer 2: EFFECTIVE DISTANCE (adjusts interp table input)
+  Camera distance - (radial velocity × flight time)
+  Fed to hood angle + shooter RPS interp tables
+
+Layer 3: SHOOTER SPEED OFFSET (compensates ball exit velocity)
+  -(radial velocity / wheel circumference) / efficiency → RPS offset
+  Added to base interp table RPS in ShootCommand
+```
+
+### Key Constants (`TurretAutoAimCommand.java`)
+| Constant | Value | Purpose |
+|---|---|---|
+| `SOTM_ENABLED` | false | Master enable |
+| `FLYWHEEL_RADIUS_METERS` | 2" (0.0508m) | Ball exit speed estimation |
+| `BALL_EXIT_EFFICIENCY` | 0.7 | Fraction of wheel speed transferred to ball |
+| `MAX_SOTM_SPEED_MPS` | 2.0 m/s | Disable SOTM above this robot speed |
+| `SOTM_AIM_TOLERANCE_DEG` | 3.0° | Relaxed aim gate during movement (vs 1.0° stationary) |
+| `VISION_LATENCY_SEC` | 0.05s | Reserved for future latency compensation |
+
+### SOTM Telemetry
+| Field | What it shows |
+|---|---|
+| `leadAngleRot` | Current turret lead offset (rotations) |
+| `effectiveDistanceMeters` | Distance fed to interp tables (compensated for radial velocity) |
+| `shooterRPSOffset` | RPS adjustment added to base interp value |
+| `robotSpeedMPS` | Robot speed in field frame |
+
+### Sign Verification (Critical)
+If balls miss **ahead** of the hub during strafing, the lead angle sign is wrong.
+Fix: negate `vTangential` in `computeSOTMCompensation()` line 392.
+
+### Activation Conditions
+SOTM compensation is active when ALL of:
+- `SOTM_ENABLED = true`
+- Robot is TRACKING a hub tag
+- `robotSpeedMPS` is between 0.3 and 2.0 m/s
+- `distanceToHubMeters` > 0.5m
+- Drivetrain state is available
+
+When inactive, `effectiveDistanceMeters` equals `distanceToHubMeters` and `shooterRPSOffset` is 0.
+
+---
+
 ## What Can Go Wrong (and what telemetry tells you)
 
 | Problem | Telemetry symptom | Root cause |

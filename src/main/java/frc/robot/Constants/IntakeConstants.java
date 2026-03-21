@@ -18,12 +18,12 @@ public final class IntakeConstants {
     public static final int intakePivotEncoderID = 22;
     public static final double IntakeCurrentSpike = 20;
 
-    public static final Angle INTAKE_IN_ANGLE = Rotations.of(0.3);
-    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.653);
+    public static final Angle INTAKE_IN_ANGLE = Rotations.of(-0.7);
+    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(-0.38);
 
     // Soft limits — prevent motor from commanding past safe range
-    public static final double INTAKE_REVERSE_SOFT_LIMIT = 0.25;   // slightly before stowed (margin)
-    public static final double INTAKE_FORWARD_SOFT_LIMIT = 0.70;   // slightly past deployed (margin)
+    public static final double INTAKE_REVERSE_SOFT_LIMIT = -0.7;   // slightly before stowed (margin)
+    public static final double INTAKE_FORWARD_SOFT_LIMIT = -0.38;   // slightly past deployed (margin)
 
     public static final Angle TOLERANCE = Degrees.of(5);
 
@@ -53,8 +53,8 @@ public final class IntakeConstants {
         INTAKE_CONFIG.Voltage.PeakReverseVoltage = -10.0;
 
         // MotionMagic constraints — prevents slapdown from slamming. TODO: tune on robot.
-        INTAKE_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 2.0; // RPS
-        INTAKE_CONFIG.MotionMagic.MotionMagicAcceleration = 4.0;   // RPS^2
+        INTAKE_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 0.3;//2.0; // RPS
+        INTAKE_CONFIG.MotionMagic.MotionMagicAcceleration = 0.6;//4.0;   // RPS^2
         INTAKE_CONFIG.MotionMagic.MotionMagicJerk = 40.0;          // Smoothing
 
         INTAKE_CONFIG.Feedback.FeedbackRemoteSensorID = intakePivotEncoderID;

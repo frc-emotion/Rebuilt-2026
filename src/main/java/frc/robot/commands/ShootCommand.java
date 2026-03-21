@@ -31,6 +31,7 @@ public class ShootCommand extends Command {
     private final Shooter shooter;
     private final BooleanSupplier isAimed;
     private final DoubleSupplier distanceSupplier;
+    private final DoubleSupplier shooterRPSOffsetSupplier;
     private final TurretAimingCalculator calculator;
     private final double manualShooterRPS;
     private final boolean useInterpTables;
@@ -42,12 +43,25 @@ public class ShootCommand extends Command {
                         DoubleSupplier distanceSupplier,
                         TurretAimingCalculator calculator,
                         BooleanSupplier isAimed) {
+        this(indexer, hood, shooter, distanceSupplier, calculator, isAimed, () -> 0.0);
+    }
+
+    /**
+     * Auto-aim shoot with SOTM: hood + shooter from interpolation tables,
+     * shooter RPS adjusted by SOTM offset, indexers gated on isAimed.
+     */
+    public ShootCommand(Indexer indexer, Hood hood, Shooter shooter,
+                        DoubleSupplier distanceSupplier,
+                        TurretAimingCalculator calculator,
+                        BooleanSupplier isAimed,
+                        DoubleSupplier shooterRPSOffsetSupplier) {
         this.indexer = indexer;
         this.hood = hood;
         this.shooter = shooter;
         this.distanceSupplier = distanceSupplier;
         this.calculator = calculator;
         this.isAimed = isAimed;
+        this.shooterRPSOffsetSupplier = shooterRPSOffsetSupplier;
         this.manualShooterRPS = 0;
         this.useInterpTables = true;
         addRequirements(indexer, hood, shooter);
@@ -63,6 +77,7 @@ public class ShootCommand extends Command {
         this.distanceSupplier = () -> 0;
         this.calculator = null;
         this.isAimed = () -> true;
+        this.shooterRPSOffsetSupplier = () -> 0.0;
         this.manualShooterRPS = shooterRPS;
         this.useInterpTables = false;
         addRequirements(indexer, hood, shooter);
@@ -73,7 +88,9 @@ public class ShootCommand extends Command {
         if (useInterpTables) {
             double dist = distanceSupplier.getAsDouble();
             hood.setHoodAngle(Rotations.of(calculator.getHoodAngleRot(dist)));
-            shooter.setShooterSpeed(RotationsPerSecond.of(calculator.getFlywheelRPS(dist)));
+            double baseRPS = calculator.getFlywheelRPS(dist);
+            double adjustedRPS = baseRPS + shooterRPSOffsetSupplier.getAsDouble();
+            shooter.setShooterSpeed(RotationsPerSecond.of(adjustedRPS));
         } else {
             shooter.setShooterSpeed(RotationsPerSecond.of(manualShooterRPS));
             hood.setHoodAngle(Rotations.of(0.0)); // hood flat in manual mode

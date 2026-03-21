@@ -235,9 +235,10 @@ public class RobotContainer {
                 operator.rightTrigger().whileTrue(Commands.defer(() -> {
                         if (visionAutoAim.isTracking()) {
                                 return new ShootCommand(indexer, hood, shooter,
-                                        visionAutoAim::getDistanceToHub,
+                                        visionAutoAim::getEffectiveDistance,
                                         visionAutoAim.getCalculator(),
-                                        visionAutoAim::isAimed);
+                                        visionAutoAim::isAimed,
+                                        visionAutoAim::getShooterRPSOffset);
                         } else {
                                 return new ShootCommand(indexer, hood, shooter, MANUAL_SHOOTER_RPS);
                         }
@@ -351,9 +352,10 @@ public class RobotContainer {
                 // -- Shooting (vision-based: uses turret auto-aim distance + interp tables) --
                 NamedCommands.registerCommand("visionShoot",
                         new ShootCommand(indexer, hood, shooter,
-                                visionAutoAim::getDistanceToHub,
+                                visionAutoAim::getEffectiveDistance,
                                 visionAutoAim.getCalculator(),
-                                visionAutoAim::isAimed));
+                                visionAutoAim::isAimed,
+                                visionAutoAim::getShooterRPSOffset));
 
                 // -- Shooting (manual: fixed speed, no aim gate) --
                 NamedCommands.registerCommand("manualShoot",
@@ -420,10 +422,12 @@ public class RobotContainer {
                         new edu.wpi.first.wpilibj2.command.FunctionalCommand(
                                 () -> {},
                                 () -> {
-                                        double dist = visionAutoAim.getDistanceToHub();
+                                        double dist = visionAutoAim.getEffectiveDistance();
                                         var calc = visionAutoAim.getCalculator();
                                         hood.setHoodAngle(Rotations.of(calc.getHoodAngleRot(dist)));
-                                        shooter.setShooterSpeed(RotationsPerSecond.of(calc.getFlywheelRPS(dist)));
+                                        double baseRPS = calc.getFlywheelRPS(dist);
+                                        shooter.setShooterSpeed(RotationsPerSecond.of(
+                                                baseRPS + visionAutoAim.getShooterRPSOffset()));
                                         // Stage balls with lower indexers immediately
                                         indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
                                         indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
