@@ -5,11 +5,13 @@
   "pathFolders": [
     "Blue to Depot",
     "Blue to Neutral",
-    "Blue to Outpost"
+    "Blue to Outpost",
+    "Manual"
   ],
   "autoFolders": [
     "Blue Depot_Outpost",
-    "Blue Outpost_Depot"
+    "Blue Outpost_Depot",
+    "Manual"
   ],
   "defaultMaxVel": 3.0,
   "defaultMaxAccel": 3.0,
