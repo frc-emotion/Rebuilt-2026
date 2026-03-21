@@ -59,7 +59,7 @@
     },
     {
       "name": "DeployIntakeEvent",
-      "waypointRelativePos": 0.733628978779841,
+      "waypointRelativePos": 0.7068755191029901,
       "endWaypointRelativePos": null,
       "command": {
         "type": "named",
