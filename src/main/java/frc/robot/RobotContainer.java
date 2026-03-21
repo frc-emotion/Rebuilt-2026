@@ -26,10 +26,7 @@ import frc.robot.commands.ShootCommand;
 import frc.robot.commands.TurretAutoAimCommand;
 import frc.robot.commands.climb.VoltageClimbCommand;
 import frc.robot.commands.intake.IntakeInCommand;
-import frc.robot.commands.intake.IntakeIrrigateCommand;
 import frc.robot.commands.intake.IntakeOutCommand;
-import frc.robot.commands.indexer.runIndexer;
-import frc.robot.commands.indexer.stopIndexer;
 // import frc.robot.commands.turret.ManualTurretCommand; // replaced by unified TurretAutoAimCommand
 import frc.robot.generated.TunerConstants;
 import frc.robot.logging.FaultMonitor;
@@ -325,124 +322,22 @@ public class RobotContainer {
         //  NAMED COMMANDS (for PathPlanner event markers)
         // ================================================================
         private void registerNamedCommands() {
-                // -- Intake control --
-                NamedCommands.registerCommand("deployIntake",
+                // -- Intake --
+                NamedCommands.registerCommand("intakeOut",
                         new IntakeOutCommand(intake));
-                NamedCommands.registerCommand("stowIntake",
+                NamedCommands.registerCommand("intakeIn",
                         new IntakeInCommand(intake));
 
-                // -- Indexer control --
-                NamedCommands.registerCommand("runIndexers",
-                        new runIndexer(indexer));
-                NamedCommands.registerCommand("stopIndexers",
-                        new stopIndexer(indexer));
-
-                // -- Combo: deploy intake + run indexers (for collecting while driving) --
-                NamedCommands.registerCommand("startIntaking",
-                        Commands.sequence(
-                                new IntakeOutCommand(intake),
-                                new runIndexer(indexer)));
-
-                // -- Combo: stow intake + stop indexers --
-                NamedCommands.registerCommand("stopIntaking",
-                        Commands.parallel(
-                                new IntakeInCommand(intake),
-                                new stopIndexer(indexer)));
-
-                // -- Shooting (vision-based: uses turret auto-aim distance + interp tables) --
-                NamedCommands.registerCommand("visionShoot",
+                // -- Shoot (vision): hood + shooter from interp tables via turret auto-aim,
+                //    all 3 indexers fire only when aimed AND shooter at setpoint --
+                NamedCommands.registerCommand("shoot",
                         new ShootCommand(indexer, hood, shooter,
                                 visionAutoAim::getEffectiveDistance,
                                 visionAutoAim.getCalculator(),
                                 visionAutoAim::isAimed,
                                 visionAutoAim::getShooterRPSOffset));
 
-                // -- Shooting (manual: fixed speed, no aim gate) --
-                NamedCommands.registerCommand("manualShoot",
-                        new ShootCommand(indexer, hood, shooter, MANUAL_SHOOTER_RPS));
-
-                // -- Pre-spin shooter flywheel (while driving to shooting position) --
-                NamedCommands.registerCommand("spinUpShooter",
-                        Commands.run(
-                                () -> shooter.setShooterSpeed(RotationsPerSecond.of(MANUAL_SHOOTER_RPS)),
-                                shooter));
-
-                // -- Mode control: no-ops (unified command auto-switches) --
-                NamedCommands.registerCommand("enableVision",
-                        Commands.none());
-                NamedCommands.registerCommand("disableVision",
-                        Commands.none());
-
-                // -- Feed indexers, gated on shooter speed (only requires indexer).
-                //    Horizontal + vertical stage balls immediately.
-                //    Upward (feeder) ONLY runs when shooter.atShooterSetpoint() is true.
-                //    If shooter speed dips after a shot, upward pauses until recovered.
-                //    Use alongside spinUpShooter — they don't conflict (different subsystems). --
-                NamedCommands.registerCommand("feedWhenReady",
-                        new edu.wpi.first.wpilibj2.command.FunctionalCommand(
-                                () -> {},
-                                () -> {
-                                        indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
-                                        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
-                                        if (shooter.atShooterSetpoint()) {
-                                                indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
-                                        } else {
-                                                indexer.setIndexerSpeed(0, IndexerType.UPWARD);
-                                        }
-                                },
-                                interrupted -> indexer.stop(),
-                                () -> false,
-                                indexer));
-
-                // -- Continuous shoot (manual speed): stages balls with lower indexers,
-                //    only feeds upward indexer into flywheel once shooter is at speed.
-                //    Runs until interrupted — handles multiple game pieces. --
-                NamedCommands.registerCommand("revThenShoot",
-                        new edu.wpi.first.wpilibj2.command.FunctionalCommand(
-                                () -> {},
-                                () -> {
-                                        shooter.setShooterSpeed(RotationsPerSecond.of(MANUAL_SHOOTER_RPS));
-                                        // Stage balls with lower indexers immediately
-                                        indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
-                                        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
-                                        // Only feed into flywheel when at speed
-                                        if (shooter.atShooterSetpoint()) {
-                                                indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
-                                        } else {
-                                                indexer.setIndexerSpeed(0, IndexerType.UPWARD);
-                                        }
-                                },
-                                interrupted -> { shooter.stop(); indexer.stop(); },
-                                () -> false,
-                                shooter, indexer));
-
-                // -- Continuous shoot (vision): hood + shooter from interp tables,
-                //    stages balls with lower indexers, feeds upward only when aimed + at speed. --
-                NamedCommands.registerCommand("visionRevThenShoot",
-                        new edu.wpi.first.wpilibj2.command.FunctionalCommand(
-                                () -> {},
-                                () -> {
-                                        double dist = visionAutoAim.getEffectiveDistance();
-                                        var calc = visionAutoAim.getCalculator();
-                                        hood.setHoodAngle(Rotations.of(calc.getHoodAngleRot(dist)));
-                                        double baseRPS = calc.getFlywheelRPS(dist);
-                                        shooter.setShooterSpeed(RotationsPerSecond.of(
-                                                baseRPS + visionAutoAim.getShooterRPSOffset()));
-                                        // Stage balls with lower indexers immediately
-                                        indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
-                                        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
-                                        // Only feed into flywheel when aimed AND at speed
-                                        if (shooter.atShooterSetpoint() && visionAutoAim.isAimed()) {
-                                                indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
-                                        } else {
-                                                indexer.setIndexerSpeed(0, IndexerType.UPWARD);
-                                        }
-                                },
-                                interrupted -> { shooter.stop(); indexer.stop(); },
-                                () -> false,
-                                hood, shooter, indexer));
-
-                // -- Stop all mechanisms --
+                // -- Safety: stop all mechanisms --
                 NamedCommands.registerCommand("stopAll",
                         Commands.parallel(
                                 Commands.runOnce(() -> shooter.stop(), shooter),

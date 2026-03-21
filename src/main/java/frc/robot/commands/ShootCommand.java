@@ -96,14 +96,14 @@ public class ShootCommand extends Command {
             hood.setHoodAngle(Rotations.of(0.0)); // hood flat in manual mode
         }
 
-        if (isAimed.getAsBoolean()) {
+        if (isAimed.getAsBoolean() && shooter.atShooterSetpoint()) {
             indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
             indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
-            if (shooter.atShooterSetpoint()) {
-                indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
-            } else {
-                indexer.setIndexerSpeed(0, IndexerType.UPWARD);
-            }
+            indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
+        } else {
+            indexer.setIndexerSpeed(0, IndexerType.HORIZONTAL);
+            indexer.setIndexerSpeed(0, IndexerType.VERTICAL);
+            indexer.setIndexerSpeed(0, IndexerType.UPWARD);
         }
     }
 
