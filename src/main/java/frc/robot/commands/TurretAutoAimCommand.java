@@ -83,7 +83,7 @@ public class TurretAutoAimCommand extends Command {
     private static final double TX_TO_ROT_GAIN = 1.0;
 
     // Don't correct below this (prevents chasing noise near center)
-    private static final double DEADBAND_DEG = 1.0;
+    private static final double DEADBAND_DEG = 6.7;
 
     // TRACKING → MANUAL: persist tracking this long after last fresh frame.
     private static final double TRACKING_PERSIST_SEC = 0.15;
@@ -196,6 +196,9 @@ public class TurretAutoAimCommand extends Command {
 
         // Distance for interp tables (hood/shooter)
         distanceToHubMeters = lastCameraDistance;
+        // Update effective distance unconditionally so ShootCommand always
+        // has a valid value, even when turret is in MANUAL state.
+        effectiveDistanceMeters = distanceToHubMeters;
 
         // ============================================================
         //  Step 2: Determine if tag is fresh

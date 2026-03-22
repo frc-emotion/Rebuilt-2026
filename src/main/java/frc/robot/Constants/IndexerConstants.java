@@ -19,10 +19,10 @@ public final class IndexerConstants {
 
     public static final TalonFXConfiguration HORIZONTAL_INDEXER_CONFIG = new TalonFXConfiguration();
 
-    public static final double HORIZONTAL_INDEXER_SPEED = 80;
+    public static final double HORIZONTAL_INDEXER_SPEED = 100;
 
     static{
-        HORIZONTAL_INDEXER_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        HORIZONTAL_INDEXER_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         HORIZONTAL_INDEXER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         HORIZONTAL_INDEXER_CONFIG.CurrentLimits.StatorCurrentLimitEnable = true;
         HORIZONTAL_INDEXER_CONFIG.CurrentLimits.StatorCurrentLimit = 60.0;
@@ -40,7 +40,7 @@ public final class IndexerConstants {
 
     public static final TalonFXConfiguration VERTICAL_INDEXER_CONFIG = new TalonFXConfiguration();
 
-    public static final double VERTICAL_INDEXER_SPEED = 50;
+    public static final double VERTICAL_INDEXER_SPEED = 75;
 
     static{
         VERTICAL_INDEXER_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
@@ -59,7 +59,7 @@ public final class IndexerConstants {
 
     public static final TalonFXConfiguration UPWARD_INDEXER_CONFIG = new TalonFXConfiguration();
 
-    public static final double UPWARD_INDEXER_SPEED = 80;
+    public static final double UPWARD_INDEXER_SPEED = 100;
 
     static{
         UPWARD_INDEXER_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;

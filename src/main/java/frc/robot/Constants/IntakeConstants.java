@@ -18,14 +18,16 @@ public final class IntakeConstants {
     public static final int intakePivotEncoderID = 22;
     public static final double IntakeCurrentSpike = 20;
 
-    public static final Angle INTAKE_IN_ANGLE = Rotations.of(-0.7);
-    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(-0.38);
+    public static final Angle INTAKE_IN_ANGLE = Rotations.of(0.46);
+    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.82);
 
     // Soft limits — prevent motor from commanding past safe range
-    public static final double INTAKE_REVERSE_SOFT_LIMIT = -0.7;   // slightly before stowed (margin)
-    public static final double INTAKE_FORWARD_SOFT_LIMIT = -0.38;   // slightly past deployed (margin)
+    public static final double INTAKE_REVERSE_SOFT_LIMIT = 0.44;    // hard safety wall — past stow target
+    public static final double INTAKE_OVERTRAVEL_THRESHOLD = 0.458;  // if past this (toward reverse), recovery kicks in
+    public static final double INTAKE_FORWARD_SOFT_LIMIT = 0.84;    // past deploy target (forward direction)
 
-    public static final Angle TOLERANCE = Degrees.of(5);
+    public static final Angle TOLERANCE = Degrees.of(5);          // default (used for stow)
+    public static final Angle DEPLOY_TOLERANCE = Degrees.of(10);   // looser — rollers start sooner on deploy
 
     // If pivot is more than this angle away from INTAKE_IN_ANGLE (toward deployed), intake is considered "out"
     public static final double INTAKE_OUT_THRESHOLD_ROT = 5.0 / 360.0; // 5 degrees in rotations
@@ -47,7 +49,7 @@ public final class IntakeConstants {
         INTAKE_CONFIG.Slot0.kA = 0.0;
         INTAKE_CONFIG.Slot0.kP = 13;
         INTAKE_CONFIG.Slot0.kI = 0.0;
-        INTAKE_CONFIG.Slot0.kD = 0.0;
+        INTAKE_CONFIG.Slot0.kD = 0.5; // TODO: tune on robot — resists velocity overshoot at stow
 
         INTAKE_CONFIG.Voltage.PeakForwardVoltage = 10.0;
         INTAKE_CONFIG.Voltage.PeakReverseVoltage = -10.0;
@@ -69,7 +71,7 @@ public final class IntakeConstants {
         INTAKE_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitThreshold = INTAKE_FORWARD_SOFT_LIMIT;
     }
 
-    public static final double INTAKE_ROLLER_VELOCITY = 55;
+    public static final double INTAKE_ROLLER_VELOCITY = 57;
 
     public static final TalonFXConfiguration ROLLER_CONFIG = new TalonFXConfiguration();
 

@@ -54,7 +54,7 @@ public class RobotContainer {
         private final double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
         private final double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
         private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-                        .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1)
+                        .withDeadband(MaxSpeed * 0.05).withRotationalDeadband(MaxAngularRate * 0.1)
                         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
         private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
 
@@ -89,11 +89,6 @@ public class RobotContainer {
         @Logged public final FaultMonitor faultMonitor = new FaultMonitor();
         // @Logged public final SuperstructureTuner tuner = new SuperstructureTuner(); // REMOVED — use TurretConstants directly
         @NotLogged private final SendableChooser<Command> autoChooser;
-
-        // ================================================================
-        //  MANUAL MODE CONSTANTS
-        // ================================================================
-        private static final double MANUAL_SHOOTER_RPS = 40.0;
 
         // Turret setpoints (D-pad): clean degree values for testing
         // Soft limits: -0.74 (reverse) to +0.05 (forward) — 270° range, mostly leftward
@@ -220,25 +215,21 @@ public class RobotContainer {
         private void configureSharedBindings() {
                 // -- Intake toggle (A) --
                 if (intake != null) {
-                        operator.a().onTrue(Commands.defer(() -> {
-                                if (intake.isOut()) return new IntakeInCommand(intake);
-                                else return new IntakeOutCommand(intake);
-                        }, Set.of(intake)));
+                        operator.a().toggleOnTrue(new IntakeOutCommand(intake));
                 }
 
                 // -- SHOOT (right trigger): ShootCommand handles hood + shooter + indexers --
-                // If turret is TRACKING a hub tag → interp-table shot (distance from camera)
-                // If turret is in MANUAL (no tag) → fixed RPS, hood to 0
+                // Always use interp-table ShootCommand so hood/shooter adjust with
+                // distance even if turret transitions between MANUAL and TRACKING
+                // mid-shot. getEffectiveDistance() persists the last seen camera
+                // distance, so hood still gets a valid setpoint after brief tag loss.
+                // Falls back to minimum-range values if no tag has ever been seen (dist ≈ 0).
                 operator.rightTrigger().whileTrue(Commands.defer(() -> {
-                        if (visionAutoAim.isTracking()) {
-                                return new ShootCommand(indexer, hood, shooter,
-                                        visionAutoAim::getEffectiveDistance,
-                                        visionAutoAim.getCalculator(),
-                                        visionAutoAim::isAimed,
-                                        visionAutoAim::getShooterRPSOffset);
-                        } else {
-                                return new ShootCommand(indexer, hood, shooter, MANUAL_SHOOTER_RPS);
-                        }
+                        return new ShootCommand(indexer, hood, shooter,
+                                visionAutoAim::getEffectiveDistance,
+                                visionAutoAim.getCalculator(),
+                                visionAutoAim::isAimed,
+                                visionAutoAim::getShooterRPSOffset);
                 }, Set.of(indexer, hood, shooter)));
 
                 // -- Vertical indexer only (left trigger) --

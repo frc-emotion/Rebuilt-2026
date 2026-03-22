@@ -156,22 +156,44 @@ public final class VisionConstants {
             ),
             new Rotation3d(
                     0, // Roll: 0°
-                    Units.degreesToRadians(-15), // Pitch: tilted up slightly to see hub
+                    Units.degreesToRadians(10), // Pitch: +10° = nose UP (confirmed: getPitch is negative for above-camera tags)
                     0 // Yaw: 0° (points forward along turret)
             ));
 
-    /** Height of the turret camera lens from the floor in meters */
-    public static final double CAM_TURRET_HEIGHT_METERS = Units.inchesToMeters(16.0);
+    /** Height of the turret camera lens from the floor in meters (measured on robot) */
+    public static final double CAM_TURRET_HEIGHT_METERS = Units.inchesToMeters(26.5);
+
+    // ==================
+    // ★★★ TURRET CAMERA DISTANCE CALIBRATION ★★★
+    // ==================
+    // These 2 constants control the trig distance formula.
+    // If distance reads wrong, adjust TURRET_CAM_TILT_DEG.
+    //
+    // QUICK CALIBRATION (5 min in pit):
+    //   1. Place robot so bumper is exactly 2m from the AprilTag (tape measure).
+    //   2. Aim turret at the tag. Read "targetPitchDeg" from Elastic telemetry.
+    //   3. Compute:  tilt = targetPitchDeg - degrees(atan(0.451 / (2.0 - 0.356)))
+    //              = targetPitchDeg - 15.3
+    //   4. Put that number here and redeploy.
+    //
+    // If distance is too HIGH → make this value MORE negative.
+    // If distance is too LOW  → make this value LESS negative.
+    // If distance is 0        → this value is not negative enough (or no tag visible).
+
+    /**
+     * Camera tilt in degrees. Negative = camera tilted UP from horizontal.
+     * Your camera is aimed ABOVE the horizon, so this is negative.
+     * This is the single most important constant for distance accuracy.
+     */
+    public static final double TURRET_CAM_TILT_DEG = -10.0;
 
     /**
      * Horizontal offset from turret camera to front bumper along the shooting axis.
      * Added to the camera's horizontal distance to approximate bumper-to-hub distance
      * (which is how the interpolation table was calibrated).
-     *
-     * PLACEHOLDER — measure on robot: distance from camera lens to front bumper
-     * along the turret's forward axis when turret is aimed at hub.
+     * Measure on robot: distance from camera lens to front bumper edge.
      */
-    public static final double CAMERA_TO_BUMPER_OFFSET_METERS = Units.inchesToMeters(20.0);
+    public static final double CAMERA_TO_BUMPER_OFFSET_METERS = Units.inchesToMeters(14.0);
 
     // ==================
     // HUB TARGETING CONFIGURATION

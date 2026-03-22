@@ -157,6 +157,10 @@ public class Vision extends SubsystemBase {
     @Logged(importance = Logged.Importance.CRITICAL) private double cameraToTargetX = 0.0;
     @Logged(importance = Logged.Importance.CRITICAL) private double cameraToTargetY = 0.0;
     @Logged(importance = Logged.Importance.CRITICAL) private double cameraToTargetZ = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double trigDistMeters = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double solvePnpDistMeters = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double targetPitchDeg = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double trigAngleDeg = 0.0;
     @Logged(importance = Logged.Importance.CRITICAL) private double visionLatencyMs = 0.0;
     @Logged(importance = Logged.Importance.CRITICAL) private double timeSinceLastFrameMs = 0.0;
 
@@ -463,12 +467,41 @@ public class Vision extends SubsystemBase {
      * converted to an approximate bumper-to-hub ground distance for the
      * interpolation tables.
      *
-     * <p>Conversion: extract horizontal distance (ignore Z/height), then add
-     * a constant offset to translate from camera position to front bumper.
+     * <p>Uses trig from getPitch() — works in 2D mode (no PV camera
+     * calibration needed). Accuracy depends on TURRET_CAM_TILT_DEG
+     * matching the physical camera mount angle.
+     *
+     * <p>Formula: horizDist = heightDiff / tan(getPitch() - cameraTilt)
      *
      * @return bumper-to-hub ground distance in meters (0 if no target visible)
      */
     public double getTurretCameraDistanceToTarget() {
+        if (latestResultTurret != null && latestResultTurret.hasTargets()) {
+            var best = latestResultTurret.getBestTarget();
+            double pitchDeg = best.getPitch(); // positive = target above crosshair
+            double tiltDeg = VisionConstants.TURRET_CAM_TILT_DEG;
+            double trueAngleDeg = pitchDeg - tiltDeg;
+
+            // Log for diagnostics (visible in Elastic)
+            trigAngleDeg = trueAngleDeg;
+
+            if (trueAngleDeg < 0.5) return 0.0; // tag at or below horizontal
+
+            double tagHeight = VisionConstants.getTagHeight(best.getFiducialId());
+            double camHeight = VisionConstants.CAM_TURRET_HEIGHT_METERS;
+            double horizDist = (tagHeight - camHeight) / Math.tan(Math.toRadians(trueAngleDeg));
+            if (horizDist < 0) return 0.0;
+
+            return horizDist + VisionConstants.CAMERA_TO_BUMPER_OFFSET_METERS;
+        }
+        return 0.0;
+    }
+
+    /**
+     * DIAGNOSTIC ONLY — SolvePNP distance. Requires 3D camera calibration
+     * in PhotonVision. Returns ~0.36 (bumper offset only) if uncalibrated.
+     */
+    public double getTurretCameraDistanceSolvePNP() {
         if (latestResultTurret != null && latestResultTurret.hasTargets()) {
             Translation3d camToTag = latestResultTurret.getBestTarget()
                     .getBestCameraToTarget().getTranslation();
@@ -494,6 +527,10 @@ public class Vision extends SubsystemBase {
             horizontalCameraDist = Math.sqrt(camToTag.getX() * camToTag.getX()
                     + camToTag.getY() * camToTag.getY());
             correctedBumperDist = horizontalCameraDist + VisionConstants.CAMERA_TO_BUMPER_OFFSET_METERS;
+            // Primary distance (trig) vs diagnostic SolvePNP (stale if uncalibrated)
+            trigDistMeters = getTurretCameraDistanceToTarget();
+            solvePnpDistMeters = getTurretCameraDistanceSolvePNP();
+            targetPitchDeg = latestResultTurret.getBestTarget().getPitch();
         }
         // Latency: time since last fresh turret frame
         if (turretResultTimestamp > 0) {

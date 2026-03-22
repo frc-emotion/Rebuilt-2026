@@ -6,11 +6,13 @@
     "Blue to Depot",
     "Blue to Neutral",
     "Blue to Outpost",
+    "Blue to center",
     "Manual"
   ],
   "autoFolders": [
     "Blue Depot_Outpost",
     "Blue Outpost_Depot",
+    "Blue Center Shoot",
     "Manual"
   ],
   "defaultMaxVel": 3.0,

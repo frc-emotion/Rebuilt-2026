@@ -42,11 +42,12 @@ public final class TurretConstants {
     public static final double HOOD_REVERSE_HARD_STOP = 0.0;
     public static final double HOOD_FORWARD_HARD_STOP = 0.08;
 
-    public static final double shooterTolerance = 2.0; // RPS — prevents flicker at edge of PID settling band
+    public static final double shooterTolerance = 5; // RPS — prevents flicker at edge of PID settling band
     public static final double turretTolerance = 0.005; // ~1.8° — tight enough for shooting
     public static final double hoodTolerance = 0.005; // ~1.8° — matches turret tolerance
 
     public static final double MAX_SHOOTER_RPS = 400;
+    public static final double SHOOTER_RPS = 55;
 
     public static TalonFXConfiguration SHOOTER_CONFIG = new TalonFXConfiguration();
 

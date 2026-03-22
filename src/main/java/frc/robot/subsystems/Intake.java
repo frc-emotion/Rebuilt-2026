@@ -32,6 +32,7 @@ public class Intake extends SubsystemBase {
     @Logged(importance = Logged.Importance.DEBUG) private double pivotPositionRot = 0.0;
     @Logged(importance = Logged.Importance.DEBUG) private double rollerVelocityRPS = 0.0;
     @Logged(importance = Logged.Importance.DEBUG) private double pivotCurrentAmps = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private boolean overtravelRecovery = false;
 
     public Intake(CANBus canBus) {
         intakeMotor = new TalonFX(IntakeConstants.intakeMotorID, canBus);
@@ -51,6 +52,8 @@ public class Intake extends SubsystemBase {
         intakeMotor.getPosition().setUpdateFrequency(50);          // MotionMagic feedback
         intakeMotor.getSupplyCurrent().setUpdateFrequency(4);      // telemetry
         rollerMotor.getVelocity().setUpdateFrequency(10);          // telemetry
+
+        
     }
 
     @Override
@@ -60,6 +63,18 @@ public class Intake extends SubsystemBase {
                 + IntakeConstants.INTAKE_OUT_THRESHOLD_ROT;
         rollerVelocityRPS = rollerMotor.getVelocity().getValueAsDouble();
         pivotCurrentAmps = intakeMotor.getSupplyCurrent().getValueAsDouble();
+
+        // Over-travel recovery: if external forces (robot movement, collisions) push
+        // the intake past the safe stow zone, actively re-command the stow position
+        // so the PID fights back before the mechanism mechanically jams.
+        // ONLY runs when we're trying to stow — never blocks a deploy command.
+        boolean tryingToStow = Math.abs(currentSetpoint.in(Rotations) - IntakeConstants.INTAKE_IN_ANGLE.in(Rotations)) < 0.01;
+        if (tryingToStow && pivotPositionRot < IntakeConstants.INTAKE_OVERTRAVEL_THRESHOLD) {
+            intakeMotor.setControl(intakeMotionRequest.withPosition(IntakeConstants.INTAKE_IN_ANGLE));
+            overtravelRecovery = true;
+        } else {
+            overtravelRecovery = false;
+        }
     }
 
     private void configurePivotEncoder() {
@@ -113,9 +128,11 @@ public class Intake extends SubsystemBase {
     }
 
     public boolean atSetpoint(){
+        return atSetpoint(IntakeConstants.TOLERANCE);
+    }
 
-        return Math.abs(intakeMotor.getPosition().getValueAsDouble() - currentSetpoint.in(Rotations)) < IntakeConstants.TOLERANCE.in(Rotations);
-
+    public boolean atSetpoint(Angle tolerance){
+        return Math.abs(intakeMotor.getPosition().getValueAsDouble() - currentSetpoint.in(Rotations)) < tolerance.in(Rotations);
     }
 
     // ==================

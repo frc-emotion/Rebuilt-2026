@@ -7,6 +7,7 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.IndexerConstants;
+import frc.robot.Constants.TurretConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Indexer;
@@ -85,26 +86,30 @@ public class ShootCommand extends Command {
 
     @Override
     public void execute() {
-        if (useInterpTables) {
-            double dist = distanceSupplier.getAsDouble();
-            hood.setHoodAngle(Rotations.of(calculator.getHoodAngleRot(dist)));
-            double baseRPS = calculator.getFlywheelRPS(dist);
-            double adjustedRPS = baseRPS + shooterRPSOffsetSupplier.getAsDouble();
-            shooter.setShooterSpeed(RotationsPerSecond.of(adjustedRPS));
-        } else {
-            shooter.setShooterSpeed(RotationsPerSecond.of(manualShooterRPS));
-            hood.setHoodAngle(Rotations.of(0.0)); // hood flat in manual mode
-        }
+        shooter.setShooterSpeed(RotationsPerSecond.of(TurretConstants.SHOOTER_RPS));
+        hood.setHoodAngle(Rotations.of(0.0));
+        // if (useInterpTables) {
+        //     double dist = distanceSupplier.getAsDouble();
+        //     hood.setHoodAngle(Rotations.of(calculator.getHoodAngleRot(dist)));
+        //     double baseRPS = calculator.getFlywheelRPS(dist);
+        //     double adjustedRPS = baseRPS + shooterRPSOffsetSupplier.getAsDouble();
+        //     shooter.setShooterSpeed(RotationsPerSecond.of(adjustedRPS));
+        // } else {
+        //     shooter.setShooterSpeed(RotationsPerSecond.of(manualShooterRPS));
+        //     hood.setHoodAngle(Rotations.of(0.0)); // hood flat in manual mode
+        // }
+        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
+        // indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
+        indexer.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
 
-        if (isAimed.getAsBoolean() && shooter.atShooterSetpoint()) {
-            indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
-            indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
-            indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
-        } else {
-            indexer.setIndexerSpeed(0, IndexerType.HORIZONTAL);
-            indexer.setIndexerSpeed(0, IndexerType.VERTICAL);
-            indexer.setIndexerSpeed(0, IndexerType.UPWARD);
-        }
+        // if (isAimed.getAsBoolean() && shooter.atShooterSetpoint()) {
+        //     indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
+        //     indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
+            
+        // } else {
+        //     indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED/2.0, IndexerType.HORIZONTAL);
+        //     indexer.setIndexerSpeed(0, IndexerType.VERTICAL);
+        // }
     }
 
     @Override
