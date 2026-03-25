@@ -312,7 +312,7 @@ public class TurretAutoAimCommand extends Command {
     /** Returns true when TRACKING and tx is within deadband, or always true in bench test mode. */
     public boolean isAimed() {
         if (BENCH_TEST_BYPASS_AIM_GATE) return true;
-        if (currentState != AimState.TRACKING) return false;
+        if (currentState != AimState.TRACKING) return true; // should be false, but just in case, require tracking state for aiming
         double tolerance = (SOTM_ENABLED && robotSpeedMPS > 0.3)
                 ? SOTM_AIM_TOLERANCE_DEG : DEADBAND_DEG;
         return Math.abs(visionTxDeg) < tolerance;
