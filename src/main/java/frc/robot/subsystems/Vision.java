@@ -463,45 +463,12 @@ public class Vision extends SubsystemBase {
     }
 
     /**
-     * Gets the distance to the best target seen by the turret camera,
-     * converted to an approximate bumper-to-hub ground distance for the
-     * interpolation tables.
+     * Gets the horizontal distance to the best target seen by the turret camera.
+     * Uses PhotonVision's 3D SolvePNP pose (requires 3D mode enabled in PV).
      *
-     * <p>Uses trig from getPitch() — works in 2D mode (no PV camera
-     * calibration needed). Accuracy depends on TURRET_CAM_TILT_DEG
-     * matching the physical camera mount angle.
-     *
-     * <p>Formula: horizDist = heightDiff / tan(getPitch() - cameraTilt)
-     *
-     * @return bumper-to-hub ground distance in meters (0 if no target visible)
+     * @return horizontal camera-to-tag distance in meters, plus bumper offset (0 if no target)
      */
     public double getTurretCameraDistanceToTarget() {
-        if (latestResultTurret != null && latestResultTurret.hasTargets()) {
-            var best = latestResultTurret.getBestTarget();
-            double pitchDeg = best.getPitch(); // positive = target above crosshair
-            double tiltDeg = VisionConstants.TURRET_CAM_TILT_DEG;
-            double trueAngleDeg = pitchDeg - tiltDeg;
-
-            // Log for diagnostics (visible in Elastic)
-            trigAngleDeg = trueAngleDeg;
-
-            if (trueAngleDeg < 0.5) return 0.0; // tag at or below horizontal
-
-            double tagHeight = VisionConstants.getTagHeight(best.getFiducialId());
-            double camHeight = VisionConstants.CAM_TURRET_HEIGHT_METERS;
-            double horizDist = (tagHeight - camHeight) / Math.tan(Math.toRadians(trueAngleDeg));
-            if (horizDist < 0) return 0.0;
-
-            return horizDist + VisionConstants.CAMERA_TO_BUMPER_OFFSET_METERS;
-        }
-        return 0.0;
-    }
-
-    /**
-     * DIAGNOSTIC ONLY — SolvePNP distance. Requires 3D camera calibration
-     * in PhotonVision. Returns ~0.36 (bumper offset only) if uncalibrated.
-     */
-    public double getTurretCameraDistanceSolvePNP() {
         if (latestResultTurret != null && latestResultTurret.hasTargets()) {
             Translation3d camToTag = latestResultTurret.getBestTarget()
                     .getBestCameraToTarget().getTranslation();
@@ -527,9 +494,9 @@ public class Vision extends SubsystemBase {
             horizontalCameraDist = Math.sqrt(camToTag.getX() * camToTag.getX()
                     + camToTag.getY() * camToTag.getY());
             correctedBumperDist = horizontalCameraDist + VisionConstants.CAMERA_TO_BUMPER_OFFSET_METERS;
-            // Primary distance (trig) vs diagnostic SolvePNP (stale if uncalibrated)
-            trigDistMeters = getTurretCameraDistanceToTarget();
-            solvePnpDistMeters = getTurretCameraDistanceSolvePNP();
+            // Both now show SolvePNP-based distance (3D mode enabled in PV)
+            trigDistMeters = correctedBumperDist; // legacy field name, same value
+            solvePnpDistMeters = getTurretCameraDistanceToTarget();
             targetPitchDeg = latestResultTurret.getBestTarget().getPitch();
         }
         // Latency: time since last fresh turret frame

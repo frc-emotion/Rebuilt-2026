@@ -55,8 +55,8 @@ public final class IntakeConstants {
         INTAKE_CONFIG.Voltage.PeakReverseVoltage = -10.0;
 
         // MotionMagic constraints — prevents slapdown from slamming. TODO: tune on robot.
-        INTAKE_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 0.3;//2.0; // RPS
-        INTAKE_CONFIG.MotionMagic.MotionMagicAcceleration = 0.6;//4.0;   // RPS^2
+        INTAKE_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 1.5;//2.0; // RPS
+        INTAKE_CONFIG.MotionMagic.MotionMagicAcceleration = 2.5;//4.0;   // RPS^2
         INTAKE_CONFIG.MotionMagic.MotionMagicJerk = 40.0;          // Smoothing
 
         INTAKE_CONFIG.Feedback.FeedbackRemoteSensorID = intakePivotEncoderID;
@@ -71,7 +71,7 @@ public final class IntakeConstants {
         INTAKE_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitThreshold = INTAKE_FORWARD_SOFT_LIMIT;
     }
 
-    public static final double INTAKE_ROLLER_VELOCITY = 57;
+    public static final double INTAKE_ROLLER_VELOCITY = 35;
 
     public static final TalonFXConfiguration ROLLER_CONFIG = new TalonFXConfiguration();
 
