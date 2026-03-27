@@ -140,11 +140,6 @@ public class Intake extends SubsystemBase {
     // ==================
 
     public boolean isOut() {
-        return pivotPositionRot > IntakeConstants.INTAKE_IN_ANGLE.in(Rotations)
-                + IntakeConstants.INTAKE_OUT_THRESHOLD_ROT;
-    }
-
-    public boolean isDeployed() {
         return intakeIsOut;
     }
 

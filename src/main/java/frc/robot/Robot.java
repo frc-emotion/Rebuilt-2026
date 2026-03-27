@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-// import com.bionanomics.refinery.mcp.RoboRioMcpServer;
 
 /**
  * Main robot class with automated Epilogue telemetry.
@@ -65,21 +64,12 @@ public class Robot extends TimedRobot {
 
         System.out.println("[TELEMETRY] MATCH_MODE=" + MATCH_MODE
                 + " -> NT publishes " + (MATCH_MODE ? "CRITICAL only" : "ALL (DEBUG+CRITICAL)"));
-
-        // RoboRioMcpServer.start();
     }
 
     @Override
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run();
-
-        // SuperstructureTuner REMOVED — PID values come from TurretConstants/IntakeConstants directly
-        // m_robotContainer.tuner.checkForChanges();
-
-        if (m_robotContainer.isVisionPoseEstimationEnabled()) {
-            m_robotContainer.updateVisionPoseEstimates();
-        }
     }
 
     @Override

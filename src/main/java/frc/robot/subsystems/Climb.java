@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
@@ -21,11 +20,7 @@ import frc.robot.Constants.ClimbConstants;
 public class Climb extends SubsystemBase {
     private final TalonFX climbMotor;
 
-    private final MotionMagicVoltage leaderMotionRequest;
-
     private final VoltageOut manualRequest;
-
-    private double currentSetpoint;
 
     @Logged private double commandedVolts;
     @Logged private double leaderCurrent;
@@ -36,8 +31,6 @@ public class Climb extends SubsystemBase {
         climbMotor = new TalonFX(ClimbConstants.CLIMB_MOTOR_ID, canBus);
 
         configureClimbMotor();
-
-        leaderMotionRequest = new MotionMagicVoltage(0);
 
         manualRequest = new VoltageOut(0);
 
@@ -65,27 +58,6 @@ public class Climb extends SubsystemBase {
     }
 
 
-    public void setClimbPosition(double setpoint) {
-        currentSetpoint = setpoint;
-        // passing in position in rotations
-        climbMotor.setControl(leaderMotionRequest.withPosition(setpoint));
-    }
-
-    public boolean atSetpoint() {
-        return Math.abs(climbMotor.getPosition().getValueAsDouble() - currentSetpoint) < ClimbConstants.TOLERANCE;
-    }
-
-    public void setManualVoltage(double joystickInput) {
-        double manualVolts = joystickInput * 12.0;
-        climbMotor.setControl(manualRequest.withOutput(manualVolts + ClimbConstants.manual_kG));
-    }
-
-    /**
-     * New manual voltage climb control.
-     * Positive voltage = counterclockwise = climb UP.
-     * Negative voltage = clockwise = climb DOWN.
-     * Applies raw voltage directly to the leader motor (follower follows in opposed mode).
-     */
     public void setClimbVoltage(double volts) {
         commandedVolts = volts;
         climbMotor.setControl(manualRequest.withOutput(volts));

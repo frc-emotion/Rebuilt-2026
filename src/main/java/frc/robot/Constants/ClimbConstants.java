@@ -1,56 +1,21 @@
 package frc.robot.Constants;
 
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.ctre.phoenix6.signals.SensorDirectionValue;
-
-import edu.wpi.first.units.measure.Angle;
-
-import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
 public final class ClimbConstants {
-    // IDs - Defined locally here to match subsystem style, mirrored in CANID for
-    // documentation
-    public static final int CLIMB_LEADER_ID = 40;   // old leader (removed)
-    public static final int CLIMB_FOLLOWER_ID = 41;  // old follower
-    public static final int CLIMB_MOTOR_ID = 41;     // single climb motor
-
+    public static final int CLIMB_MOTOR_ID = 41;
     public static final double CLIMB_GEAR_RATIO = 1.0;
-
-    public static final int CLIMB_ENCODER_ID = 67;
-
-    // Mechanics
-    public static final double GEAR_RATIO = 12.0;
 
     public static final double TOLERANCE = 0.5;
 
-    public static final double manual_kG = 0.5;
-
-    // Manual voltage climb constants
-    public static final double MANUAL_CLIMB_VOLTAGE = 6.0;  // Peak voltage for manual up/down
-    public static final double MANUAL_CLIMB_DEADBAND = 0.1;  // Joystick deadband
-    public static final double CLIMB_GRAVITY_COMP_VOLTS = 0.5; // Gravity compensation (holds against gravity when idle)
+    public static final double MANUAL_CLIMB_VOLTAGE = 6.0;
+    public static final double MANUAL_CLIMB_DEADBAND = 0.1;
+    public static final double CLIMB_GRAVITY_COMP_VOLTS = 0.5;
 
     public static final TalonFXConfiguration CLIMB_CONFIG = new TalonFXConfiguration();
-
-    public static enum ClimbLevel {
-        LEVEL_1(0.0, 0.0),
-        LEVEL_2(0.0, 0.0),
-        LEVEL_3(0.0, 0.0);
-
-        public final double inner;
-        public final double outer;
-
-        ClimbLevel(double inner, double outer) {
-            this.inner = inner;
-            this.outer = outer;
-        }
-    }
-
-    public static final double MAX_HEIGHT_ROTATIONS = 1000;
 
     static {
         // Motor Configuration
@@ -87,20 +52,7 @@ public final class ClimbConstants {
         // CLIMB_CONFIG.MotionMagic.MotionMagicAcceleration = 160.0; // RPS^2
         // CLIMB_CONFIG.MotionMagic.MotionMagicJerk = 1600.0; // Smoothing
 
-        // CANcoder removed — using rotor sensor for feedback
-        // CLIMB_CONFIG.Feedback.FeedbackRemoteSensorID = CLIMB_ENCODER_ID;
-        // CLIMB_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
         CLIMB_CONFIG.Feedback.SensorToMechanismRatio = CLIMB_GEAR_RATIO;
         CLIMB_CONFIG.Feedback.RotorToSensorRatio = 1.0;
-    }
-
-    public static CANcoderConfiguration CLIMB_ENCODER_CONFIG = new CANcoderConfiguration();
-
-    public static double CLIMB_ENCODER_OFFSET = 0;
-
-    static {
-
-        CLIMB_ENCODER_CONFIG.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-        CLIMB_ENCODER_CONFIG.MagnetSensor.MagnetOffset = CLIMB_ENCODER_OFFSET;
     }
 }

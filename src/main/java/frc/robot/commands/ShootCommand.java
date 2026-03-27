@@ -14,15 +14,10 @@ import frc.robot.subsystems.Shooter;
 import frc.robot.util.TurretAimingCalculator;
 
 /**
- * Spins up shooter + sets hood from interpolation tables + feeds indexers when aimed.
- * Requires hood, shooter, and indexer so it can command all three without conflicting
- * with the turret auto-aim (which only requires turret).
+ * Spins up shooter + sets hood + feeds indexers when aimed.
  *
- * <p>Two construction patterns:
- * <ul>
- *   <li><b>Auto modes</b>: distance supplier + calculator → interp-table hood/shooter</li>
- *   <li><b>Manual mode</b>: fixed shooter RPS, hood holds current position, no aim gate</li>
- * </ul>
+ * Vision mode: hood/shooter from interp tables, indexers gated on isAimed.
+ * Manual mode: fixed shooter RPS, hood flat, indexers always fire.
  */
 public class ShootCommand extends Command {
 
@@ -31,45 +26,27 @@ public class ShootCommand extends Command {
     private final Shooter shooter;
     private final BooleanSupplier isAimed;
     private final DoubleSupplier distanceSupplier;
-    private final DoubleSupplier shooterRPSOffsetSupplier;
     private final TurretAimingCalculator calculator;
     private final double manualShooterRPS;
     private final boolean useInterpTables;
 
-    /**
-     * Auto-aim shoot: hood + shooter from interpolation tables, indexers gated on isAimed.
-     */
+    /** Vision mode: hood + shooter from interp tables, indexers gated on isAimed. */
     public ShootCommand(Indexer indexer, Hood hood, Shooter shooter,
                         DoubleSupplier distanceSupplier,
                         TurretAimingCalculator calculator,
                         BooleanSupplier isAimed) {
-        this(indexer, hood, shooter, distanceSupplier, calculator, isAimed, () -> 0.0);
-    }
-
-    /**
-     * Auto-aim shoot with SOTM: hood + shooter from interpolation tables,
-     * shooter RPS adjusted by SOTM offset, indexers gated on isAimed.
-     */
-    public ShootCommand(Indexer indexer, Hood hood, Shooter shooter,
-                        DoubleSupplier distanceSupplier,
-                        TurretAimingCalculator calculator,
-                        BooleanSupplier isAimed,
-                        DoubleSupplier shooterRPSOffsetSupplier) {
         this.indexer = indexer;
         this.hood = hood;
         this.shooter = shooter;
         this.distanceSupplier = distanceSupplier;
         this.calculator = calculator;
         this.isAimed = isAimed;
-        this.shooterRPSOffsetSupplier = shooterRPSOffsetSupplier;
         this.manualShooterRPS = 0;
         this.useInterpTables = true;
         addRequirements(indexer, hood, shooter);
     }
 
-    /**
-     * Manual shoot: fixed shooter speed, hood holds current position, indexers always fire.
-     */
+    /** Manual mode: fixed shooter speed, hood flat, indexers always fire. */
     public ShootCommand(Indexer indexer, Hood hood, Shooter shooter, double shooterRPS) {
         this.indexer = indexer;
         this.hood = hood;
@@ -77,7 +54,6 @@ public class ShootCommand extends Command {
         this.distanceSupplier = () -> 0;
         this.calculator = null;
         this.isAimed = () -> true;
-        this.shooterRPSOffsetSupplier = () -> 0.0;
         this.manualShooterRPS = shooterRPS;
         this.useInterpTables = false;
         addRequirements(indexer, hood, shooter);
@@ -88,20 +64,21 @@ public class ShootCommand extends Command {
         if (useInterpTables) {
             double dist = distanceSupplier.getAsDouble();
             hood.setHoodAngle(Rotations.of(calculator.getHoodAngleRot(dist)));
-            double baseRPS = calculator.getFlywheelRPS(dist);
-            double adjustedRPS = baseRPS + shooterRPSOffsetSupplier.getAsDouble();
-            shooter.setShooterSpeed(RotationsPerSecond.of(adjustedRPS));
+            shooter.setShooterSpeed(RotationsPerSecond.of(calculator.getFlywheelRPS(dist)));
         } else {
             shooter.setShooterSpeed(RotationsPerSecond.of(manualShooterRPS));
-            hood.setHoodAngle(Rotations.of(0.0)); // hood flat in manual mode
+            hood.setHoodAngle(Rotations.of(0.0));
         }
-        // indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
-        // indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
-        // indexer.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
 
-        indexer.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
-        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
-        indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
+        if (isAimed.getAsBoolean()) {
+            indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
+            indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
+            indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
+        } else {
+            indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED * 0.75, IndexerType.VERTICAL);
+            indexer.stopIndexer(IndexerType.HORIZONTAL);
+            indexer.stopIndexer(IndexerType.UPWARD);
+        }
     }
 
     @Override

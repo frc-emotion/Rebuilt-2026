@@ -29,23 +29,11 @@ import edu.wpi.first.math.util.Units;
  */
 public final class VisionConstants {
 
-    // ==================
-    // CAMERA NAMES
-    // ==================
-    // Must match exactly what's configured in PhotonVision web UI
-    public static final String CAMERA_NAME_RIGHT = "yurr"; //mugilanr
-    public static final String CAMERA_NAME_LEFT = "aaranc";
-
-    // ==================
-    // CAMERA ENABLE/DISABLE — set to true only for cameras physically connected
-    // ==================
-    public static final boolean ENABLE_RIGHT_CAM = false;
-    public static final boolean ENABLE_LEFT_CAM = false;
     public static final boolean ENABLE_TURRET_CAM = true;
 
     /** When true, turret auto-aim tracks ANY visible AprilTag (not just hub tags).
      *  Set to false for competition so the turret only locks onto the hub. */
-    public static final boolean BENCH_TEST_ANY_TAG = true; // PIT TESTING — set false before matches!
+    public static final boolean BENCH_TEST_ANY_TAG = false;
 
     /** Which camera name is physically on the turret. Change to match your wiring. */
     public static final String TURRET_CAM_NAME = "mugilanr"; // "aaranc"
@@ -72,58 +60,8 @@ public final class VisionConstants {
     }
 
     // ==================
-    // CAMERA TRANSFORMS (Robot to Camera)
-    // ==================
-    // These define where each camera is mounted relative to the robot center
-    // Translation: X (forward), Y (left), Z (up) in meters
-    // Rotation: Roll, Pitch, Yaw in radians
-
-    /**
-     * Right camera (mugilanr) - Front right of robot
-     * Position: 11.25" forward, 9.25" right, 8" up
-     * Orientation: -30° pitch (tilted up), -40° yaw (angled right), 0° roll
-     *
-     * Note: Y is positive left in WPILib, so right = negative Y
-     * Note: Yaw is positive CCW, so angled right = negative yaw
-     * Note: Negative pitch = camera tilted up from horizontal
-     */
-    public static final Transform3d ROBOT_TO_CAM_RIGHT = new Transform3d(
-            new Translation3d(
-                    Units.inchesToMeters(11.25), // X: forward
-                    Units.inchesToMeters(-9.25), // Y: right (negative = right)
-                    Units.inchesToMeters(8.0) // Z: up from floor
-            ),
-            new Rotation3d(
-                    0, // Roll: 0°
-                    Units.degreesToRadians(-30), // Pitch: -30° (tilted up from horizontal)
-                    Units.degreesToRadians(-40) // Yaw: -40° (angled toward right)
-            ));
-
-    /**
-     * Left camera (aaranc) - Rear of robot, fixed (not on turret)
-     * Position: 9" behind center, 7.125" left, 14" up from floor
-     * Orientation: facing straight backward (yaw = 180°), level pitch, no roll
-     */
-    public static final Transform3d ROBOT_TO_CAM_LEFT = new Transform3d(
-            new Translation3d(
-                    Units.inchesToMeters(-9.0),    // X: 9" behind robot center
-                    Units.inchesToMeters(7.125),   // Y: 7.125" left of center
-                    Units.inchesToMeters(14.0)     // Z: 14" above floor
-            ),
-            new Rotation3d(
-                    0,                              // Roll: 0°
-                    0,                              // Pitch: 0° (level)
-                    Units.degreesToRadians(180)     // Yaw: 180° (facing backward, toward back bumper)
-            ));
-
-    // ==================
     // TURRET CAMERA CONFIGURATION
     // ==================
-    // The turret camera moves with the turret rotation, requiring dynamic transform
-    // computation
-
-    /** Name of the turret-mounted camera - must match PhotonVision UI */
-    public static final String CAMERA_NAME_TURRET = "turret_cam";
 
     /**
      * Static transform from robot center to turret pivot point.
@@ -321,57 +259,5 @@ public final class VisionConstants {
     /** Minimum number of targets for multi-tag to be considered reliable */
     public static final int MIN_MULTI_TAG_TARGETS = 2;
 
-    // ==================
-    // AIM AND RANGE PARAMETERS
-    // ==================
-
-    /** P gain for turning toward a target */
-    public static final double VISION_TURN_kP = 8.0;
-
-    /** D gain for turning toward a target (dampens oscillation/jitter) */
-    public static final double VISION_TURN_kD = 0.1;
-
-    /** P gain for driving toward/away from a target */
-    public static final double VISION_DRIVE_kP = 0.5;
-
-    /** P gain for strafing toward a target */
-    public static final double VISION_STRAFE_kP = 0.5;
-
-    /** Default target distance in meters for auto-range */
-    public static final double DEFAULT_TARGET_DISTANCE = 1.0;
-
-    /** Angle tolerance for aim commands (degrees) */
-    public static final double AIM_TOLERANCE_DEGREES = 2.0;
-
-    /** Distance tolerance for range commands (meters) */
-    public static final double RANGE_TOLERANCE_METERS = 0.05;
-
-    // ==================
-    // CAMERA PHYSICAL PROPERTIES
-    // ==================
-    // Used for distance calculation via trigonometry
-
-    /** Height of the right camera lens from the floor in meters */
-    public static final double CAM_RIGHT_HEIGHT_METERS = Units.inchesToMeters(8.0);
-
-    /** Height of the left camera lens from the floor in meters */
-    public static final double CAM_LEFT_HEIGHT_METERS = Units.inchesToMeters(8.0);
-
-    /** Pitch angle of cameras from horizontal (negative = tilted up) */
-    public static final double CAM_PITCH_RADIANS = Units.degreesToRadians(-30);
-
-    /**
-     * Gets the height of an AprilTag based on its ID for 2026 REBUILT.
-     * Hub tags are all at the same height.
-     */
-    public static double getTagHeight(int tagId) {
-        if (isHubTag(tagId)) {
-            return HUB_TAG_HEIGHT_METERS;
-        }
-        return HUB_TAG_HEIGHT_METERS; // TODO: add heights for non-hub tags
-    }
-
-    private VisionConstants() {
-        // Prevent instantiation
-    }
+    private VisionConstants() {}
 }

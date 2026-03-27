@@ -20,8 +20,6 @@ public class Hood extends SubsystemBase {
     private final CANcoder hoodEncoder;
 
     private final MotionMagicVoltage hoodMotionRequest;
-    private final com.ctre.phoenix6.controls.VoltageOut hoodManualVoltageRequest = new com.ctre.phoenix6.controls.VoltageOut(
-            0);
 
     private Angle hoodCurrentSetpoint = Rotations.of(0);
 
@@ -100,11 +98,6 @@ public class Hood extends SubsystemBase {
 
     public TalonFX getHoodMotor() {
         return hoodMotor;
-    }
-
-    public void setHoodManualVoltage(double joystickInput) {
-        double manualVolts = joystickInput * 3.0;
-        hoodMotor.setControl(hoodManualVoltageRequest.withOutput(manualVolts));
     }
 
     public void stop() {

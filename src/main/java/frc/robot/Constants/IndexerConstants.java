@@ -19,7 +19,7 @@ public final class IndexerConstants {
 
     public static final TalonFXConfiguration HORIZONTAL_INDEXER_CONFIG = new TalonFXConfiguration();
 
-    public static final double HORIZONTAL_INDEXER_SPEED = 50;
+    public static final double HORIZONTAL_INDEXER_SPEED = 65;
 
     static{
         HORIZONTAL_INDEXER_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;

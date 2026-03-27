@@ -21,16 +21,13 @@ import com.pathplanner.lib.auto.NamedCommands;
 import frc.robot.Constants.CANID;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
-import frc.robot.commands.CalibrationShootCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.TurretAutoAimCommand;
 import frc.robot.commands.climb.VoltageClimbCommand;
 import frc.robot.commands.intake.IntakeInCommand;
 import frc.robot.commands.intake.IntakeOutCommand;
-// import frc.robot.commands.turret.ManualTurretCommand; // replaced by unified TurretAutoAimCommand
 import frc.robot.generated.TunerConstants;
 import frc.robot.logging.FaultMonitor;
-// import frc.robot.util.SuperstructureTuner; // REMOVED — tuner defaults conflicted with TurretConstants
 import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Indexer;
@@ -42,11 +39,6 @@ import frc.robot.subsystems.Vision;
 
 @Logged
 public class RobotContainer {
-
-        // ================================================================
-        //  ROBOT MODE — unified: turret auto-switches between MANUAL and TRACKING
-        //  based on whether the turret camera sees a hub tag.
-        // ================================================================
 
         // ================================================================
         //  DRIVE
@@ -77,26 +69,18 @@ public class RobotContainer {
         public final Shooter shooter = new Shooter(mechanismBus);
         public final Climb climb = new Climb(mechanismBus);
 
-        // ================================================================
-        //  AUTO-AIM COMMANDS (created once, swapped as default on mode change)
-        // ================================================================
         @Logged private final TurretAutoAimCommand visionAutoAim;
 
-        // ================================================================
-        //  LOGGING & TUNING
-        // ================================================================
         private final Telemetry logger = new Telemetry(MaxSpeed);
         @Logged public final FaultMonitor faultMonitor = new FaultMonitor();
-        // @Logged public final SuperstructureTuner tuner = new SuperstructureTuner(); // REMOVED — use TurretConstants directly
         @NotLogged private final SendableChooser<Command> autoChooser;
 
-        // Turret setpoints (D-pad): clean degree values for testing
-        // Soft limits: -0.74 (reverse) to +0.05 (forward) — 270° range, mostly leftward
-        // Up=0° (forward), Right=+18° CW (near fwd limit), Left=-180° (backward), Down=-90° (perpendicular left)
-        private static final double TURRET_POS_CENTER   =  0.0;     //   0° (forward)
-        private static final double TURRET_POS_RIGHT    =  0.05;    // +18° CW  (forward limit)
-        private static final double TURRET_POS_LEFT     = -0.500;   // -180° CCW (straight backward)
-        private static final double TURRET_POS_FAR_LEFT = -0.250;   // -90° CCW (perpendicular left)
+        // Turret D-pad setpoints (intuitive relative to robot)
+        // Up = forward (0°), Down = backward (-180°), Left = 90° left, Right = forward limit
+        private static final double TURRET_POS_FORWARD  =  0.0;     //   0° (front of robot)
+        private static final double TURRET_POS_RIGHT    =  0.05;    // +18° CW (forward limit)
+        private static final double TURRET_POS_LEFT     = -0.250;   // -90° CCW (perpendicular left)
+        private static final double TURRET_POS_BACK     = -0.500;   // -180° CCW (straight backward)
 
         // Hood setpoints (X/Y/B): range [0.0, 0.08]
         private static final double HOOD_POS_DOWN = 0.005;
@@ -126,7 +110,6 @@ public class RobotContainer {
                 turret.setDefaultCommand(visionAutoAim);
 
                 registerMotorsForFaultMonitoring();
-                // tuner.setSubsystems(turret, hood, shooter, intake); // REMOVED — SuperstructureTuner disabled
                 vision.setTurretAngleSupplier(turret::getTurretPosition);
 
                 // PathPlanner: configure path-following, register named commands, build auto chooser
@@ -135,26 +118,7 @@ public class RobotContainer {
                 autoChooser = AutoBuilder.buildAutoChooser();
                 SmartDashboard.putData("Auto Chooser", autoChooser);
 
-                System.out.println("[STARTUP] Turret unified command active (MANUAL/TRACKING)");
         }
-
-        // ================================================================
-        //  VISION POSE ESTIMATION — disabled, only turret cam active for tracking
-        // ================================================================
-        public boolean isVisionPoseEstimationEnabled() {
-                return false;
-        }
-
-        public void updateVisionPoseEstimates() {
-                // All drivebase cameras disabled. Turret camera is used for
-                // turret tracking + distance only, not pose estimation.
-                // Re-enable here when drivebase cameras come back online.
-        }
-
-        // ================================================================
-        //  MODE SWITCHING — removed. Turret auto-switches MANUAL ↔ TRACKING
-        //  based on turret camera seeing a hub tag.
-        // ================================================================
 
         // ================================================================
         //  DRIVE BINDINGS (always active)
@@ -172,12 +136,7 @@ public class RobotContainer {
                 joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
                 joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-                // -- Calibration shoot REMOVED from driver B — accidental press takes over all mechanisms --
-                // joystick.b().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer));
-
-                // -- Seed pose facing hub (driver Y): sets odometry so hub is directly ahead --
-                // Places robot ~4m in front of red hub center, facing +X (toward hub).
-                // SEEKING mode then aims turret to 0° (forward), aligning camera with the tag.
+                // Seed pose facing hub (driver Y): sets odometry so hub is directly ahead
                 joystick.y().onTrue(Commands.runOnce(() -> {
                         var hubCenter = frc.robot.Constants.VisionConstants.RED_HUB_CENTER;
                         drivetrain.resetPose(new edu.wpi.first.math.geometry.Pose2d(
@@ -188,7 +147,6 @@ public class RobotContainer {
 
                 drivetrain.registerTelemetry(logger::telemeterize);
 
-                // -- SysId characterization REMOVED — was on driver D-pad, dangerous during matches --
         }
 
         // ================================================================
@@ -208,70 +166,50 @@ public class RobotContainer {
         }
 
         // ================================================================
-        //  SHARED BINDINGS (active in ALL modes)
+        //  OPERATOR BINDINGS
         //
         //  A          = intake toggle
-        //  Right trig = SHOOT (indexers + shooter + hood from interp table)
+        //  Right trig = SHOOT (hood + shooter + indexers from interp table)
         //  Left trig  = vertical indexer only
-        //  Left bump  = intake irrigate (oscillate to unstick balls)
-        //  Right bump = zero turret
-        //  Left stick  = toggle mode (MANUAL ↔ FULL_VISION)
-        //  D-pad      = turret setpoints (MANUAL: override joystick,
-        //               FULL_VISION: temporarily override auto-aim while held)
+        //  Right bump = zero turret encoder
+        //  Right stick click = reverse indexers (unjam)
+        //  D-pad      = turret setpoints
         //  X / Y / B  = hood setpoints
         // ================================================================
         private void configureSharedBindings() {
-                // -- Intake toggle (A) --
-                if (intake != null) {
-                        operator.a().toggleOnTrue(new IntakeOutCommand(intake));
-                }
+                operator.a().toggleOnTrue(new IntakeOutCommand(intake));
 
-                // -- SHOOT (right trigger): ShootCommand handles hood + shooter + indexers --
-                // Always use interp-table ShootCommand so hood/shooter adjust with
-                // distance even if turret transitions between MANUAL and TRACKING
-                // mid-shot. getEffectiveDistance() persists the last seen camera
-                // distance, so hood still gets a valid setpoint after brief tag loss.
-                // Falls back to minimum-range values if no tag has ever been seen (dist ≈ 0).
                 operator.rightTrigger().whileTrue(Commands.defer(() -> {
                         return new ShootCommand(indexer, hood, shooter,
-                                visionAutoAim::getEffectiveDistance,
+                                visionAutoAim::getDistanceToHub,
                                 visionAutoAim.getCalculator(),
-                                visionAutoAim::isAimed,
-                                visionAutoAim::getShooterRPSOffset);
+                                visionAutoAim::isAimed);
                 }, Set.of(indexer, hood, shooter)));
 
-                // -- Vertical indexer only (left trigger) --
                 operator.leftTrigger().whileTrue(
                         Commands.startEnd(
                                 () -> indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL),
                                 () -> indexer.stopIndexer(IndexerType.VERTICAL),
                                 indexer));
 
-                // -- Intake irrigate (left bumper): oscillate to dislodge stuck balls --
-                // if (intake != null) {
-                //         operator.leftBumper().whileTrue(new IntakeIrrigateCommand(intake));
-                // }
-
-                // -- Zero turret (right bumper) --
                 operator.rightBumper().onTrue(Commands.runOnce(() -> {
                         turret.getTurretMotor().setPosition(0);
                         System.out.println("[TURRET] Zeroed at current position");
                 }));
 
-                // -- Calibration shoot (driver B): hold to shoot with Elastic-tunable values --
-                joystick.b().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer));
+                // CalibrationShootCommand — uncomment for interp table calibration sessions only
+                // joystick.b().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer));
 
-                // -- Turret setpoints (D-pad) — interrupt default while held --
+                // Turret setpoints (D-pad) — interrupts auto-aim default while held
                 operator.povUp().whileTrue(turret.run(
-                        () -> turret.moveTurret(Rotations.of(TURRET_POS_CENTER))));
-                operator.povRight().whileTrue(turret.run(
-                        () -> turret.moveTurret(Rotations.of(TURRET_POS_RIGHT))));
+                        () -> turret.moveTurret(Rotations.of(TURRET_POS_FORWARD))));
+                operator.povDown().whileTrue(turret.run(
+                        () -> turret.moveTurret(Rotations.of(TURRET_POS_BACK))));
                 operator.povLeft().whileTrue(turret.run(
                         () -> turret.moveTurret(Rotations.of(TURRET_POS_LEFT))));
-                operator.povDown().whileTrue(turret.run(
-                        () -> turret.moveTurret(Rotations.of(TURRET_POS_FAR_LEFT))));
+                operator.povRight().whileTrue(turret.run(
+                        () -> turret.moveTurret(Rotations.of(TURRET_POS_RIGHT))));
 
-                // -- Reverse indexers (right stick click): clear jams while held --
                 operator.rightStick().whileTrue(
                         Commands.startEnd(
                                 () -> {
@@ -282,7 +220,6 @@ public class RobotContainer {
                                 () -> indexer.stop(),
                                 indexer));
 
-                // -- Hood setpoints (X / Y / B) --
                 operator.x().whileTrue(hood.run(
                         () -> hood.setHoodAngle(Rotations.of(HOOD_POS_DOWN))));
                 operator.y().whileTrue(hood.run(
@@ -313,7 +250,7 @@ public class RobotContainer {
                 if (hood != null)   faultMonitor.register(CANID.TURRET_ANGLE, hood.getHoodMotor());
                 if (shooter != null) faultMonitor.register(CANID.SHOOTER_WHEEL, shooter.getShooterMotor());
                 if (climb != null) {
-                    faultMonitor.register(CANID.CLIMB_FOLLOWER, climb.getClimbMotor());
+                    faultMonitor.register(CANID.CLIMB_MOTOR, climb.getClimbMotor());
                 }
         }
 
@@ -331,10 +268,9 @@ public class RobotContainer {
                 //    all 3 indexers fire only when aimed AND shooter at setpoint --
                 NamedCommands.registerCommand("shoot",
                         new ShootCommand(indexer, hood, shooter,
-                                visionAutoAim::getEffectiveDistance,
+                                visionAutoAim::getDistanceToHub,
                                 visionAutoAim.getCalculator(),
-                                visionAutoAim::isAimed,
-                                visionAutoAim::getShooterRPSOffset));
+                                visionAutoAim::isAimed));
 
                 // -- Safety: stop all mechanisms --
                 NamedCommands.registerCommand("stopAll",
