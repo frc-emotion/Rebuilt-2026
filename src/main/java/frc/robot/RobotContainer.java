@@ -112,6 +112,14 @@ public class RobotContainer {
                 hood.setDefaultCommand(hood.run(() ->
                         hood.setHoodAngle(Rotations.of(hood.getHoodPosition()))));
 
+                indexer.setDefaultCommand(indexer.run(() -> {
+                        if (intake.isOut()) {
+                                indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED * 0.75, IndexerType.VERTICAL);
+                        } else {
+                                indexer.stopIndexer(IndexerType.VERTICAL);
+                        }
+                }));
+
                 configureDriveBindings();
                 configureSharedBindings();
                 configureClimbBindings();
@@ -236,7 +244,7 @@ public class RobotContainer {
                 operator.leftTrigger().whileTrue(
                         Commands.startEnd(
                                 () -> indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL),
-                                () -> indexer.setIndexerSpeed(0, IndexerType.VERTICAL),
+                                () -> indexer.stopIndexer(IndexerType.VERTICAL),
                                 indexer));
 
                 // -- Intake irrigate (left bumper): oscillate to dislodge stuck balls --

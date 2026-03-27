@@ -20,9 +20,9 @@ public class stopIndexer extends Command {
     @Override
     public void execute(){
 
-        m_indexerSubsystem.setIndexerSpeed(0, IndexerType.HORIZONTAL);
-        m_indexerSubsystem.setIndexerSpeed(0, IndexerType.VERTICAL);
-        m_indexerSubsystem.setIndexerSpeed(0, IndexerType.UPWARD);
+        m_indexerSubsystem.stopIndexer(IndexerType.HORIZONTAL);
+        m_indexerSubsystem.stopIndexer(IndexerType.VERTICAL);
+        m_indexerSubsystem.stopIndexer(IndexerType.UPWARD);
        
 
     }

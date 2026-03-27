@@ -42,7 +42,7 @@ public final class TurretConstants {
     public static final double HOOD_REVERSE_HARD_STOP = 0.0;
     public static final double HOOD_FORWARD_HARD_STOP = 0.08;
 
-    public static final double shooterTolerance = 5; // RPS — prevents flicker at edge of PID settling band
+    public static final double shooterTolerance = 2.5; // RPS — prevents flicker at edge of PID settling band
     public static final double turretTolerance = 0.005; // ~1.8° — tight enough for shooting
     public static final double hoodTolerance = 0.005; // ~1.8° — matches turret tolerance
 
@@ -86,7 +86,7 @@ public final class TurretConstants {
         TURRET_CONFIG.Slot0.kV = 0.0;
         TURRET_CONFIG.Slot0.kA = 0.0;
         TURRET_CONFIG.Slot0.kP = 30;
-        TURRET_CONFIG.Slot0.kI = 5;
+        TURRET_CONFIG.Slot0.kI = 0;
         TURRET_CONFIG.Slot0.kD = 0.00;
 
         TURRET_CONFIG.Voltage.PeakForwardVoltage = 10.0;
@@ -96,7 +96,7 @@ public final class TurretConstants {
         TURRET_CONFIG.Feedback.SensorToMechanismRatio = TURRET_GEAR_RATIO; // 5.08 rotor turns per turret turn
 
         // MotionMagic constraints — prevents turret from slamming. TODO: tune on robot.
-        TURRET_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 0.5; // RPS
+        TURRET_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 1.0; // RPS
         TURRET_CONFIG.MotionMagic.MotionMagicAcceleration = 2.0; // RPS^2
         TURRET_CONFIG.MotionMagic.MotionMagicJerk = 20.0; // Smoothing
 

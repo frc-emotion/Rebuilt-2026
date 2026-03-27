@@ -23,7 +23,7 @@ public class Indexer extends SubsystemBase {
 
     @Logged(importance = Logged.Importance.DEBUG) private double horizontalVelocityRPS = 0.0;
     @Logged(importance = Logged.Importance.DEBUG) private double verticalVelocityRPS = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double upwardVelocityRPS = IndexerConstants.UPWARD_INDEXER_SPEED;
+    @Logged(importance = Logged.Importance.DEBUG) private double upwardVelocityRPS = 0.0;
 
     public Indexer(CANBus canBus) {
         horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID, canBus);
@@ -44,7 +44,6 @@ public class Indexer extends SubsystemBase {
         verticalIndexerMotor.getVelocity().setUpdateFrequency(10);
         upwardIndexerMotor.getVelocity().setUpdateFrequency(10);
 
-        upwardIndexerMotor.setControl(upwardMotionController.withVelocity(IndexerConstants.UPWARD_INDEXER_SPEED));
     }
 
     @Override
@@ -99,7 +98,21 @@ public class Indexer extends SubsystemBase {
                 verticalIndexerMotor.setControl(verticalMotionController.withVelocity(speed));
                 break;
             case UPWARD:
-                // upwardIndexerMotor.setControl(upwardMotionController.withVelocity(speed));
+                upwardIndexerMotor.setControl(upwardMotionController.withVelocity(speed));
+                break;
+        }
+    }
+
+    public void stopIndexer(IndexerType indexer) {
+        switch (indexer) {
+            case HORIZONTAL:
+                horizontalIndexerMotor.stopMotor();
+                break;
+            case VERTICAL:
+                verticalIndexerMotor.stopMotor();
+                break;
+            case UPWARD:
+                upwardIndexerMotor.stopMotor();
                 break;
         }
     }
@@ -107,7 +120,7 @@ public class Indexer extends SubsystemBase {
     public void stop() {
         horizontalIndexerMotor.stopMotor();
         verticalIndexerMotor.stopMotor();
-        // upwardIndexerMotor.stopMotor();
+        upwardIndexerMotor.stopMotor();
     }
 
     // ==================

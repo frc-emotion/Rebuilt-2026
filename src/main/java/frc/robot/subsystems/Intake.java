@@ -144,6 +144,10 @@ public class Intake extends SubsystemBase {
                 + IntakeConstants.INTAKE_OUT_THRESHOLD_ROT;
     }
 
+    public boolean isDeployed() {
+        return intakeIsOut;
+    }
+
     public void stop() {
         intakeMotor.stopMotor();
         rollerMotor.stopMotor();

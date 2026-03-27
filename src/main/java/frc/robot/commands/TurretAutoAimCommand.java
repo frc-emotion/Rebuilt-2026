@@ -80,10 +80,10 @@ public class TurretAutoAimCommand extends Command {
     // 1 degree of tx ≈ 1/360 turret rotations, but we scale by a gain
     // to let the turret converge faster or slower. Start at 1.0 (1:1).
     // If the turret under-shoots, increase. If it oscillates, decrease.
-    private static final double TX_TO_ROT_GAIN = 1.0;
+    private static final double TX_TO_ROT_GAIN = 0.5;
 
     // Don't correct below this (prevents chasing noise near center)
-    private static final double DEADBAND_DEG = 6.7;
+    private static final double DEADBAND_DEG = 2.0;
 
     // TRACKING → MANUAL: persist tracking this long after last fresh frame.
     private static final double TRACKING_PERSIST_SEC = 0.15;
@@ -248,9 +248,6 @@ public class TurretAutoAimCommand extends Command {
                 // turret tracks even between camera frames.
                 gyroFeedforwardRot = 0.0;
                 if (GYRO_FF_ENABLED && drivetrain != null) {
-                    // getAngularVelocityZWorld returns deg/s; positive = CCW
-                    // Robot rotating CCW means turret must rotate CW (positive
-                    // in Clockwise_Positive motor convention) to stay aimed.
                     double gyroRateDegPerSec = drivetrain.getPigeon2()
                             .getAngularVelocityZWorld().getValueAsDouble();
                     gyroFeedforwardRot = -(gyroRateDegPerSec / 360.0) * LOOP_PERIOD_SEC;
@@ -258,37 +255,31 @@ public class TurretAutoAimCommand extends Command {
                 }
 
                 // --- Vision correction: only on fresh frames ---
-                // persistentTargetRot accumulates corrections — it is NOT
-                // re-read from the motor each cycle, preventing the base
-                // from shifting while the motor is still catching up.
-                Angle newSetpoint = Rotations.of(turretPos);
+                // persistentTargetRot accumulates toward the target. On non-vision
+                // cycles, MotionMagic keeps driving to the last target (no oscillation).
                 if (freshVisionThisCycle && Math.abs(visionTxDeg) > DEADBAND_DEG) {
-                    double txOffsetRot = -(visionTxDeg / 360.0) * TX_TO_ROT_GAIN;
+                    double txOffsetRot = (visionTxDeg / 360.0) * TX_TO_ROT_GAIN;
                     persistentTargetRot += txOffsetRot;
-                    newSetpoint = newSetpoint.plus(Degrees.of(visionTxDeg));
                 }
 
                 // --- Shoot-on-the-move: effective distance + shooter compensation ---
-                // Lead angle is NOT applied to the turret here (SOTM_ENABLED = false).
-                // When enabled, lead will be added to newSetpoint in turret-frame degrees.
                 leadAngleRot = 0.0;
                 effectiveDistanceMeters = distanceToHubMeters;
                 shooterRPSOffset = 0.0;
                 robotSpeedMPS = 0.0;
                 if (SOTM_ENABLED && drivetrain != null && distanceToHubMeters > 0.5) {
                     computeSOTMCompensation(turretPos);
-                    // Add lead angle to newSetpoint in degrees (same frame as tx)
-                    newSetpoint = newSetpoint.plus(Degrees.of(leadAngleRot * 360.0));
+                    persistentTargetRot += leadAngleRot;
                 }
 
                 persistentTargetRot = MathUtil.clamp(persistentTargetRot,
                         frc.robot.Constants.TurretConstants.TURRET_REVERSE_LIMIT,
                         frc.robot.Constants.TurretConstants.TURRET_FORWARD_LIMIT);
 
-                // MotionMagic handles acceleration, deceleration, and holding.
-                // Commands every cycle so turret holds position between frames.
-                targetPositionRot = turretPos;
-                turret.moveTurret(newSetpoint);
+                // Send persistent target to MotionMagic every cycle.
+                // MotionMagic smoothly drives to this target and holds it.
+                targetPositionRot = persistentTargetRot;
+                turret.moveTurret(Rotations.of(persistentTargetRot));
                 break;
             }
         }
@@ -312,7 +303,7 @@ public class TurretAutoAimCommand extends Command {
     /** Returns true when TRACKING and tx is within deadband, or always true in bench test mode. */
     public boolean isAimed() {
         if (BENCH_TEST_BYPASS_AIM_GATE) return true;
-        if (currentState != AimState.TRACKING) return true; // should be false, but just in case, require tracking state for aiming
+        if (currentState != AimState.TRACKING) return false;
         double tolerance = (SOTM_ENABLED && robotSpeedMPS > 0.3)
                 ? SOTM_AIM_TOLERANCE_DEG : DEADBAND_DEG;
         return Math.abs(visionTxDeg) < tolerance;

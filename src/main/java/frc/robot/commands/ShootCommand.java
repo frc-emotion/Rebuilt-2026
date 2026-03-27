@@ -99,14 +99,9 @@ public class ShootCommand extends Command {
         // indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
         // indexer.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
 
-        if (isAimed.getAsBoolean() && shooter.atShooterSetpoint()) {
-            indexer.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
-            indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
-            
-        } else {
-            indexer.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED/2.0, IndexerType.HORIZONTAL);
-            indexer.setIndexerSpeed(0, IndexerType.VERTICAL);
-        }
+        indexer.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
+        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
+        indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
     }
 
     @Override
