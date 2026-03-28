@@ -71,18 +71,20 @@ public class Vision extends SubsystemBase {
             return;
         }
 
-        // 3. Find the best valid target (lowest ambiguity among our hub tags)
+        // 3. Find the best valid target
         PhotonTrackedTarget bestTarget = null;
         double bestAmbiguity = 1.0;
 
         for (PhotonTrackedTarget target : latestResult.getTargets()) {
             int id = target.getFiducialId();
 
-            boolean valid = VisionConstants.BENCH_TEST_ANY_TAG || VisionConstants.isOurHubTag(id);
-            if (!valid) continue;
+            if (!VisionConstants.BENCH_TEST_ANY_TAG && !VisionConstants.isOurHubTag(id)) continue;
 
             double amb = target.getPoseAmbiguity();
-            if (amb > VisionConstants.MAX_POSE_AMBIGUITY) continue;
+
+            // Bench mode: accept any target regardless of ambiguity (matches pre-refactor)
+            // Competition mode: reject high-ambiguity readings
+            if (!VisionConstants.BENCH_TEST_ANY_TAG && amb > VisionConstants.MAX_POSE_AMBIGUITY) continue;
 
             if (amb < bestAmbiguity) {
                 bestTarget = target;
@@ -96,22 +98,27 @@ public class Vision extends SubsystemBase {
             return;
         }
 
-        // 4. Compute distance + yaw to hub center (or raw tag in bench mode)
-        Transform3d cameraToTag = bestTarget.getBestCameraToTarget();
+        // 4. Compute distance + yaw
         int tagId = bestTarget.getFiducialId();
 
-        Transform3d tagToHub = VisionConstants.TAG_TO_HUB_CENTER.get(tagId);
-        boolean useHubOffset = (tagToHub != null) && !VisionConstants.BENCH_TEST_ANY_TAG;
-
-        Translation3d toTarget;
-        if (useHubOffset) {
-            toTarget = cameraToTag.plus(tagToHub).getTranslation();
+        if (VisionConstants.BENCH_TEST_ANY_TAG) {
+            // Bench mode: use raw PhotonVision yaw + raw camera→tag distance
+            // This matches pre-refactor behavior exactly
+            yawToHubDeg = bestTarget.getYaw();
+            Translation3d camToTag = bestTarget.getBestCameraToTarget().getTranslation();
+            distanceToHub = Math.hypot(camToTag.getX(), camToTag.getY());
         } else {
-            toTarget = cameraToTag.getTranslation();
-        }
+            // Competition mode: camera→tag + tag→hub vector addition
+            Transform3d cameraToTag = bestTarget.getBestCameraToTarget();
+            Transform3d tagToHub = VisionConstants.TAG_TO_HUB_CENTER.get(tagId);
 
-        distanceToHub = Math.hypot(toTarget.getX(), toTarget.getY());
-        yawToHubDeg = Math.toDegrees(Math.atan2(toTarget.getY(), toTarget.getX()));
+            Translation3d toHub = (tagToHub != null)
+                    ? cameraToTag.plus(tagToHub).getTranslation()
+                    : cameraToTag.getTranslation();
+
+            distanceToHub = Math.hypot(toHub.getX(), toHub.getY());
+            yawToHubDeg = Math.toDegrees(Math.atan2(toHub.getY(), toHub.getX()));
+        }
 
         // 5. Update state
         trackedTagId = tagId;
