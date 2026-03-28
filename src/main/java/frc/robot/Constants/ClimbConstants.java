@@ -13,7 +13,6 @@ public final class ClimbConstants {
 
     public static final double MANUAL_CLIMB_VOLTAGE = 6.0;
     public static final double MANUAL_CLIMB_DEADBAND = 0.1;
-    public static final double CLIMB_GRAVITY_COMP_VOLTS = 0.5;
 
     public static final TalonFXConfiguration CLIMB_CONFIG = new TalonFXConfiguration();
 

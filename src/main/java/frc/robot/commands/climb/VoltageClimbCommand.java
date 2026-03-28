@@ -42,15 +42,12 @@ public class VoltageClimbCommand extends Command {
     public void execute() {
         double input = m_inputSupplier.getAsDouble();
 
-        // Apply deadband
         if (Math.abs(input) < ClimbConstants.MANUAL_CLIMB_DEADBAND) {
-            input = 0.0;
+            m_climb.stop();
+            return;
         }
 
-        // Scale joystick input to voltage and add gravity compensation
-        double volts = (input * ClimbConstants.MANUAL_CLIMB_VOLTAGE) + ClimbConstants.CLIMB_GRAVITY_COMP_VOLTS;
-
-        m_climb.setClimbVoltage(volts);
+        m_climb.setClimbVoltage(input * ClimbConstants.MANUAL_CLIMB_VOLTAGE);
     }
 
     @Override

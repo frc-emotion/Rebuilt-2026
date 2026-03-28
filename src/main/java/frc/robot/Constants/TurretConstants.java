@@ -27,8 +27,8 @@ public final class TurretConstants {
     // Boot position = turret facing straight forward = 0.0.
     // Old absolute: forward=0.08, reverse=-0.50, fwd_limit=0.28
     // New zeroed:   forward=0.00, reverse=-0.58, fwd_limit=0.20
-    public static final double TURRET_REVERSE_LIMIT = -0.8;
-    public static final double TURRET_FORWARD_LIMIT = 0.05;
+    public static final double TURRET_REVERSE_LIMIT = -0.65;
+    public static final double TURRET_FORWARD_LIMIT = 0.26;
     // Turret straight-forward is now 0.0 (zeroed at boot).
     public static final double TURRET_FORWARD_POSITION = 0.0;
 
@@ -82,10 +82,11 @@ public final class TurretConstants {
         TURRET_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
         TURRET_CONFIG.CurrentLimits.SupplyCurrentLimit = 40.0;
         TURRET_CONFIG.Slot0.kG = 0.0;
-        TURRET_CONFIG.Slot0.kS = 0.1;
+        TURRET_CONFIG.Slot0.kS = 0.2; //0.1
         TURRET_CONFIG.Slot0.kV = 0.0;
         TURRET_CONFIG.Slot0.kA = 0.0;
-        TURRET_CONFIG.Slot0.kP = 30;
+        // TURRET_CONFIG.Slot0.kP = 30;
+        TURRET_CONFIG.Slot0.kP = 40;
         TURRET_CONFIG.Slot0.kI = 0;
         TURRET_CONFIG.Slot0.kD = 0.00;
 

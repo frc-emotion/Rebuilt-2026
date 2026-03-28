@@ -14,12 +14,16 @@ import frc.robot.subsystems.Shooter;
 import frc.robot.util.TurretAimingCalculator;
 
 /**
- * Spins up shooter + sets hood + feeds indexers when aimed.
+ * Spins up shooter + sets hood + feeds indexers.
  *
- * Vision mode: hood/shooter from interp tables, indexers gated on isAimed.
- * Manual mode: fixed shooter RPS, hood flat, indexers always fire.
+ * Vision mode (interp tables):
+ *   - Aimed: hood + shooter from distance tables, all 3 indexers fire.
+ *   - Not aimed: hood stays where operator left it, shooter at FALLBACK_SHOOTER_RPS, all 3 indexers fire.
+ * Manual mode: fixed shooter RPS, hood untouched, all indexers always fire.
  */
 public class ShootCommand extends Command {
+
+    private static final double FALLBACK_SHOOTER_RPS = 50.0;
 
     private final Indexer indexer;
     private final Hood hood;
@@ -61,21 +65,25 @@ public class ShootCommand extends Command {
 
     @Override
     public void execute() {
-        if (useInterpTables) {
+        boolean aimed = isAimed.getAsBoolean();
+
+        if (useInterpTables && aimed) {
             double dist = distanceSupplier.getAsDouble();
             hood.setHoodAngle(Rotations.of(calculator.getHoodAngleRot(dist)));
             shooter.setShooterSpeed(RotationsPerSecond.of(calculator.getFlywheelRPS(dist)));
+        } else if (useInterpTables) {
+            // Not aimed: keep hood where operator left it, spin shooter at fallback RPS
+            shooter.setShooterSpeed(RotationsPerSecond.of(FALLBACK_SHOOTER_RPS));
         } else {
             shooter.setShooterSpeed(RotationsPerSecond.of(manualShooterRPS));
-            hood.setHoodAngle(Rotations.of(0.0));
         }
 
-        if (isAimed.getAsBoolean()) {
-            indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
-            indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
+        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
+
+        if (shooter.atShooterSetpoint()) {
+            indexer.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
             indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
         } else {
-            indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED * 0.75, IndexerType.VERTICAL);
             indexer.stopIndexer(IndexerType.HORIZONTAL);
             indexer.stopIndexer(IndexerType.UPWARD);
         }

@@ -16,6 +16,7 @@ import static edu.wpi.first.units.Units.Rotations;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.TurretConstants;
+import frc.robot.commands.TurretAutoAimCommand;
 
 @Logged
 public class Turret extends SubsystemBase {
@@ -35,6 +36,7 @@ public class Turret extends SubsystemBase {
     @Logged(importance = Logged.Importance.CRITICAL) private boolean faultForwardSoftLimit = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean faultReverseSoftLimit = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean turretWrapped = false;
+    @Logged(importance = Logged.Importance.CRITICAL) private double wrappedSetpointRot = 0.0;
 
     // DEBUG: only on NT during testing, always in log files
     @Logged(importance = Logged.Importance.DEBUG) private double turretVelocityRPS = 0.0;
@@ -92,20 +94,32 @@ public class Turret extends SubsystemBase {
         }
     }
 
-    public void moveTurret(Angle setpoint) {
-        double clampedRot = MathUtil.clamp(setpoint.in(Rotations),
-                TurretConstants.TURRET_REVERSE_LIMIT, TurretConstants.TURRET_FORWARD_LIMIT);
-        turretCurrentSetpoint = Rotations.of(clampedRot);
+    public Angle moveTurret(Angle setpoint) {
+        double rot = wrapAndClamp(setpoint.in(Rotations));
+        turretCurrentSetpoint = Rotations.of(rot);
         turretMotor.setControl(turretMotionRequest.withPosition(turretCurrentSetpoint));
+        return turretCurrentSetpoint;
     }
 
-    public void moveTurret(Angle setpoint, double feedforwardVolts) {
-        double clampedRot = MathUtil.clamp(setpoint.in(Rotations),
-                TurretConstants.TURRET_REVERSE_LIMIT, TurretConstants.TURRET_FORWARD_LIMIT);
-        turretCurrentSetpoint = Rotations.of(clampedRot);
+    public Angle moveTurret(Angle setpoint, double feedforwardVolts) {
+        double rot = wrapAndClamp(setpoint.in(Rotations));
+        turretCurrentSetpoint = Rotations.of(rot);
         turretMotor.setControl(turretMotionRequest.withPosition(turretCurrentSetpoint).withFeedForward(feedforwardVolts));
+        return turretCurrentSetpoint;
     }
 
+    private double wrapAndClamp(double rot) {
+        double raw = rot;
+        if (rot < TurretConstants.TURRET_REVERSE_LIMIT) {
+            rot += 1.0;
+        } else if (rot > TurretConstants.TURRET_FORWARD_LIMIT) {
+            rot -= 1.0;
+        }
+        rot = MathUtil.clamp(rot, TurretConstants.TURRET_REVERSE_LIMIT, TurretConstants.TURRET_FORWARD_LIMIT);
+        turretWrapped = (rot != raw);
+        wrappedSetpointRot = rot;
+        return rot;
+    }
 
     public void setTurretVoltage(double joystickInput) {
         double voltage = joystickInput * 3.0;

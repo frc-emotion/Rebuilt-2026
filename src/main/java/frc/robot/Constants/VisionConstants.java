@@ -187,7 +187,7 @@ public final class VisionConstants {
      *   Red tags 9,10 face +X (toward red DS at x≈16.5)
      *   Blue tags 25,26 face -X (toward blue DS at x≈0)
      */
-    public static final int[] RED_DS_FACING_TAG_IDS = { 9, 10 };
+    public static final int[] RED_DS_FACING_TAG_IDS = { 5, 9, 10 };
     public static final int[] BLUE_DS_FACING_TAG_IDS = { 25, 26 };
 
     /**

@@ -62,7 +62,9 @@ public class RobotContainer {
         // ================================================================
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
         @NotLogged public final Vision vision = new Vision();
-        public final Intake intake = new Intake(mechanismBus);
+        // To re-enable intake: uncomment the line below and comment out the null line
+        public final Intake intake = null;
+        // public final Intake intake = new Intake(mechanismBus);
         public final Indexer indexer = new Indexer(mechanismBus);
         public final Turret turret = new Turret(mechanismBus);
         public final Hood hood = new Hood(mechanismBus);
@@ -78,7 +80,7 @@ public class RobotContainer {
         // Turret D-pad setpoints (intuitive relative to robot)
         // Up = forward (0°), Down = backward (-180°), Left = 90° left, Right = forward limit
         private static final double TURRET_POS_FORWARD  =  0.0;     //   0° (front of robot)
-        private static final double TURRET_POS_RIGHT    =  0.05;    // +18° CW (forward limit)
+        private static final double TURRET_POS_RIGHT    =  0.25;    // +18° CW (forward limit)
         private static final double TURRET_POS_LEFT     = -0.250;   // -90° CCW (perpendicular left)
         private static final double TURRET_POS_BACK     = -0.500;   // -180° CCW (straight backward)
 
@@ -90,19 +92,22 @@ public class RobotContainer {
         public RobotContainer() {
                 edu.wpi.first.wpilibj.DriverStation.silenceJoystickConnectionWarning(true);
 
-                visionAutoAim = new TurretAutoAimCommand(drivetrain, vision, turret, () -> operator.getRightX());
+                visionAutoAim = new TurretAutoAimCommand(drivetrain, vision, turret,
+                        () -> operator.getRightX(),
+                        () -> operator.leftStick().getAsBoolean());
 
-                // Hood default: always hold last commanded position via MotionMagic
                 hood.setDefaultCommand(hood.run(() ->
                         hood.setHoodAngle(Rotations.of(hood.getHoodPosition()))));
 
-                indexer.setDefaultCommand(indexer.run(() -> {
-                        if (intake.isOut()) {
-                                indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED * 0.75, IndexerType.VERTICAL);
-                        } else {
-                                indexer.stopIndexer(IndexerType.VERTICAL);
-                        }
-                }));
+                if (intake != null) {
+                        indexer.setDefaultCommand(indexer.run(() -> {
+                                if (intake.isOut()) {
+                                        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED * 0.75, IndexerType.VERTICAL);
+                                } else {
+                                        indexer.stopIndexer(IndexerType.VERTICAL);
+                                }
+                        }));
+                }
 
                 configureDriveBindings();
                 configureSharedBindings();
@@ -177,7 +182,9 @@ public class RobotContainer {
         //  X / Y / B  = hood setpoints
         // ================================================================
         private void configureSharedBindings() {
-                operator.a().toggleOnTrue(new IntakeOutCommand(intake));
+                if (intake != null) {
+                        operator.a().toggleOnTrue(new IntakeOutCommand(intake));
+                }
 
                 operator.rightTrigger().whileTrue(Commands.defer(() -> {
                         return new ShootCommand(indexer, hood, shooter,
@@ -258,26 +265,21 @@ public class RobotContainer {
         //  NAMED COMMANDS (for PathPlanner event markers)
         // ================================================================
         private void registerNamedCommands() {
-                // -- Intake --
-                NamedCommands.registerCommand("intakeOut",
-                        new IntakeOutCommand(intake));
-                NamedCommands.registerCommand("intakeIn",
-                        new IntakeInCommand(intake));
+                if (intake != null) {
+                        NamedCommands.registerCommand("intakeOut", new IntakeOutCommand(intake));
+                        NamedCommands.registerCommand("intakeIn", new IntakeInCommand(intake));
+                }
 
-                // -- Shoot (vision): hood + shooter from interp tables via turret auto-aim,
-                //    all 3 indexers fire only when aimed AND shooter at setpoint --
                 NamedCommands.registerCommand("shoot",
                         new ShootCommand(indexer, hood, shooter,
                                 visionAutoAim::getDistanceToHub,
                                 visionAutoAim.getCalculator(),
                                 visionAutoAim::isAimed));
 
-                // -- Safety: stop all mechanisms --
                 NamedCommands.registerCommand("stopAll",
                         Commands.parallel(
                                 Commands.runOnce(() -> shooter.stop(), shooter),
-                                Commands.runOnce(() -> indexer.stop(), indexer),
-                                new IntakeInCommand(intake)));
+                                Commands.runOnce(() -> indexer.stop(), indexer)));
         }
 
         // ================================================================
