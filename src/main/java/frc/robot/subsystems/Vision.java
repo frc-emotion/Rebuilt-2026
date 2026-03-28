@@ -1,16 +1,10 @@
 package frc.robot.subsystems;
 
-import java.util.Optional;
-import java.util.function.Supplier;
-
 import org.photonvision.PhotonCamera;
-import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -18,124 +12,144 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.VisionConstants;
 
 /**
- * Vision subsystem: turret camera only.
- * Provides tx (yaw error) and distance-to-target for turret tracking.
+ * Vision subsystem: single turret-mounted camera.
+ *
+ * Every cycle this subsystem computes two numbers:
+ *   1. distanceToHub — horizontal meters from camera to hub center
+ *   2. yawToHubDeg   — degrees the hub center is off the camera's forward axis
+ *
+ * The math is one vector addition:
+ *   camera→hub = camera→tag (from PhotonVision) + tag→hub (fixed constant)
+ *
+ * BENCH_TEST_ANY_TAG mode skips the tag→hub offset so you can aim at any
+ * wall tag without needing a real hub.
  */
 @Logged
 public class Vision extends SubsystemBase {
 
-    private final PhotonCamera cameraTurret;
-    private final PhotonPoseEstimator poseEstimatorTurret;
+    private final PhotonCamera camera;
 
-    private PhotonPipelineResult latestResultTurret;
-    private Supplier<Rotation2d> turretAngleSupplier = () -> new Rotation2d();
+    private PhotonPipelineResult latestResult;
+    private boolean freshThisCycle = false;
+    private double resultTimestamp = 0.0;
 
-    private boolean turretResultFreshThisCycle = false;
-    private double turretResultTimestamp = 0.0;
+    // Stale-data hold: distance keeps its last good value when no tag is visible
+    private double lastGoodDistance = 0.0;
 
-    @Logged(importance = Logged.Importance.CRITICAL) private boolean turretCamConnected = false;
-    @Logged(importance = Logged.Importance.CRITICAL) private boolean turretHasTargets = false;
-    @Logged(importance = Logged.Importance.CRITICAL) private double correctedBumperDist = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double targetPitchDeg = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double visionLatencyMs = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double timeSinceLastFrameMs = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private boolean cameraConnected = false;
+    @Logged(importance = Logged.Importance.CRITICAL) private boolean seeingHubTag = false;
+    @Logged(importance = Logged.Importance.CRITICAL) private double distanceToHub = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double yawToHubDeg = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private int trackedTagId = -1;
+    @Logged(importance = Logged.Importance.CRITICAL) private double latencyMs = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double ambiguity = 0.0;
 
     public Vision() {
-        cameraTurret = VisionConstants.ENABLE_TURRET_CAM
-                ? new PhotonCamera(VisionConstants.TURRET_CAM_NAME) : null;
-
-        if (VisionConstants.TAG_LAYOUT == null || cameraTurret == null) {
-            poseEstimatorTurret = null;
-            return;
-        }
-
-        poseEstimatorTurret = new PhotonPoseEstimator(
-                VisionConstants.TAG_LAYOUT,
-                calculateTurretCameraTransform(new Rotation2d()));
+        camera = VisionConstants.ENABLE_TURRET_CAM
+                ? new PhotonCamera(VisionConstants.TURRET_CAM_NAME)
+                : null;
     }
 
     @Override
     public void periodic() {
-        updateTurretCameraTransform();
-
-        turretResultFreshThisCycle = false;
-        if (cameraTurret != null) {
-            for (PhotonPipelineResult result : cameraTurret.getAllUnreadResults()) {
-                latestResultTurret = result;
-                turretResultFreshThisCycle = true;
-                turretResultTimestamp = result.getTimestampSeconds();
+        // 1. Drain all unread frames, keep the newest one
+        freshThisCycle = false;
+        if (camera != null) {
+            for (PhotonPipelineResult result : camera.getAllUnreadResults()) {
+                latestResult = result;
+                freshThisCycle = true;
+                resultTimestamp = result.getTimestampSeconds();
             }
         }
 
-        turretCamConnected = cameraTurret != null && cameraTurret.isConnected();
-        turretHasTargets = latestResultTurret != null && latestResultTurret.hasTargets();
+        cameraConnected = camera != null && camera.isConnected();
 
-        updateTurretDiagnostics();
-    }
-
-    // ── Turret camera transform (dynamic, updates each cycle) ──
-
-    private Transform3d calculateTurretCameraTransform(Rotation2d turretAngle) {
-        Transform3d turretRotation = new Transform3d(
-                new Translation3d(),
-                new Rotation3d(0, 0, turretAngle.getRadians()));
-        return VisionConstants.ROBOT_TO_TURRET_PIVOT
-                .plus(turretRotation)
-                .plus(VisionConstants.TURRET_PIVOT_TO_CAM);
-    }
-
-    private void updateTurretCameraTransform() {
-        if (poseEstimatorTurret != null) {
-            poseEstimatorTurret.setRobotToCameraTransform(
-                    calculateTurretCameraTransform(turretAngleSupplier.get()));
+        // 2. Nothing new or no targets? Hold stale distance, clear tracking flag
+        if (!freshThisCycle || latestResult == null || !latestResult.hasTargets()) {
+            seeingHubTag = false;
+            distanceToHub = lastGoodDistance;
+            return;
         }
-    }
 
-    public void setTurretAngleSupplier(Supplier<Rotation2d> supplier) {
-        this.turretAngleSupplier = supplier;
-    }
+        // 3. Find the best valid target (lowest ambiguity among our hub tags)
+        PhotonTrackedTarget bestTarget = null;
+        double bestAmbiguity = 1.0;
 
-    // ── Turret camera accessors (used by TurretAutoAimCommand) ──
+        for (PhotonTrackedTarget target : latestResult.getTargets()) {
+            int id = target.getFiducialId();
 
-    public double getTurretCameraDistanceToTarget() {
-        if (latestResultTurret == null || !latestResultTurret.hasTargets()) return 0.0;
-        Translation3d camToTag = latestResultTurret.getBestTarget()
-                .getBestCameraToTarget().getTranslation();
-        double hDist = Math.hypot(camToTag.getX(), camToTag.getY());
-        return hDist + VisionConstants.CAMERA_TO_BUMPER_OFFSET_METERS;
-    }
+            boolean valid = VisionConstants.BENCH_TEST_ANY_TAG || VisionConstants.isOurHubTag(id);
+            if (!valid) continue;
 
-    public Optional<PhotonTrackedTarget> getTurretCameraBestTarget() {
-        if (latestResultTurret != null && latestResultTurret.hasTargets()) {
-            return Optional.of(latestResultTurret.getBestTarget());
+            double amb = target.getPoseAmbiguity();
+            if (amb > VisionConstants.MAX_POSE_AMBIGUITY) continue;
+
+            if (amb < bestAmbiguity) {
+                bestTarget = target;
+                bestAmbiguity = amb;
+            }
         }
-        return Optional.empty();
+
+        if (bestTarget == null) {
+            seeingHubTag = false;
+            distanceToHub = lastGoodDistance;
+            return;
+        }
+
+        // 4. Compute distance + yaw to hub center (or raw tag in bench mode)
+        Transform3d cameraToTag = bestTarget.getBestCameraToTarget();
+        int tagId = bestTarget.getFiducialId();
+
+        Transform3d tagToHub = VisionConstants.TAG_TO_HUB_CENTER.get(tagId);
+        boolean useHubOffset = (tagToHub != null) && !VisionConstants.BENCH_TEST_ANY_TAG;
+
+        Translation3d toTarget;
+        if (useHubOffset) {
+            toTarget = cameraToTag.plus(tagToHub).getTranslation();
+        } else {
+            toTarget = cameraToTag.getTranslation();
+        }
+
+        distanceToHub = Math.hypot(toTarget.getX(), toTarget.getY());
+        yawToHubDeg = Math.toDegrees(Math.atan2(toTarget.getY(), toTarget.getX()));
+
+        // 5. Update state
+        trackedTagId = tagId;
+        ambiguity = bestAmbiguity;
+        latencyMs = latestResult.metadata.getLatencyMillis();
+        seeingHubTag = true;
+        lastGoodDistance = distanceToHub;
     }
 
-    public boolean turretCameraHasTargets() {
-        return latestResultTurret != null && latestResultTurret.hasTargets();
+    // ── Public API ──
+
+    /** Horizontal distance from camera to hub center in meters. Holds last good value when no tag visible. */
+    public double getDistanceToHub() {
+        return distanceToHub;
     }
 
+    /** Degrees the hub center is off the camera's forward axis. 0 when no tag visible. */
+    public double getYawToHubDeg() {
+        return yawToHubDeg;
+    }
+
+    /** True when a valid hub tag (or any tag in bench mode) passed ambiguity check this cycle. */
+    public boolean isSeeingHubTag() {
+        return seeingHubTag;
+    }
+
+    /** True when the camera delivered a new frame this cycle. */
     public boolean isTurretResultFresh() {
-        return turretResultFreshThisCycle;
+        return freshThisCycle;
     }
 
+    /** Timestamp of the latest camera frame (for dedup in TurretAutoAimCommand). */
     public double getTurretResultTimestamp() {
-        return turretResultTimestamp;
+        return resultTimestamp;
     }
 
-    // ── Diagnostics ──
-
-    private void updateTurretDiagnostics() {
-        if (latestResultTurret != null && latestResultTurret.hasTargets()) {
-            correctedBumperDist = getTurretCameraDistanceToTarget();
-            targetPitchDeg = latestResultTurret.getBestTarget().getPitch();
-        }
-        if (turretResultTimestamp > 0) {
-            timeSinceLastFrameMs = (edu.wpi.first.wpilibj.Timer.getFPGATimestamp() - turretResultTimestamp) * 1000.0;
-        }
-        if (turretResultFreshThisCycle && latestResultTurret != null) {
-            visionLatencyMs = latestResultTurret.metadata.getLatencyMillis();
-        }
+    /** The fiducial ID currently being tracked (-1 if none). */
+    public int getTrackedTagId() {
+        return trackedTagId;
     }
 }

@@ -12,6 +12,7 @@ import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Vision;
 
 /**
  * Calibration command for populating the interpolation tables.
@@ -36,16 +37,18 @@ public class CalibrationShootCommand extends Command {
     private final Hood hood;
     private final Shooter shooter;
     private final Indexer indexer;
+    private final Vision vision;
 
     private final DoubleEntry hoodEntry;
     private final DoubleEntry shooterEntry;
     private final DoubleEntry distanceEntry;
 
-    public CalibrationShootCommand(Turret turret, Hood hood, Shooter shooter, Indexer indexer) {
+    public CalibrationShootCommand(Turret turret, Hood hood, Shooter shooter, Indexer indexer, Vision vision) {
         this.turret = turret;
         this.hood = hood;
         this.shooter = shooter;
         this.indexer = indexer;
+        this.vision = vision;
         addRequirements(turret, hood, shooter, indexer);
 
         var table = NetworkTableInstance.getDefault().getTable("Calibration");
@@ -61,6 +64,9 @@ public class CalibrationShootCommand extends Command {
 
     @Override
     public void execute() {
+        // Write live vision distance so you can read it on Elastic while calibrating
+        distanceEntry.set(vision != null ? vision.getDistanceToHub() : 0.0);
+
         // Read live values from Elastic
         double hoodRot = hoodEntry.get();
         double shooterRPS = shooterEntry.get();

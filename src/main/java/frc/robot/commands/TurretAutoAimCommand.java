@@ -8,8 +8,6 @@ import java.util.function.DoubleSupplier;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.TurretConstants;
-import frc.robot.Constants.VisionConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
@@ -50,7 +48,6 @@ public class TurretAutoAimCommand extends Command {
     private static final boolean GYRO_FF_ENABLED = true;
 
     private double lastVisionTimestamp = 0.0;
-    private double lastCameraDistance = 0.0;
     private boolean freshVisionThisCycle = false;
 
     public TurretAutoAimCommand(
@@ -73,7 +70,6 @@ public class TurretAutoAimCommand extends Command {
         calculator.clearAllianceCache();
         targetPositionRot = turret.getTurretMotor().getPosition().getValueAsDouble();
         lastVisionTimestamp = 0.0;
-        lastCameraDistance = 0.0;
         visionTxDeg = 0.0;
         freshVisionThisCycle = false;
     }
@@ -106,23 +102,18 @@ public class TurretAutoAimCommand extends Command {
     private void readVision() {
         freshVisionThisCycle = false;
         visionActive = false;
-        if (vision == null || !vision.isTurretResultFresh() || !vision.turretCameraHasTargets()) return;
+        if (vision == null || !vision.isTurretResultFresh()) return;
 
         double ts = vision.getTurretResultTimestamp();
         if (ts == lastVisionTimestamp) return;
         lastVisionTimestamp = ts;
 
-        var target = vision.getTurretCameraBestTarget();
-        if (target.isEmpty()) return;
+        if (!vision.isSeeingHubTag()) return;
 
-        int tagId = target.get().getFiducialId();
-        if (!VisionConstants.BENCH_TEST_ANY_TAG && !VisionConstants.isDSFacingHubTag(tagId)) return;
-
-        visionTxDeg = target.get().getYaw();
-        trackedTagId = tagId;
+        visionTxDeg = vision.getYawToHubDeg();
+        distanceToHubMeters = vision.getDistanceToHub();
+        trackedTagId = vision.getTrackedTagId();
         visionActive = true;
-        lastCameraDistance = vision.getTurretCameraDistanceToTarget();
-        distanceToHubMeters = lastCameraDistance;
         freshVisionThisCycle = true;
     }
 

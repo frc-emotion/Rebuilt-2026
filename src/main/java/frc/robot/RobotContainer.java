@@ -21,6 +21,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 import frc.robot.Constants.CANID;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
+import frc.robot.commands.CalibrationShootCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.TurretAutoAimCommand;
 import frc.robot.commands.climb.VoltageClimbCommand;
@@ -115,7 +116,6 @@ public class RobotContainer {
                 turret.setDefaultCommand(visionAutoAim);
 
                 registerMotorsForFaultMonitoring();
-                vision.setTurretAngleSupplier(turret::getTurretPosition);
 
                 // PathPlanner: configure path-following, register named commands, build auto chooser
                 drivetrain.configurePathPlanner();
@@ -141,15 +141,6 @@ public class RobotContainer {
                 joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
                 joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-                // Seed pose facing hub (driver Y): sets odometry so hub is directly ahead
-                joystick.y().onTrue(Commands.runOnce(() -> {
-                        var hubCenter = frc.robot.Constants.VisionConstants.RED_HUB_CENTER;
-                        drivetrain.resetPose(new edu.wpi.first.math.geometry.Pose2d(
-                                hubCenter.getX() - 4.0, hubCenter.getY(),
-                                new Rotation2d(0)));
-                        System.out.println("[POSE] Seeded facing red hub at ~4m distance");
-                }));
-
                 drivetrain.registerTelemetry(logger::telemeterize);
 
         }
@@ -168,10 +159,11 @@ public class RobotContainer {
                         climb.setDefaultCommand(new VoltageClimbCommand(climb,
                                 () -> joystick.getRightTriggerAxis() - joystick.getLeftTriggerAxis()));
                 }
+                
         }
 
         // ================================================================
-        //  OPERATOR BINDINGS
+        //  OPERATOR BINDINGS}
         //
         //  A          = intake toggle
         //  Right trig = SHOOT (hood + shooter + indexers from interp table)
@@ -205,7 +197,7 @@ public class RobotContainer {
                 }));
 
                 // CalibrationShootCommand — uncomment for interp table calibration sessions only
-                // joystick.b().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer));
+                joystick.b().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer, vision));
 
                 // Turret setpoints (D-pad) — interrupts auto-aim default while held
                 operator.povUp().whileTrue(turret.run(
