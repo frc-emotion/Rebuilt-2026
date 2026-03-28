@@ -7,13 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Blue 2 to Outpost"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Outpost to Depot"
+            "pathName": "Blue 3 to Depot"
           }
         },
         {
@@ -45,6 +39,6 @@
     }
   },
   "resetOdom": true,
-  "folder": "Blue Outpost_Depot",
+  "folder": "Blue Depot_Center",
   "choreoAuto": false
 }

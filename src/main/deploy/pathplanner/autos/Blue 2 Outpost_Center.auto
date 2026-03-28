@@ -11,15 +11,15 @@
           }
         },
         {
-          "type": "path",
+          "type": "wait",
           "data": {
-            "pathName": "Outpost to Depot"
+            "waitTime": 3.0
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Depot to Center"
+            "pathName": "Outpost to Center"
           }
         },
         {
@@ -45,6 +45,6 @@
     }
   },
   "resetOdom": true,
-  "folder": "Blue Outpost_Depot",
+  "folder": "Blue Outpost_Center",
   "choreoAuto": false
 }
