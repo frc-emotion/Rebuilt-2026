@@ -13,13 +13,8 @@
     "Blue Depot_Center",
     "Blue Depot_Outpost",
     "Blue Outpost_Depot",
-<<<<<<< HEAD
     "Blue Center Shoot",
     "Manual"
-=======
-    "Manual",
-    "Blue Outpost_Center"
->>>>>>> e3b3abe (More Path)
   ],
   "defaultMaxVel": 3.0,
   "defaultMaxAccel": 3.0,
