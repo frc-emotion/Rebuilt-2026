@@ -62,7 +62,8 @@ public class RobotContainer {
         //  SUBSYSTEMS
         // ================================================================
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-        @NotLogged public final Vision vision = new Vision();
+        // @NotLogged public final Vision vision = null;
+        @Logged public final Vision vision = new Vision();
         // To re-enable intake: uncomment the line below and comment out the null line
         public final Intake intake = null;
         // public final Intake intake = new Intake(mechanismBus);
@@ -117,7 +118,6 @@ public class RobotContainer {
 
                 registerMotorsForFaultMonitoring();
 
-                // PathPlanner: configure path-following, register named commands, build auto chooser
                 drivetrain.configurePathPlanner();
                 registerNamedCommands();
                 autoChooser = AutoBuilder.buildAutoChooser();
@@ -257,21 +257,21 @@ public class RobotContainer {
         //  NAMED COMMANDS (for PathPlanner event markers)
         // ================================================================
         private void registerNamedCommands() {
-                if (intake != null) {
-                        NamedCommands.registerCommand("intakeOut", new IntakeOutCommand(intake));
-                        NamedCommands.registerCommand("intakeIn", new IntakeInCommand(intake));
-                }
+                // if (intake != null) {
+                //         NamedCommands.registerCommand("intakeOut", new IntakeOutCommand(intake));
+                //         NamedCommands.registerCommand("intakeIn", new IntakeInCommand(intake));
+                // }
 
-                NamedCommands.registerCommand("shoot",
-                        new ShootCommand(indexer, hood, shooter,
-                                visionAutoAim::getDistanceToHub,
-                                visionAutoAim.getCalculator(),
-                                visionAutoAim::isAimed));
+                // NamedCommands.registerCommand("shoot",
+                //         new ShootCommand(indexer, hood, shooter,
+                //                 visionAutoAim::getDistanceToHub,
+                //                 visionAutoAim.getCalculator(),
+                //                 visionAutoAim::isAimed));
 
-                NamedCommands.registerCommand("stopAll",
-                        Commands.parallel(
-                                Commands.runOnce(() -> shooter.stop(), shooter),
-                                Commands.runOnce(() -> indexer.stop(), indexer)));
+                // NamedCommands.registerCommand("stopAll",
+                //         Commands.parallel(
+                //                 Commands.runOnce(() -> shooter.stop(), shooter),
+                //                 Commands.runOnce(() -> indexer.stop(), indexer)));
         }
 
         // ================================================================

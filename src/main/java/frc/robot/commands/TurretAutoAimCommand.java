@@ -42,6 +42,8 @@ public class TurretAutoAimCommand extends Command {
     @Logged(importance = Logged.Importance.CRITICAL) private double turretErrorRot = 0.0;
     @Logged(importance = Logged.Importance.DEBUG) private double gyroFeedforwardRot = 0.0;
 
+    @Logged(importance = Logged.Importance.CRITICAL) private double lastGyroYawDeg = 0.0;
+
     private static final double DEADBAND_DEG = 3.0;
     private static final double MANUAL_DEADBAND = 0.08;
     private static final double LOOP_PERIOD_SEC = 0.02;
@@ -72,6 +74,7 @@ public class TurretAutoAimCommand extends Command {
         lastVisionTimestamp = 0.0;
         visionTxDeg = 0.0;
         freshVisionThisCycle = false;
+        lastGyroYawDeg = drivetrain != null ? drivetrain.getPigeon2().getYaw().getValueAsDouble() : 0.0;
     }
 
     @Override
@@ -120,11 +123,23 @@ public class TurretAutoAimCommand extends Command {
     private void applyGyroFF() {
         gyroFeedforwardRot = 0.0;
         if (!GYRO_FF_ENABLED || drivetrain == null) return;
-        double gyroRate = drivetrain.getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
-        gyroFeedforwardRot = (gyroRate / 360.0) * LOOP_PERIOD_SEC*1.75;
-       
+
+        double currentYawDeg = drivetrain.getPigeon2().getYaw().getValueAsDouble();
+        double deltaDeg = currentYawDeg - lastGyroYawDeg;
+        lastGyroYawDeg = currentYawDeg;
+
+        gyroFeedforwardRot = deltaDeg / 360.0;
         targetPositionRot += gyroFeedforwardRot;
     }
+
+    // private void applyGyroFF() {
+    //     gyroFeedforwardRot = 0.0;
+    //     if (!GYRO_FF_ENABLED || drivetrain == null) return;
+    //     double gyroRate = drivetrain.getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
+    //     gyroFeedforwardRot = (gyroRate / 360.0) * LOOP_PERIOD_SEC*1.75;
+       
+    //     targetPositionRot += gyroFeedforwardRot;
+    // }
 
     @Override
     public void end(boolean interrupted) {

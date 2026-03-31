@@ -8,7 +8,6 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
 import frc.robot.Constants.VisionConstants;
 
 /**
@@ -43,6 +42,7 @@ public class Vision extends SubsystemBase {
     @Logged(importance = Logged.Importance.CRITICAL) private int trackedTagId = -1;
     @Logged(importance = Logged.Importance.CRITICAL) private double latencyMs = 0.0;
     @Logged(importance = Logged.Importance.CRITICAL) private double ambiguity = 0.0;
+    @Logged(importance = Logged.Importance.CRITICAL) private double rawDeg = 0.0;
 
     public Vision() {
         camera = VisionConstants.ENABLE_TURRET_CAM
@@ -71,24 +71,33 @@ public class Vision extends SubsystemBase {
             return;
         }
 
-        // 3. Find the best valid target
+        // 3. Find target — prefer the tag we're already tracking (sticky)
         PhotonTrackedTarget bestTarget = null;
         double bestAmbiguity = 1.0;
 
-        for (PhotonTrackedTarget target : latestResult.getTargets()) {
-            int id = target.getFiducialId();
-
-            if (!VisionConstants.BENCH_TEST_ANY_TAG && !VisionConstants.isOurHubTag(id)) continue;
-
-            double amb = target.getPoseAmbiguity();
-
-            // Bench mode: accept any target regardless of ambiguity (matches pre-refactor)
-            // Competition mode: reject high-ambiguity readings
-            if (!VisionConstants.BENCH_TEST_ANY_TAG && amb > VisionConstants.MAX_POSE_AMBIGUITY) continue;
-
-            if (amb < bestAmbiguity) {
+        // First pass: look for the tag we're already tracking
+        if (trackedTagId != -1) {
+            for (PhotonTrackedTarget target : latestResult.getTargets()) {
+                if (target.getFiducialId() != trackedTagId) continue;
+                double amb = target.getPoseAmbiguity();
+                if (!VisionConstants.BENCH_TEST_ANY_TAG && amb > VisionConstants.MAX_POSE_AMBIGUITY) break;
                 bestTarget = target;
                 bestAmbiguity = amb;
+                break;
+            }
+        }
+
+        // Second pass: current tag not found — pick the best new one
+        if (bestTarget == null) {
+            for (PhotonTrackedTarget target : latestResult.getTargets()) {
+                int id = target.getFiducialId();
+                if (!VisionConstants.BENCH_TEST_ANY_TAG && !VisionConstants.isOurHubTag(id)) continue;
+                double amb = target.getPoseAmbiguity();
+                if (!VisionConstants.BENCH_TEST_ANY_TAG && amb > VisionConstants.MAX_POSE_AMBIGUITY) continue;
+                if (amb < bestAmbiguity) {
+                    bestTarget = target;
+                    bestAmbiguity = amb;
+                }
             }
         }
 
@@ -108,6 +117,7 @@ public class Vision extends SubsystemBase {
             Translation3d camToTag = bestTarget.getBestCameraToTarget().getTranslation();
             distanceToHub = Math.hypot(camToTag.getX(), camToTag.getY());
         } else {
+            rawDeg = bestTarget.getYaw();
             // Competition mode: camera→tag + tag→hub vector addition
             Transform3d cameraToTag = bestTarget.getBestCameraToTarget();
             Transform3d tagToHub = VisionConstants.TAG_TO_HUB_CENTER.get(tagId);
@@ -117,7 +127,7 @@ public class Vision extends SubsystemBase {
                     : cameraToTag.getTranslation();
 
             distanceToHub = Math.hypot(toHub.getX(), toHub.getY());
-            yawToHubDeg = Math.toDegrees(Math.atan2(toHub.getY(), toHub.getX()));
+            yawToHubDeg = -Math.toDegrees(Math.atan2(toHub.getY(), toHub.getX()));
         }
 
         // 5. Update state

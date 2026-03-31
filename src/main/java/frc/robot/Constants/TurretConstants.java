@@ -27,8 +27,8 @@ public final class TurretConstants {
     // Boot position = turret facing straight forward = 0.0.
     // Old absolute: forward=0.08, reverse=-0.50, fwd_limit=0.28
     // New zeroed:   forward=0.00, reverse=-0.58, fwd_limit=0.20
-    public static final double TURRET_REVERSE_LIMIT = -0.65;
-    public static final double TURRET_FORWARD_LIMIT = 0.26;
+    public static final double TURRET_REVERSE_LIMIT = -0.73;
+    public static final double TURRET_FORWARD_LIMIT = 0.39;
     // Turret straight-forward is now 0.0 (zeroed at boot).
     public static final double TURRET_FORWARD_POSITION = 0.0;
 

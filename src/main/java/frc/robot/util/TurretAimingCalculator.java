@@ -61,24 +61,24 @@ public class TurretAimingCalculator {
         // ── Flywheel speed table (distance m → RPS) ──────────────────────
         // Calibrated 2026-03-17 from field measurements (inches → meters).
         flywheelRPSTable = new InterpolatingDoubleTreeMap();
-        flywheelRPSTable.put(1.232, 50.0);  //  48.5"
-        flywheelRPSTable.put(2.216, 55.0);  //  87.25"
-        flywheelRPSTable.put(3.232, 60.0);  // 127.25"
-        flywheelRPSTable.put(4.191, 65.0);  // 165"
-        flywheelRPSTable.put(5.207, 68.0);  // 205"
-        flywheelRPSTable.put(6.223, 74.0);  // 245"
-        flywheelRPSTable.put(7.239, 79.0);  // 285"
+        flywheelRPSTable.put(1.5501340177286882, 45.0);//42.5);  //  48.5"
+        flywheelRPSTable.put(2.47698, 47.0);//45  //  87.25"
+        flywheelRPSTable.put(3.5, 52.0);//50  // 127.25"
+        flywheelRPSTable.put(4.620237, 59.0); //57 // 165"
+        //flywheelRPSTable.put(5.207, 68.0);  // 205"
+        //flywheelRPSTable.put(6.223, 74.0);  // 245"
+        //flywheelRPSTable.put(7.239, 79.0);  // 285"
 
         // ── Hood angle table (distance m → mechanism rotations 0.0–0.08) ─
         // Calibrated 2026-03-17 from field measurements (inches → meters).
         hoodAngleTable = new InterpolatingDoubleTreeMap();
-        hoodAngleTable.put(1.232, 0.000);   //  48.5"
-        hoodAngleTable.put(2.216, 0.016);   //  87.25"
-        hoodAngleTable.put(3.232, 0.031);   // 127.25"
-        hoodAngleTable.put(4.191, 0.046);   // 165"
-        hoodAngleTable.put(5.207, 0.050);   // 205"
-        hoodAngleTable.put(6.223, 0.053);   // 245"
-        hoodAngleTable.put(7.239, 0.055);   // 285"
+        hoodAngleTable.put(1.5501340177286882, 0.000);   //  48.5"
+        hoodAngleTable.put(2.47698, 0.02);   //  87.25"
+        hoodAngleTable.put(3.5, 0.03);   // 127.25"
+        hoodAngleTable.put(4.620237, 0.035);   // 165"
+        //hoodAngleTable.put(5.207, 0.050);   // 205"
+        //hoodAngleTable.put(6.223, 0.053);   // 245"
+        //hoodAngleTable.put(7.239, 0.055);   // 285"
     }
 
     /**
