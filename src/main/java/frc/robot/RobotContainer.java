@@ -1,39 +1,42 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
+import java.util.Set;
+
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.NotLogged;
-import edu.wpi.first.math.geometry.Rotation2d;
-import static edu.wpi.first.units.Units.*;
-import java.util.Set;
-
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.auto.NamedCommands;
 import frc.robot.Constants.CANID;
 import frc.robot.Constants.IndexerConstants;
+import frc.robot.Constants.TurretConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
 import frc.robot.commands.CalibrationShootCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.TurretAutoAimCommand;
 import frc.robot.commands.climb.VoltageClimbCommand;
-import frc.robot.commands.intake.IntakeInCommand;
 import frc.robot.commands.intake.IntakeOutCommand;
+import frc.robot.commands.intake.runRoller;
 import frc.robot.generated.TunerConstants;
 import frc.robot.logging.FaultMonitor;
 import frc.robot.subsystems.Climb;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
@@ -65,8 +68,8 @@ public class RobotContainer {
         // @NotLogged public final Vision vision = null;
         @Logged public final Vision vision = new Vision();
         // To re-enable intake: uncomment the line below and comment out the null line
-        public final Intake intake = null;
-        // public final Intake intake = new Intake(mechanismBus);
+        //public final Intake intake = null;
+        public final Intake intake = new Intake(mechanismBus);
         public final Indexer indexer = new Indexer(mechanismBus);
         public final Turret turret = new Turret(mechanismBus);
         public final Hood hood = new Hood(mechanismBus);
@@ -101,15 +104,15 @@ public class RobotContainer {
                 hood.setDefaultCommand(hood.run(() ->
                         hood.setHoodAngle(Rotations.of(hood.getHoodPosition()))));
 
-                if (intake != null) {
-                        indexer.setDefaultCommand(indexer.run(() -> {
-                                if (intake.isOut()) {
-                                        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED * 0.75, IndexerType.VERTICAL);
-                                } else {
-                                        indexer.stopIndexer(IndexerType.VERTICAL);
-                                }
-                        }));
-                }
+                // if (intake != null) {
+                //         indexer.setDefaultCommand(indexer.run(() -> {
+                //                 if (intake.isOut()) {
+                //                         indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED * 0.75, IndexerType.VERTICAL);
+                //                 } else {
+                //                         indexer.stopIndexer(IndexerType.VERTICAL);
+                //                 }
+                //         }));
+                // }
 
                 configureDriveBindings();
                 configureSharedBindings();
@@ -175,7 +178,9 @@ public class RobotContainer {
         // ================================================================
         private void configureSharedBindings() {
                 if (intake != null) {
-                        operator.a().toggleOnTrue(new IntakeOutCommand(intake));
+                        //operator.a().toggleOnTrue(new IntakeOutCommand(intake));
+                        operator.a().toggleOnTrue(new runRoller(intake));
+
                 }
 
                 operator.rightTrigger().whileTrue(Commands.defer(() -> {
@@ -215,6 +220,7 @@ public class RobotContainer {
                                         indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED * 0.5, IndexerType.HORIZONTAL);
                                         indexer.setIndexerSpeed(-IndexerConstants.VERTICAL_INDEXER_SPEED * 0.5, IndexerType.VERTICAL);
                                         indexer.setIndexerSpeed(-IndexerConstants.UPWARD_INDEXER_SPEED * 0.5, IndexerType.UPWARD);
+                                        shooter.setShooterSpeed(RotationsPerSecond.of(-TurretConstants.MAX_SHOOTER_RPS));
                                 },
                                 () -> indexer.stop(),
                                 indexer));

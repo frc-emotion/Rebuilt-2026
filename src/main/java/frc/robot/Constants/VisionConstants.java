@@ -30,7 +30,7 @@ public final class VisionConstants {
     public static final String TURRET_CAM_NAME = "mugilanr"; // "aaranc"
 
     /** Reject any single-tag reading with ambiguity above this (0 = perfect, 1 = garbage). */
-    public static final double MAX_POSE_AMBIGUITY = 0.15;
+    public static final double MAX_POSE_AMBIGUITY = 1.0;//0.15;
 
     // ================================================================
     //  HUB GEOMETRY
@@ -105,24 +105,24 @@ public final class VisionConstants {
     /** Tag ID → Transform3d from tag frame to hub center. Only hub tags have entries. */
     public static final Map<Integer, Transform3d> TAG_TO_HUB_CENTER = Map.ofEntries(
             // ── Red Hub ──
-            Map.entry( 2, hubVec( 0.000)),            // +Y face, centered
-            Map.entry( 3, hubVec(-HUB_LATERAL_OFFSET_METERS)), // -X face, offset
-            Map.entry( 4, hubVec( 0.000)),            // -X face, centered
-            Map.entry( 5, hubVec( 0.000)),            // -Y face, centered
-            Map.entry( 8, hubVec(+HUB_LATERAL_OFFSET_METERS)), // -Y face, offset
-            Map.entry( 9, hubVec(-HUB_LATERAL_OFFSET_METERS)), // +X face, offset
-            Map.entry(10, hubVec( 0.000)),            // +X face, centered
-            Map.entry(11, hubVec(-HUB_LATERAL_OFFSET_METERS)), // +Y face, offset
+            Map.entry( 2, hubVec( 0.000-0.1758)),            // +Y face, centered
+            Map.entry( 3, hubVec(-HUB_LATERAL_OFFSET_METERS-0.1758)), // -X face, offset
+            Map.entry( 4, hubVec(0.000-0.1758)),            // -X face, centered
+            Map.entry( 5, hubVec( 0.000-0.1758)),            // -Y face, centered
+            Map.entry( 8, hubVec(-HUB_LATERAL_OFFSET_METERS-0.1758)), // -Y face, offset
+            Map.entry( 9, hubVec(-HUB_LATERAL_OFFSET_METERS-0.1758)), // +X face, offset
+            Map.entry(10, hubVec( 0.000-0.1758)),            // +X face, centered
+            Map.entry(11, hubVec(-HUB_LATERAL_OFFSET_METERS-0.1758)), // +Y face, offset
 
             // ── Blue Hub ──
-            Map.entry(18, hubVec( 0.000)),            // -Y face, centered
-            Map.entry(19, hubVec(-HUB_LATERAL_OFFSET_METERS)), // +X face, offset
-            Map.entry(20, hubVec( 0.000-0.2)),            // +X face, centered
-            Map.entry(21, hubVec( 0.000)),            // +Y face, centered
-            Map.entry(24, hubVec(+HUB_LATERAL_OFFSET_METERS)), // +Y face, offset
-            Map.entry(25, hubVec(-HUB_LATERAL_OFFSET_METERS)), // -X face, offset
-            Map.entry(26, hubVec( 0.000)),            // -X face, centered
-            Map.entry(27, hubVec(+HUB_LATERAL_OFFSET_METERS))  // -Y face, offset WAS POSITIVE BEFORE
+            Map.entry(18, hubVec( 0.000+0.1758)),            // -Y face, centered
+            Map.entry(19, hubVec(-HUB_LATERAL_OFFSET_METERS-0.1758)), // +X face, offset
+            Map.entry(20, hubVec( 0.000-0.1758)),            // +X face, centered
+            Map.entry(21, hubVec( 0.000-0.1758)),            // +Y face, centered
+            Map.entry(24, hubVec(-HUB_LATERAL_OFFSET_METERS-0.1758)), // +Y face, offset
+            Map.entry(25, hubVec(-HUB_LATERAL_OFFSET_METERS-0.1758)), // -X face, offset
+            Map.entry(26, hubVec( 0.000-0.1758)),            // -X face, centered
+            Map.entry(27, hubVec(-HUB_LATERAL_OFFSET_METERS-0.1758))  // -Y face, offset WAS POSITIVE BEFORE
     );
 
     private VisionConstants() {}

@@ -58,23 +58,23 @@ public class Intake extends SubsystemBase {
 
     @Override
     public void periodic() {
-        pivotPositionRot = intakeMotor.getPosition().getValueAsDouble();
-        intakeIsOut = pivotPositionRot > IntakeConstants.INTAKE_IN_ANGLE.in(Rotations)
-                + IntakeConstants.INTAKE_OUT_THRESHOLD_ROT;
-        rollerVelocityRPS = rollerMotor.getVelocity().getValueAsDouble();
-        pivotCurrentAmps = intakeMotor.getSupplyCurrent().getValueAsDouble();
+        // pivotPositionRot = intakeMotor.getPosition().getValueAsDouble();
+        // intakeIsOut = pivotPositionRot > IntakeConstants.INTAKE_IN_ANGLE.in(Rotations)
+        //         + IntakeConstants.INTAKE_OUT_THRESHOLD_ROT;
+        // rollerVelocityRPS = rollerMotor.getVelocity().getValueAsDouble();
+        // pivotCurrentAmps = intakeMotor.getSupplyCurrent().getValueAsDouble();
 
-        // Over-travel recovery: if external forces (robot movement, collisions) push
-        // the intake past the safe stow zone, actively re-command the stow position
-        // so the PID fights back before the mechanism mechanically jams.
-        // ONLY runs when we're trying to stow — never blocks a deploy command.
-        boolean tryingToStow = Math.abs(currentSetpoint.in(Rotations) - IntakeConstants.INTAKE_IN_ANGLE.in(Rotations)) < 0.01;
-        if (tryingToStow && pivotPositionRot < IntakeConstants.INTAKE_OVERTRAVEL_THRESHOLD) {
-            intakeMotor.setControl(intakeMotionRequest.withPosition(IntakeConstants.INTAKE_IN_ANGLE));
-            overtravelRecovery = true;
-        } else {
-            overtravelRecovery = false;
-        }
+        // // Over-travel recovery: if external forces (robot movement, collisions) push
+        // // the intake past the safe stow zone, actively re-command the stow position
+        // // so the PID fights back before the mechanism mechanically jams.
+        // // ONLY runs when we're trying to stow — never blocks a deploy command.
+        // boolean tryingToStow = Math.abs(currentSetpoint.in(Rotations) - IntakeConstants.INTAKE_IN_ANGLE.in(Rotations)) < 0.01;
+        // if (tryingToStow && pivotPositionRot < IntakeConstants.INTAKE_OVERTRAVEL_THRESHOLD) {
+        //     intakeMotor.setControl(intakeMotionRequest.withPosition(IntakeConstants.INTAKE_IN_ANGLE));
+        //     overtravelRecovery = true;
+        // } else {
+        //     overtravelRecovery = false;
+        // }
     }
 
     private void configurePivotEncoder() {
