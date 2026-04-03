@@ -265,10 +265,10 @@ public class RobotContainer {
         //  NAMED COMMANDS (for PathPlanner event markers)
         // ================================================================
         private void registerNamedCommands() {
-                if (intake != null) {
-                        NamedCommands.registerCommand("intakeOut", new IntakeOutCommand(intake));
-                        NamedCommands.registerCommand("intakeIn", new IntakeInCommand(intake));
-                }
+                // if (intake != null) {
+                //         NamedCommands.registerCommand("intakeOut", new IntakeOutCommand(intake));
+                //         NamedCommands.registerCommand("intakeIn", new IntakeInCommand(intake));
+                // }
 
                 // NamedCommands.registerCommand("shoot",
                 //         new ShootCommand(indexer, hood, shooter,

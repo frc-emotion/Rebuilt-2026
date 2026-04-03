@@ -19,7 +19,7 @@ public final class IntakeConstants {
     public static final double IntakeCurrentSpike = 20;
 
     public static final Angle INTAKE_IN_ANGLE = Rotations.of(-0.35); 
-    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(-0.018); 
+    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.018); 
 
     // Soft limits — prevent motor from commanding past safe range
     public static final double INTAKE_REVERSE_SOFT_LIMIT = -0.37;    // hard safety wall — past stow target

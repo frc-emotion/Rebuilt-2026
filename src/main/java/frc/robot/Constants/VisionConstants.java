@@ -110,9 +110,9 @@ public final class VisionConstants {
             Map.entry( 4, hubVec(0.000-0.1758)),            // -X face, centered
             Map.entry( 5, hubVec( 0.000-0.1758)),            // -Y face, centered
             Map.entry( 8, hubVec(-HUB_LATERAL_OFFSET_METERS-0.1758)), // -Y face, offset
-            Map.entry( 9, hubVec(-HUB_LATERAL_OFFSET_METERS-0.1758)), // +X face, offset
-            Map.entry(10, hubVec( 0.000-0.1758)),            // +X face, centered
-            Map.entry(11, hubVec(-HUB_LATERAL_OFFSET_METERS-0.1758)), // +Y face, offset
+            Map.entry( 9, hubVec(+HUB_LATERAL_OFFSET_METERS-0.1758)), // +X face, offset
+            Map.entry(10, hubVec( 0.000-0.2)),            // +X face, centered
+            Map.entry(11, hubVec(-HUB_LATERAL_OFFSET_METERS)), // +Y face, offset
 
             // ── Blue Hub ──
             Map.entry(18, hubVec( 0.000+0.1758)),            // -Y face, centered
