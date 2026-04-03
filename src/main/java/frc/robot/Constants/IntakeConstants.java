@@ -19,12 +19,12 @@ public final class IntakeConstants {
     public static final double IntakeCurrentSpike = 20;
 
     public static final Angle INTAKE_IN_ANGLE = Rotations.of(-0.35); 
-    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.018); 
+    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.0); 
 
     // Soft limits — prevent motor from commanding past safe range
-    public static final double INTAKE_REVERSE_SOFT_LIMIT = -0.37;    // hard safety wall — past stow target
-    public static final double INTAKE_OVERTRAVEL_THRESHOLD = -0.37;  // if past this (toward reverse), recovery kicks in
-    public static final double INTAKE_FORWARD_SOFT_LIMIT =  0.2;    // past deploy target (forward direction)
+    public static final double INTAKE_REVERSE_SOFT_LIMIT = -0.365;    // hard safety wall — past stow target
+    public static final double INTAKE_OVERTRAVEL_THRESHOLD = -0.365;  // if past this (toward reverse), recovery kicks in
+    public static final double INTAKE_FORWARD_SOFT_LIMIT =  -0.01;    // past deploy target (forward direction)
 
     public static final Angle TOLERANCE = Degrees.of(5);          // default (used for stow)
     public static final Angle DEPLOY_TOLERANCE = Degrees.of(15);   // looser — rollers start sooner on deploy
@@ -71,7 +71,7 @@ public final class IntakeConstants {
         INTAKE_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitThreshold = INTAKE_FORWARD_SOFT_LIMIT;
     }
 
-    public static final double INTAKE_ROLLER_VELOCITY = 35;
+    public static final double INTAKE_ROLLER_VELOCITY = 60;
 
     public static final TalonFXConfiguration ROLLER_CONFIG = new TalonFXConfiguration();
 

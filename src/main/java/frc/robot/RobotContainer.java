@@ -25,6 +25,7 @@ import frc.robot.Constants.CANID;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.TurretConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
+import frc.robot.commands.AutoShootCommand;
 import frc.robot.commands.CalibrationShootCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.TurretAutoAimCommand;
@@ -82,7 +83,7 @@ public class RobotContainer {
 
         private final Telemetry logger = new Telemetry(MaxSpeed);
         @Logged public final FaultMonitor faultMonitor = new FaultMonitor();
-        @NotLogged private final SendableChooser<Command> autoChooser;
+        // @NotLogged private final SendableChooser<Command> autoChooser;
 
         // Turret D-pad setpoints (intuitive relative to robot)
         // Up = forward (0°), Down = backward (-180°), Left = 90° left, Right = forward limit
@@ -123,10 +124,10 @@ public class RobotContainer {
 
                 registerMotorsForFaultMonitoring();
 
-                drivetrain.configurePathPlanner();
-                registerNamedCommands();
-                autoChooser = AutoBuilder.buildAutoChooser();
-                SmartDashboard.putData("Auto Chooser", autoChooser);
+                // drivetrain.configurePathPlanner();
+                // registerNamedCommands();
+                // autoChooser = AutoBuilder.buildAutoChooser();
+                // SmartDashboard.putData("Auto Chooser", autoChooser);
 
         }
 
@@ -222,7 +223,7 @@ public class RobotContainer {
                                         indexer.setIndexerSpeed(-IndexerConstants.HORIZONTAL_INDEXER_SPEED * 0.5, IndexerType.HORIZONTAL);
                                         indexer.setIndexerSpeed(-IndexerConstants.VERTICAL_INDEXER_SPEED * 0.5, IndexerType.VERTICAL);
                                         indexer.setIndexerSpeed(-IndexerConstants.UPWARD_INDEXER_SPEED * 0.5, IndexerType.UPWARD);
-                                        shooter.setShooterSpeed(RotationsPerSecond.of(-TurretConstants.MAX_SHOOTER_RPS));
+                                        shooter.setShooterSpeed(RotationsPerSecond.of(TurretConstants.MAX_SHOOTER_RPS));
                                 },
                                 () -> indexer.stop(),
                                 indexer));
@@ -265,27 +266,44 @@ public class RobotContainer {
         //  NAMED COMMANDS (for PathPlanner event markers)
         // ================================================================
         private void registerNamedCommands() {
-                // if (intake != null) {
-                //         NamedCommands.registerCommand("intakeOut", new IntakeOutCommand(intake));
-                //         NamedCommands.registerCommand("intakeIn", new IntakeInCommand(intake));
-                // }
+                if (intake != null) {
+                        NamedCommands.registerCommand("intakeOut", new IntakeOutCommand(intake));
+                        NamedCommands.registerCommand("intakeIn", new IntakeInCommand(intake));
+                }
 
-                // NamedCommands.registerCommand("shoot",
-                //         new ShootCommand(indexer, hood, shooter,
-                //                 visionAutoAim::getDistanceToHub,
-                //                 visionAutoAim.getCalculator(),
-                //                 visionAutoAim::isAimed));
+                NamedCommands.registerCommand("shoot",
+                        new ShootCommand(indexer, hood, shooter,
+                                visionAutoAim::getDistanceToHub,
+                                visionAutoAim.getCalculator(),
+                                visionAutoAim::isAimed));
 
-                // NamedCommands.registerCommand("stopAll",
-                //         Commands.parallel(
-                //                 Commands.runOnce(() -> shooter.stop(), shooter),
-                //                 Commands.runOnce(() -> indexer.stop(), indexer)));
+                NamedCommands.registerCommand("stopAll",
+                        Commands.parallel(
+                                Commands.runOnce(() -> shooter.stop(), shooter),
+                                Commands.runOnce(() -> indexer.stop(), indexer)));
+
+                NamedCommands.registerCommand("autoShoot",
+                                new AutoShootCommand(shooter, hood,
+                                        visionAutoAim::getDistanceToHub,
+                                        visionAutoAim.getCalculator()));
+
+                NamedCommands.registerCommand("feedIndexers",
+                        Commands.runEnd(
+                                () -> {
+                                        indexer.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
+                                        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
+                                        indexer.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
+                                },
+                                () -> indexer.stop(),
+                                indexer));
+
         }
 
         // ================================================================
         //  AUTONOMOUS
         // ================================================================
         public Command getAutonomousCommand() {
-                return autoChooser.getSelected();
+                //return autoChooser.getSelected();
+                return null;
         }
 }

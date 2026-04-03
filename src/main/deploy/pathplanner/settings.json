@@ -10,12 +10,15 @@
     "Manual"
   ],
   "autoFolders": [
-    "Blue Depot_Center",
-    "Blue Depot_Outpost",
-    "Blue Outpost_Depot",
     "Blue Center Shoot",
+    "Blue Depot_Center",
+    "Blue Depot_Outpost_Center",
+    "Blue Depot_Outpost_Corner",
+    "Blue Outpost_Center",
+    "Blue Outpost_Depot",
+    "Blue_Outpost_Corner",
     "Manual",
-    "Blue Outpost_Center"
+    "Blue Depot_Corner"
   ],
   "defaultMaxVel": 3.0,
   "defaultMaxAccel": 3.0,

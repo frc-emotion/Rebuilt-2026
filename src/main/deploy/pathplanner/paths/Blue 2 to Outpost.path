@@ -16,11 +16,11 @@
     },
     {
       "anchor": {
-        "x": 0.46,
+        "x": 0.72,
         "y": 0.6715011485625906
       },
       "prevControl": {
-        "x": 0.28230293771558257,
+        "x": 0.5423029377155825,
         "y": 0.48925696886567466
       },
       "nextControl": null,
@@ -31,7 +31,19 @@
   "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "DeployIntakeEvent",
+      "waypointRelativePos": 0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "intakeOut"
+        }
+      }
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,

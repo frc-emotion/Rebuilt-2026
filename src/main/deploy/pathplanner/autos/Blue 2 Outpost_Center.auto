@@ -5,37 +5,44 @@
     "data": {
       "commands": [
         {
-          "type": "path",
-          "data": {
-            "pathName": "Blue 2 to Outpost"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 3.0
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Outpost to Center"
-          }
-        },
-        {
-          "type": "deadline",
+          "type": "parallel",
           "data": {
             "commands": [
               {
-                "type": "wait",
+                "type": "named",
                 "data": {
-                  "waitTime": 8.0
+                  "name": "autoShoot"
                 }
               },
               {
-                "type": "named",
+                "type": "sequential",
                 "data": {
-                  "name": "shoot"
+                  "commands": [
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "Blue 2 to Outpost"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 3.0
+                      }
+                    },
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "Outpost to Center"
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "feedIndexers"
+                      }
+                    }
+                  ]
                 }
               }
             ]

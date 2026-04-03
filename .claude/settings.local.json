@@ -7,7 +7,19 @@
       "Bash(JAVA_HOME=\"C:\\\\Users\\\\Public\\\\wpilib\\\\2026\\\\jdk\" ./gradlew build:*)",
       "WebFetch(domain:v6.docs.ctr-electronics.com)",
       "WebFetch(domain:api.ctr-electronics.com)",
-      "Bash(./gradlew build:*)"
+      "Bash(./gradlew build:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git:*)",
+      "WebFetch(domain:frc-elastic.gitbook.io)",
+      "Bash(JAVA_HOME=\"C:/Users/Public/wpilib/2026/jdk\" ./gradlew compileJava)",
+      "Bash(grep -l \"shoot\\\\|autoShoot\" *.path)",
+      "Bash(ls *Center*)",
+      "Bash(ls paths/*.path)",
+      "Bash(node -e ':*)"
     ]
   }
 }
