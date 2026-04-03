@@ -11,6 +11,7 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.NotLogged;
@@ -28,6 +29,7 @@ import frc.robot.commands.CalibrationShootCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.TurretAutoAimCommand;
 import frc.robot.commands.climb.VoltageClimbCommand;
+import frc.robot.commands.intake.IntakeInCommand;
 import frc.robot.commands.intake.IntakeOutCommand;
 import frc.robot.commands.intake.runRoller;
 import frc.robot.generated.TunerConstants;
@@ -104,15 +106,15 @@ public class RobotContainer {
                 hood.setDefaultCommand(hood.run(() ->
                         hood.setHoodAngle(Rotations.of(hood.getHoodPosition()))));
 
-                // if (intake != null) {
-                //         indexer.setDefaultCommand(indexer.run(() -> {
-                //                 if (intake.isOut()) {
-                //                         indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED * 0.75, IndexerType.VERTICAL);
-                //                 } else {
-                //                         indexer.stopIndexer(IndexerType.VERTICAL);
-                //                 }
-                //         }));
-                // }
+                if (intake != null) {
+                        indexer.setDefaultCommand(indexer.run(() -> {
+                                if (intake.isOut()) {
+                                        indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED * 0.75, IndexerType.VERTICAL);
+                                } else {
+                                        indexer.stopIndexer(IndexerType.VERTICAL);
+                                }
+                        }));
+                }
 
                 configureDriveBindings();
                 configureSharedBindings();
@@ -178,8 +180,8 @@ public class RobotContainer {
         // ================================================================
         private void configureSharedBindings() {
                 if (intake != null) {
-                        //operator.a().toggleOnTrue(new IntakeOutCommand(intake));
-                        operator.a().toggleOnTrue(new runRoller(intake));
+                        operator.a().toggleOnTrue(new IntakeOutCommand(intake));
+                        //operator.a().toggleOnTrue(new runRoller(intake));
 
                 }
 
@@ -263,10 +265,10 @@ public class RobotContainer {
         //  NAMED COMMANDS (for PathPlanner event markers)
         // ================================================================
         private void registerNamedCommands() {
-                // if (intake != null) {
-                //         NamedCommands.registerCommand("intakeOut", new IntakeOutCommand(intake));
-                //         NamedCommands.registerCommand("intakeIn", new IntakeInCommand(intake));
-                // }
+                if (intake != null) {
+                        NamedCommands.registerCommand("intakeOut", new IntakeOutCommand(intake));
+                        NamedCommands.registerCommand("intakeIn", new IntakeInCommand(intake));
+                }
 
                 // NamedCommands.registerCommand("shoot",
                 //         new ShootCommand(indexer, hood, shooter,
