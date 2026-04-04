@@ -278,7 +278,7 @@ public class RobotContainer {
                                 visionAutoAim::isAimed));
 
                 NamedCommands.registerCommand("stopAll",
-                        Commands.parallel(
+                        Commands.sequence(
                                 Commands.runOnce(() -> shooter.stop(), shooter),
                                 Commands.runOnce(() -> indexer.stop(), indexer)));
 
@@ -303,7 +303,7 @@ public class RobotContainer {
         //  AUTONOMOUS
         // ================================================================
         public Command getAutonomousCommand() {
-                //return autoChooser.getSelected();
+                // return autoChooser.getSelected();
                 return null;
         }
 }

@@ -2,24 +2,8 @@
   "robotWidth": 0.838,
   "robotLength": 0.838,
   "holonomicMode": true,
-  "pathFolders": [
-    "Blue to Depot",
-    "Blue to Neutral",
-    "Blue to Outpost",
-    "Blue to center",
-    "Manual"
-  ],
-  "autoFolders": [
-    "Blue Center Shoot",
-    "Blue Depot_Center",
-    "Blue Depot_Outpost_Center",
-    "Blue Depot_Outpost_Corner",
-    "Blue Outpost_Center",
-    "Blue Outpost_Depot",
-    "Blue_Outpost_Corner",
-    "Manual",
-    "Blue Depot_Corner"
-  ],
+  "pathFolders": [],
+  "autoFolders": [],
   "defaultMaxVel": 3.0,
   "defaultMaxAccel": 3.0,
   "defaultMaxAngVel": 540.0,
