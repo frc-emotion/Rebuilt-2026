@@ -19,7 +19,7 @@ public final class TurretConstants {
     // Total gear ratio from motor/CANcoder to turret output (SensorToMechanismRatio).
     // CANcoder is 1:1 with the motor rotor shaft.
     // Empirically measured: 5.08 rotor turns per 1 turret turn.
-    public static final double TURRET_GEAR_RATIO = 5.08;
+    public static final double TURRET_GEAR_RATIO = 122.0/24.0; //5.08
     
     public static final double HOOD_GEAR_RATIO = 155.0 / 12.0; // SensorToMechanismRatio
 

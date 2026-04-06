@@ -100,7 +100,7 @@
             ]
           },
           {
-            "title": "Key Values",
+            "title": "Key Readouts",
             "x": 256.0,
             "y": 0.0,
             "width": 256.0,
@@ -111,7 +111,7 @@
             },
             "children": [
               {
-                "title": "Shooter Vel",
+                "title": "Shooter Vel (RPS)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 256.0,
@@ -123,7 +123,7 @@
                 }
               },
               {
-                "title": "Shooter Setpt",
+                "title": "Shooter Setpt (RPS)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 256.0,
@@ -135,7 +135,7 @@
                 }
               },
               {
-                "title": "Turret Pos",
+                "title": "Turret Pos (rot)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 256.0,
@@ -147,7 +147,7 @@
                 }
               },
               {
-                "title": "Hood Pos",
+                "title": "Hood Pos (rot)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 256.0,
@@ -171,12 +171,105 @@
                 }
               }
             ]
+          },
+          {
+            "title": "Setpoint Status",
+            "x": 512.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 640.0,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "TOP"
+            },
+            "children": [
+              {
+                "title": "At Intake Setpt",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/intake/atSetpoint",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4284572001,
+                  "true_icon": "Checkmark",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "At Turret Setpt",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/turret/atTurretSetpoint",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4284572001,
+                  "true_icon": "Checkmark",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "At Hood Setpt",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/hood/atHoodSetpoint",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4284572001,
+                  "true_icon": "Checkmark",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "At Shooter Setpt",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/shooter/atShooterSetpoint",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4284572001,
+                  "true_icon": "Checkmark",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "AutoAim Aimed",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/visionAutoAim/isAimed",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "Checkmark",
+                  "false_icon": "X"
+                }
+              }
+            ]
           }
         ],
         "containers": [
           {
-            "title": "Auto Aim State",
-            "x": 512.0,
+            "title": "AutoAim State",
+            "x": 768.0,
             "y": 0.0,
             "width": 256.0,
             "height": 128.0,
@@ -187,20 +280,40 @@
             }
           },
           {
-            "title": "Active Faults",
-            "x": 512.0,
+            "title": "Vision Active",
+            "x": 768.0,
             "y": 128.0,
-            "width": 512.0,
-            "height": 256.0,
-            "type": "Text Display",
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Boolean Box",
             "properties": {
-              "topic": "/Robot/m_robotContainer/faultMonitor/activeFaults",
-              "period": 0.033
+              "topic": "/Robot/m_robotContainer/visionAutoAim/visionActive",
+              "period": 0.033,
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Has Faults",
+            "x": 768.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/Robot/m_robotContainer/faultMonitor/hasActiveFaults",
+              "period": 0.033,
+              "true_color": 4294198070,
+              "false_color": 4283215696,
+              "true_icon": "Exclamation Point",
+              "false_icon": "None"
             }
           },
           {
             "title": "Fault Count",
-            "x": 512.0,
+            "x": 768.0,
             "y": 384.0,
             "width": 256.0,
             "height": 128.0,
@@ -212,9 +325,9 @@
           },
           {
             "title": "Last Fault",
-            "x": 512.0,
+            "x": 768.0,
             "y": 512.0,
-            "width": 512.0,
+            "width": 256.0,
             "height": 128.0,
             "type": "Text Display",
             "properties": {
@@ -277,22 +390,6 @@
             "properties": {
               "topic": "/FMSInfo",
               "period": 0.033
-            }
-          },
-          {
-            "title": "Vision Active",
-            "x": 768.0,
-            "y": 0.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/Robot/m_robotContainer/visionAutoAim/visionActive",
-              "period": 0.033,
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "Checkmark",
-              "false_icon": "X"
             }
           },
           {
@@ -459,7 +556,7 @@
             "x": 0.0,
             "y": 0.0,
             "width": 256.0,
-            "height": 384.0,
+            "height": 640.0,
             "type": "List Layout",
             "properties": {
               "label_position": "TOP"
@@ -496,41 +593,57 @@
                   "true_icon": "Exclamation Point",
                   "false_icon": "None"
                 }
+              },
+              {
+                "title": "At Setpoint",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/intake/atSetpoint",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4284572001,
+                  "true_icon": "Checkmark",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Pivot Pos (rot)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/intake/pivotPositionRot",
+                  "period": 0.033
+                }
+              },
+              {
+                "title": "Roller Vel (RPS)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/intake/rollerVelocityRPS",
+                  "period": 0.033
+                }
               }
             ]
           }
         ],
         "containers": [
           {
-            "title": "Pivot Pos (rot)",
-            "x": 0.0,
-            "y": 384.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/Robot/m_robotContainer/intake/pivotPositionRot",
-              "period": 0.033
-            }
-          },
-          {
-            "title": "Roller Vel (RPS)",
-            "x": 0.0,
-            "y": 512.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/Robot/m_robotContainer/intake/rollerVelocityRPS",
-              "period": 0.033
-            }
-          },
-          {
             "title": "Pivot Position",
             "x": 256.0,
             "y": 0.0,
             "width": 512.0,
-            "height": 256.0,
+            "height": 320.0,
             "type": "Graph",
             "properties": {
               "topic": "/Robot/m_robotContainer/intake/pivotPositionRot",
@@ -543,9 +656,9 @@
           {
             "title": "Roller Velocity",
             "x": 256.0,
-            "y": 256.0,
+            "y": 320.0,
             "width": 512.0,
-            "height": 256.0,
+            "height": 320.0,
             "type": "Graph",
             "properties": {
               "topic": "/Robot/m_robotContainer/intake/rollerVelocityRPS",
@@ -560,7 +673,7 @@
             "x": 768.0,
             "y": 0.0,
             "width": 512.0,
-            "height": 256.0,
+            "height": 320.0,
             "type": "Graph",
             "properties": {
               "topic": "/Robot/m_robotContainer/intake/pivotCurrentAmps",
@@ -572,8 +685,8 @@
           },
           {
             "title": "Pivot Current (A)",
-            "x": 256.0,
-            "y": 512.0,
+            "x": 768.0,
+            "y": 320.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Text Display",
@@ -625,15 +738,19 @@
                 }
               },
               {
-                "title": "Current (A)",
+                "title": "At Setpoint",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 256.0,
                 "height": 128.0,
-                "type": "Text Display",
+                "type": "Boolean Box",
                 "properties": {
-                  "topic": "/Robot/m_robotContainer/shooter/shooterCurrentAmps",
-                  "period": 0.033
+                  "topic": "/Robot/m_robotContainer/shooter/atShooterSetpoint",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4284572001,
+                  "true_icon": "Checkmark",
+                  "false_icon": "None"
                 }
               }
             ]
@@ -662,15 +779,19 @@
                 }
               },
               {
-                "title": "Current (A)",
+                "title": "At Setpoint",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 256.0,
                 "height": 128.0,
-                "type": "Text Display",
+                "type": "Boolean Box",
                 "properties": {
-                  "topic": "/Robot/m_robotContainer/hood/hoodCurrentAmps",
-                  "period": 0.033
+                  "topic": "/Robot/m_robotContainer/hood/atHoodSetpoint",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4284572001,
+                  "true_icon": "Checkmark",
+                  "false_icon": "None"
                 }
               }
             ]
@@ -804,21 +925,25 @@
                 }
               },
               {
-                "title": "Wrapped Setpt",
+                "title": "At Setpoint",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 256.0,
                 "height": 128.0,
-                "type": "Text Display",
+                "type": "Boolean Box",
                 "properties": {
-                  "topic": "/Robot/m_robotContainer/turret/wrappedSetpointRot",
-                  "period": 0.033
+                  "topic": "/Robot/m_robotContainer/turret/atTurretSetpoint",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4284572001,
+                  "true_icon": "Checkmark",
+                  "false_icon": "None"
                 }
               }
             ]
           },
           {
-            "title": "Limits",
+            "title": "Limits & Flags",
             "x": 256.0,
             "y": 384.0,
             "width": 384.0,
@@ -865,7 +990,7 @@
         ],
         "containers": [
           {
-            "title": "Turret Wrapped",
+            "title": "Wrapped",
             "x": 256.0,
             "y": 0.0,
             "width": 256.0,
@@ -881,7 +1006,7 @@
             }
           },
           {
-            "title": "Turret Velocity (RPS)",
+            "title": "Velocity (RPS)",
             "x": 256.0,
             "y": 128.0,
             "width": 256.0,
@@ -893,7 +1018,7 @@
             }
           },
           {
-            "title": "Turret Current (A)",
+            "title": "Current (A)",
             "x": 256.0,
             "y": 256.0,
             "width": 256.0,
@@ -972,7 +1097,7 @@
       "grid_layout": {
         "layouts": [
           {
-            "title": "Vision Status",
+            "title": "Vision",
             "x": 0.0,
             "y": 0.0,
             "width": 256.0,
@@ -1015,6 +1140,22 @@
                 }
               },
               {
+                "title": "Fresh This Cycle",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/vision/freshThisCycle",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4284572001,
+                  "true_icon": "Checkmark",
+                  "false_icon": "None"
+                }
+              },
+              {
                 "title": "Tag ID",
                 "x": 0.0,
                 "y": 0.0,
@@ -1037,23 +1178,11 @@
                   "topic": "/Robot/m_robotContainer/vision/latencyMs",
                   "period": 0.033
                 }
-              },
-              {
-                "title": "Ambiguity",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 256.0,
-                "height": 128.0,
-                "type": "Text Display",
-                "properties": {
-                  "topic": "/Robot/m_robotContainer/vision/ambiguity",
-                  "period": 0.033
-                }
               }
             ]
           },
           {
-            "title": "AutoAim State",
+            "title": "AutoAim",
             "x": 256.0,
             "y": 0.0,
             "width": 256.0,
@@ -1086,45 +1215,57 @@
                   "topic": "/Robot/m_robotContainer/visionAutoAim/visionActive",
                   "period": 0.033,
                   "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "Checkmark",
+                  "false_icon": "X"
+                }
+              },
+              {
+                "title": "Is Aimed",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/visionAutoAim/isAimed",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "Checkmark",
+                  "false_icon": "X"
+                }
+              },
+              {
+                "title": "Is Tracking",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/visionAutoAim/isTracking",
+                  "period": 0.033,
+                  "true_color": 4283215696,
                   "false_color": 4284572001,
                   "true_icon": "Checkmark",
                   "false_icon": "None"
                 }
               },
               {
-                "title": "Target Pos (rot)",
+                "title": "Manual Override",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 256.0,
                 "height": 128.0,
-                "type": "Text Display",
+                "type": "Boolean Box",
                 "properties": {
-                  "topic": "/Robot/m_robotContainer/visionAutoAim/targetPositionRot",
-                  "period": 0.033
-                }
-              },
-              {
-                "title": "Current Pos (rot)",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 256.0,
-                "height": 128.0,
-                "type": "Text Display",
-                "properties": {
-                  "topic": "/Robot/m_robotContainer/visionAutoAim/currentPositionRot",
-                  "period": 0.033
-                }
-              },
-              {
-                "title": "Gyro FF (rot)",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 256.0,
-                "height": 128.0,
-                "type": "Text Display",
-                "properties": {
-                  "topic": "/Robot/m_robotContainer/visionAutoAim/gyroFeedforwardRot",
-                  "period": 0.033
+                  "topic": "/Robot/m_robotContainer/visionAutoAim/manualOverride",
+                  "period": 0.033,
+                  "true_color": 4294940672,
+                  "false_color": 4283215696,
+                  "true_icon": "Exclamation Point",
+                  "false_icon": "None"
                 }
               }
             ]
@@ -1132,7 +1273,7 @@
         ],
         "containers": [
           {
-            "title": "Distance to Hub (m)",
+            "title": "Distance (m)",
             "x": 512.0,
             "y": 0.0,
             "width": 256.0,
@@ -1144,7 +1285,7 @@
             }
           },
           {
-            "title": "Yaw to Hub (deg)",
+            "title": "Yaw (deg)",
             "x": 512.0,
             "y": 128.0,
             "width": 256.0,
@@ -1168,8 +1309,68 @@
             }
           },
           {
-            "title": "Vision TX (deg)",
+            "title": "Ambiguity",
             "x": 512.0,
+            "y": 384.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/Robot/m_robotContainer/vision/ambiguity",
+              "period": 0.033
+            }
+          },
+          {
+            "title": "Last Good Dist",
+            "x": 512.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/Robot/m_robotContainer/vision/lastGoodDistance",
+              "period": 0.033
+            }
+          },
+          {
+            "title": "Target Pos (rot)",
+            "x": 768.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/Robot/m_robotContainer/visionAutoAim/targetPositionRot",
+              "period": 0.033
+            }
+          },
+          {
+            "title": "Current Pos (rot)",
+            "x": 768.0,
+            "y": 128.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/Robot/m_robotContainer/visionAutoAim/currentPositionRot",
+              "period": 0.033
+            }
+          },
+          {
+            "title": "Gyro FF (rot)",
+            "x": 768.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/Robot/m_robotContainer/visionAutoAim/gyroFeedforwardRot",
+              "period": 0.033
+            }
+          },
+          {
+            "title": "Vision TX (deg)",
+            "x": 768.0,
             "y": 384.0,
             "width": 256.0,
             "height": 128.0,
@@ -1180,8 +1381,8 @@
             }
           },
           {
-            "title": "Last Gyro Yaw (deg)",
-            "x": 512.0,
+            "title": "Gyro Yaw (deg)",
+            "x": 768.0,
             "y": 512.0,
             "width": 256.0,
             "height": 128.0,
@@ -1193,9 +1394,9 @@
           },
           {
             "title": "AutoAim Distance",
-            "x": 768.0,
+            "x": 1024.0,
             "y": 0.0,
-            "width": 384.0,
+            "width": 512.0,
             "height": 320.0,
             "type": "Graph",
             "properties": {
@@ -1208,9 +1409,9 @@
           },
           {
             "title": "AutoAim Error",
-            "x": 768.0,
+            "x": 1024.0,
             "y": 320.0,
-            "width": 384.0,
+            "width": 512.0,
             "height": 320.0,
             "type": "Graph",
             "properties": {
@@ -1218,36 +1419,6 @@
               "period": 0.033,
               "time_displayed": 10.0,
               "color": 4294198070,
-              "line_width": 2.0
-            }
-          },
-          {
-            "title": "Vision Latency",
-            "x": 1152.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 320.0,
-            "type": "Graph",
-            "properties": {
-              "topic": "/Robot/m_robotContainer/vision/latencyMs",
-              "period": 0.033,
-              "time_displayed": 10.0,
-              "color": 4294940672,
-              "line_width": 2.0
-            }
-          },
-          {
-            "title": "Vision Ambiguity",
-            "x": 1152.0,
-            "y": 320.0,
-            "width": 384.0,
-            "height": 320.0,
-            "type": "Graph",
-            "properties": {
-              "topic": "/Robot/m_robotContainer/vision/ambiguity",
-              "period": 0.033,
-              "time_displayed": 10.0,
-              "color": 4283215696,
               "line_width": 2.0
             }
           }
@@ -1596,9 +1767,25 @@
         ],
         "containers": [
           {
-            "title": "Last Fault Time",
+            "title": "Has Active Faults",
             "x": 384.0,
             "y": 0.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/Robot/m_robotContainer/faultMonitor/hasActiveFaults",
+              "period": 0.033,
+              "true_color": 4294198070,
+              "false_color": 4283215696,
+              "true_icon": "Exclamation Point",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Last Fault Time",
+            "x": 384.0,
+            "y": 128.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Text Display",
@@ -1610,7 +1797,7 @@
           {
             "title": "Motors Monitored",
             "x": 384.0,
-            "y": 128.0,
+            "y": 256.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Text Display",
@@ -1622,7 +1809,7 @@
           {
             "title": "Battery",
             "x": 384.0,
-            "y": 256.0,
+            "y": 384.0,
             "width": 384.0,
             "height": 128.0,
             "type": "Voltage View",
@@ -1666,6 +1853,246 @@
               "false_color": 4283215696,
               "true_icon": "Exclamation Point",
               "false_icon": "None"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PhotonVision",
+      "grid_layout": {
+        "layouts": [
+          {
+            "title": "Target Data",
+            "x": 640.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 640.0,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "TOP"
+            },
+            "children": [
+              {
+                "title": "Has Target",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/photonvision/mugilanr/hasTarget",
+                  "period": 0.033,
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "Checkmark",
+                  "false_icon": "X"
+                }
+              },
+              {
+                "title": "Target Yaw (deg)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/photonvision/mugilanr/targetYaw",
+                  "period": 0.033
+                }
+              },
+              {
+                "title": "Target Pitch (deg)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/photonvision/mugilanr/targetPitch",
+                  "period": 0.033
+                }
+              },
+              {
+                "title": "Target Area (%)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/photonvision/mugilanr/targetArea",
+                  "period": 0.033
+                }
+              },
+              {
+                "title": "Latency (ms)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/photonvision/mugilanr/latencyMillis",
+                  "period": 0.033
+                }
+              }
+            ]
+          },
+          {
+            "title": "Camera Config",
+            "x": 896.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 640.0,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "TOP"
+            },
+            "children": [
+              {
+                "title": "Pipeline Index",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/photonvision/mugilanr/pipelineIndex",
+                  "period": 0.033
+                }
+              },
+              {
+                "title": "Driver Mode",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/photonvision/mugilanr/driverMode",
+                  "period": 0.033,
+                  "true_color": 4294940672,
+                  "false_color": 4283215696,
+                  "true_icon": "Exclamation Point",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "LED Mode",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/photonvision/ledMode",
+                  "period": 0.033
+                }
+              },
+              {
+                "title": "Tag ID",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/vision/trackedTagId",
+                  "period": 0.033
+                }
+              },
+              {
+                "title": "Ambiguity",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 256.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Robot/m_robotContainer/vision/ambiguity",
+                  "period": 0.033
+                }
+              }
+            ]
+          }
+        ],
+        "containers": [
+          {
+            "title": "Camera Output",
+            "x": 0.0,
+            "y": 0.0,
+            "width": 640.0,
+            "height": 512.0,
+            "type": "Camera Stream",
+            "properties": {
+              "topic": "/CameraPublisher/photonvision_Port_1182_Output_mugilanr",
+              "period": 0.033,
+              "compression": 30,
+              "fps": 15,
+              "rotation_turns": 0
+            }
+          },
+          {
+            "title": "Camera Connected",
+            "x": 0.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/Robot/m_robotContainer/vision/cameraConnected",
+              "period": 0.033,
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Seeing Hub Tag",
+            "x": 256.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/Robot/m_robotContainer/vision/seeingHubTag",
+              "period": 0.033,
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Distance (m)",
+            "x": 1152.0,
+            "y": 0.0,
+            "width": 384.0,
+            "height": 320.0,
+            "type": "Graph",
+            "properties": {
+              "topic": "/Robot/m_robotContainer/vision/distanceToHub",
+              "period": 0.033,
+              "time_displayed": 10.0,
+              "color": 4278238420,
+              "line_width": 2.0
+            }
+          },
+          {
+            "title": "Latency Over Time",
+            "x": 1152.0,
+            "y": 320.0,
+            "width": 384.0,
+            "height": 320.0,
+            "type": "Graph",
+            "properties": {
+              "topic": "/Robot/m_robotContainer/vision/latencyMs",
+              "period": 0.033,
+              "time_displayed": 10.0,
+              "color": 4294940672,
+              "line_width": 2.0
             }
           }
         ]

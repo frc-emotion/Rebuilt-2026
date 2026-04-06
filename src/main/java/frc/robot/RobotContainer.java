@@ -68,22 +68,27 @@ public class RobotContainer {
         //  SUBSYSTEMS
         // ================================================================
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-        // @NotLogged public final Vision vision = null;
+        //@NotLogged public final Vision vision = null;
         @Logged public final Vision vision = new Vision();
         // To re-enable intake: uncomment the line below and comment out the null line
         //public final Intake intake = null;
         public final Intake intake = new Intake(mechanismBus);
+        //public final Indexer indexer = null;
         public final Indexer indexer = new Indexer(mechanismBus);
+        //public final Turret turret = null; 
         public final Turret turret = new Turret(mechanismBus);
+        //public final Hood hood = null; 
         public final Hood hood = new Hood(mechanismBus);
+        //public final Shooter shooter = null; 
         public final Shooter shooter = new Shooter(mechanismBus);
+        //public final Climb climb = null;
         public final Climb climb = new Climb(mechanismBus);
 
         @Logged private final TurretAutoAimCommand visionAutoAim;
 
         private final Telemetry logger = new Telemetry(MaxSpeed);
         @Logged public final FaultMonitor faultMonitor = new FaultMonitor();
-        // @NotLogged private final SendableChooser<Command> autoChooser;
+        @NotLogged private final SendableChooser<Command> autoChooser;
 
         // Turret D-pad setpoints (intuitive relative to robot)
         // Up = forward (0°), Down = backward (-180°), Left = 90° left, Right = forward limit
@@ -103,10 +108,10 @@ public class RobotContainer {
                 visionAutoAim = new TurretAutoAimCommand(drivetrain, vision, turret,
                         () -> operator.getRightX(),
                         () -> operator.leftStick().getAsBoolean());
-
-                hood.setDefaultCommand(hood.run(() ->
+                if (hood != null){
+                        hood.setDefaultCommand(hood.run(() ->
                         hood.setHoodAngle(Rotations.of(hood.getHoodPosition()))));
-
+                }
                 if (intake != null) {
                         indexer.setDefaultCommand(indexer.run(() -> {
                                 if (intake.isOut()) {
@@ -120,14 +125,15 @@ public class RobotContainer {
                 configureDriveBindings();
                 configureSharedBindings();
                 configureClimbBindings();
+                if (turret!=null){
                 turret.setDefaultCommand(visionAutoAim);
-
+                }
                 registerMotorsForFaultMonitoring();
 
-                // drivetrain.configurePathPlanner();
-                // registerNamedCommands();
-                // autoChooser = AutoBuilder.buildAutoChooser();
-                // SmartDashboard.putData("Auto Chooser", autoChooser);
+                drivetrain.configurePathPlanner();
+                registerNamedCommands();
+                autoChooser = AutoBuilder.buildAutoChooser();
+                SmartDashboard.putData("Auto Chooser", autoChooser);
 
         }
 
@@ -180,11 +186,14 @@ public class RobotContainer {
         //  X / Y / B  = hood setpoints
         // ================================================================
         private void configureSharedBindings() {
+
                 if (intake != null) {
                         operator.a().toggleOnTrue(new IntakeOutCommand(intake));
                         //operator.a().toggleOnTrue(new runRoller(intake));
 
                 }
+
+
 
                 operator.rightTrigger().whileTrue(Commands.defer(() -> {
                         return new ShootCommand(indexer, hood, shooter,
@@ -303,7 +312,7 @@ public class RobotContainer {
         //  AUTONOMOUS
         // ================================================================
         public Command getAutonomousCommand() {
-                // return autoChooser.getSelected();
-                return null;
+                return autoChooser.getSelected();
+                // return null;
         }
 }

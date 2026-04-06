@@ -61,10 +61,10 @@ public class TurretAimingCalculator {
         // ── Flywheel speed table (distance m → RPS) ──────────────────────
         // Calibrated 2026-03-17 from field measurements (inches → meters).
         flywheelRPSTable = new InterpolatingDoubleTreeMap();
-        flywheelRPSTable.put(1.5501340177286882, 43.0);//45 //42.5);  //  48.5"
-        flywheelRPSTable.put(2.47698, 45.5);//47 //45  //  87.25"
-        flywheelRPSTable.put(3.5, 50.5); //52 //50  // 127.25"
-        flywheelRPSTable.put(4.620237, 57.5);//59 //57 // 165"
+        flywheelRPSTable.put(1.5501340177286882, 45.0);//45 //42.5);  //  48.5"
+        flywheelRPSTable.put(2.47698, 47.0);//47 //45  //  87.25"
+        flywheelRPSTable.put(3.5, 52.0); //52 //50  // 127.25"
+        flywheelRPSTable.put(4.620237, 59.0);//59 //57 // 165"
         //flywheelRPSTable.put(5.207, 68.0);  // 205"
         //flywheelRPSTable.put(6.223, 74.0);  // 245"
         //flywheelRPSTable.put(7.239, 79.0);  // 285"

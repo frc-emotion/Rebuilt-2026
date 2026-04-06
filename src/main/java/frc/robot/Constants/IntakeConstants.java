@@ -24,7 +24,7 @@ public final class IntakeConstants {
     // Soft limits — prevent motor from commanding past safe range
     public static final double INTAKE_REVERSE_SOFT_LIMIT = -0.347;                           // hard safety wall — past stow target
     public static final double INTAKE_OVERTRAVEL_THRESHOLD = -0.346; //0.116  // if past this (toward reverse), recovery kicks in
-    public static final double INTAKE_FORWARD_SOFT_LIMIT =  0.0;    // past deploy target (forward direction)
+    public static final double INTAKE_FORWARD_SOFT_LIMIT =  0;    // past deploy target (forward direction)
 
     public static final Angle TOLERANCE = Degrees.of(5);          // default (used for stow)
     public static final Angle DEPLOY_TOLERANCE = Degrees.of(45);   // looser — rollers start sooner on deploy

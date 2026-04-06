@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
+import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Shooter;
@@ -24,7 +25,7 @@ import frc.robot.util.TurretAimingCalculator;
 public class ShootCommand extends Command {
 
     private static final double FALLBACK_SHOOTER_RPS = 50.0;
-
+    private final CommandSwerveDrivetrain drivetrain;
     private final Indexer indexer;
     private final Hood hood;
     private final Shooter shooter;
@@ -38,7 +39,8 @@ public class ShootCommand extends Command {
     public ShootCommand(Indexer indexer, Hood hood, Shooter shooter,
                         DoubleSupplier distanceSupplier,
                         TurretAimingCalculator calculator,
-                        BooleanSupplier isAimed) {
+                        BooleanSupplier isAimed, 
+                        CommandSwerveDrivetrain drivetrain) {
         this.indexer = indexer;
         this.hood = hood;
         this.shooter = shooter;
@@ -47,11 +49,12 @@ public class ShootCommand extends Command {
         this.isAimed = isAimed;
         this.manualShooterRPS = 0;
         this.useInterpTables = true;
+        this.drivetrain = drivetrain;
         addRequirements(indexer, hood, shooter);
     }
 
     /** Manual mode: fixed shooter speed, hood flat, indexers always fire. */
-    public ShootCommand(Indexer indexer, Hood hood, Shooter shooter, double shooterRPS) {
+    public ShootCommand(Indexer indexer, Hood hood, Shooter shooter, double shooterRPS, CommandSwerveDrivetrain drivetrain) {
         this.indexer = indexer;
         this.hood = hood;
         this.shooter = shooter;
@@ -60,6 +63,7 @@ public class ShootCommand extends Command {
         this.isAimed = () -> true;
         this.manualShooterRPS = shooterRPS;
         this.useInterpTables = false;
+        this.drivetrain = drivetrain;
         addRequirements(indexer, hood, shooter);
     }
 

@@ -144,6 +144,13 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
     }
 
+    public double getSwerveXSpeed(){
+        return getState().Speeds.vxMetersPerSecond;
+    }
+    public double getSwerveYSpeed(){
+        return getState().Speeds.vyMetersPerSecond;
+    }
+
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
      * <p>
