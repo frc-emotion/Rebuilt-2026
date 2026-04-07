@@ -69,19 +69,19 @@ public class RobotContainer {
         //  SUBSYSTEMS
         // ================================================================
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-        @NotLogged public final Vision vision = null;
-        // @Logged public final Vision vision = new Vision();
+        // @NotLogged public final Vision vision = null;
+        @Logged public final Vision vision = new Vision();
         // To re-enable intake: uncomment the line below and comment out the null line
-        public final Intake intake = null;
-        // public final Intake intake = new Intake(mechanismBus);
-        public final Indexer indexer = null;
-        // public final Indexer indexer = new Indexer(mechanismBus);
+        // public final Intake intake = null;
+        public final Intake intake = new Intake(mechanismBus);
+        // public final Indexer indexer = null;
+        public final Indexer indexer = new Indexer(mechanismBus);
         //public final Turret turret = null; 
         public final Turret turret = new Turret(mechanismBus);
-        public final Hood hood = null; 
-        // public final Hood hood = new Hood(mechanismBus);
-        public final Shooter shooter = null; 
-        // public final Shooter shooter = new Shooter(mechanismBus);
+        // public final Hood hood = null; 
+        public final Hood hood = new Hood(mechanismBus);
+        // public final Shooter shooter = null; 
+        public final Shooter shooter = new Shooter(mechanismBus);
         public final Climb climb = null;
         // public final Climb climb = new Climb(mechanismBus);
 
@@ -213,6 +213,10 @@ public class RobotContainer {
                                 drivetrain, turret);
                 }, Set.of(indexer, hood, shooter)));
 
+                
+        }
+
+        if (indexer != null && hood != null && shooter != null && turret != null) {
                 operator.leftBumper().whileTrue(new PasssingShootCommand(shooter, hood, indexer));
         }
 

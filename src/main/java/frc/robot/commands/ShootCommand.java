@@ -96,8 +96,8 @@ public class ShootCommand extends Command {
        
         if (useInterpTables && aimed) {
             
-            hood.setHoodAngle(Rotations.of(calculator.getHoodAngleRot(effectiveDist)));
-            shooter.setShooterSpeed(RotationsPerSecond.of(calculator.getFlywheelRPS(effectiveDist)));
+            hood.setHoodAngle(Rotations.of(calculator.getHoodAngleRot(dist)));
+            shooter.setShooterSpeed(RotationsPerSecond.of(calculator.getFlywheelRPS(dist)));
         // } else if (useInterpTables) {
         //     // Not aimed: keep hood where operator left it, spin shooter at fallback RPS
         //     shooter.setShooterSpeed(RotationsPerSecond.of(FALLBACK_SHOOTER_RPS));

@@ -30,7 +30,7 @@ public class PasssingShootCommand extends Command {
         m_shooterSubsystem.setShooterSpeed(RotationsPerSecond.of(100));
         m_hoodSubsystem.setHoodAngle(Rotations.of(0.075));
         m_indexerSubsystem.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
-        if (m_shooterSubsystem.atShooterSetpoint() && m_hoodSubsystem.atHoodSetpoint()){
+        if (m_shooterSubsystem.atShooterSetpoint()){
             m_indexerSubsystem.setIndexerSpeed(IndexerConstants.HORIZONTAL_INDEXER_SPEED, IndexerType.HORIZONTAL);
             m_indexerSubsystem.setIndexerSpeed(IndexerConstants.UPWARD_INDEXER_SPEED, IndexerType.UPWARD);
         }
@@ -38,6 +38,12 @@ public class PasssingShootCommand extends Command {
 
     public boolean isFinished(){
         return false; 
+    }
+
+    public void end(){
+        m_shooterSubsystem.stop();
+        m_indexerSubsystem.stop();
+        m_hoodSubsystem.setHoodAngle(Rotations.of(0.0));
     }
     
 }

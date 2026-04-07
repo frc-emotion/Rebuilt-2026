@@ -112,7 +112,8 @@ public class TurretAutoAimCommand extends Command {
     }
 
     private void applyOmega() {
-        targetPositionRot += (omega * TurretConstants.omegaFeedforwardMultiplier);
+        return;
+        // targetPositionRot += (omega * TurretConstants.omegaFeedforwardMultiplier);
 
     }
 

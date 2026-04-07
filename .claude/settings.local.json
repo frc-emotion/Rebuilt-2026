@@ -19,7 +19,12 @@
       "Bash(grep -l \"shoot\\\\|autoShoot\" *.path)",
       "Bash(ls *Center*)",
       "Bash(ls paths/*.path)",
-      "Bash(node -e ':*)"
+      "Bash(node -e ':*)",
+      "Read(//c/tmp/**)",
+      "Bash(jar xf:*)",
+      "Bash(unzip -q \"/c/Users/FRCTeam2658/.gradle/caches/modules-2/files-2.1/com.ctre.phoenix6/wpiapi-java/26.1.1/930064c04fd0521f83920d7facf5898aa7f29957/wpiapi-java-26.1.1.jar\")",
+      "Bash(javap -c \"/tmp/com/ctre/phoenix6/hardware/TalonFX.class\")",
+      "Bash(javap \"/tmp/com/ctre/phoenix6/hardware/TalonFX.class\")"
     ]
   }
 }
