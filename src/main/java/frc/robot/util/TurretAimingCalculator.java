@@ -76,7 +76,7 @@ public class TurretAimingCalculator {
         hoodAngleTable.put(2.47698, 0.02);   //  87.25"
         hoodAngleTable.put(3.5, 0.03);   // 127.25"
         hoodAngleTable.put(4.620237, 0.035);   // 165"
-        //hoodAngleTable.put(5.207, 0.050);   // 205"
+        //hoodAngleTable.put(5.207, 0.050);   // 205"][\]
         //hoodAngleTable.put(6.223, 0.053);   // 245"
         //hoodAngleTable.put(7.239, 0.055);   // 285"
     }

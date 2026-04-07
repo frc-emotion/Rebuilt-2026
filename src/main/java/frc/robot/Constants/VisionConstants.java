@@ -64,6 +64,12 @@ public final class VisionConstants {
     public static final int[] RED_HUB_TAG_IDS  = { 2, 3, 4, 5, 8, 9, 10, 11 };
     public static final int[] BLUE_HUB_TAG_IDS = { 18, 19, 20, 21, 24, 25, 26, 27 };
 
+    public static final int[] Blue_NEUTRAL_PASSING_TAG_IDS = {17, 19,20,22};
+    public static final int[] RED_NEUTRAL_PASSING_TAG_IDS = {1, 3, 4, 6};
+
+    public static final int[] RED_ZONE_PASSING_TAG_IDS = {7,9,10,12};
+    public static final int[] BLUE_ZONE_PASSING_TAG_IDS = {23,25,26,28};
+    
     public static boolean isRedHubTag(int tagId) {
         for (int id : RED_HUB_TAG_IDS) { if (id == tagId) return true; }
         return false;

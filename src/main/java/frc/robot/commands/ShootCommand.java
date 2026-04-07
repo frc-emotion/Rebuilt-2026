@@ -5,13 +5,18 @@ import java.util.function.DoubleSupplier;
 
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.IndexerConstants;
+import frc.robot.Constants.TurretConstants;
 import frc.robot.Constants.IndexerConstants.IndexerType;
+import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Shooter;
+import frc.robot.subsystems.Turret;
 import frc.robot.util.TurretAimingCalculator;
 
 /**
@@ -29,18 +34,20 @@ public class ShootCommand extends Command {
     private final Indexer indexer;
     private final Hood hood;
     private final Shooter shooter;
-    private final BooleanSupplier isAimed;
+    public final BooleanSupplier isAimed;
     private final DoubleSupplier distanceSupplier;
     private final TurretAimingCalculator calculator;
     private final double manualShooterRPS;
     private final boolean useInterpTables;
+    private final Turret turret;
 
     /** Vision mode: hood + shooter from interp tables, indexers gated on isAimed. */
     public ShootCommand(Indexer indexer, Hood hood, Shooter shooter,
                         DoubleSupplier distanceSupplier,
                         TurretAimingCalculator calculator,
                         BooleanSupplier isAimed, 
-                        CommandSwerveDrivetrain drivetrain) {
+                        CommandSwerveDrivetrain drivetrain,
+                        Turret turret) {
         this.indexer = indexer;
         this.hood = hood;
         this.shooter = shooter;
@@ -50,11 +57,12 @@ public class ShootCommand extends Command {
         this.manualShooterRPS = 0;
         this.useInterpTables = true;
         this.drivetrain = drivetrain;
+        this.turret = turret;
         addRequirements(indexer, hood, shooter);
     }
 
     /** Manual mode: fixed shooter speed, hood flat, indexers always fire. */
-    public ShootCommand(Indexer indexer, Hood hood, Shooter shooter, double shooterRPS, CommandSwerveDrivetrain drivetrain) {
+    public ShootCommand(Indexer indexer, Hood hood, Shooter shooter, Turret turret, double shooterRPS, CommandSwerveDrivetrain drivetrain) {
         this.indexer = indexer;
         this.hood = hood;
         this.shooter = shooter;
@@ -64,17 +72,32 @@ public class ShootCommand extends Command {
         this.manualShooterRPS = shooterRPS;
         this.useInterpTables = false;
         this.drivetrain = drivetrain;
+        this.turret = turret;
         addRequirements(indexer, hood, shooter);
     }
 
     @Override
     public void execute() {
         boolean aimed = isAimed.getAsBoolean();
+        ChassisSpeeds speeds = drivetrain.getState().Speeds;
 
+        double turretAngleRad = turret.getTurretPosition().getRadians();
+        double vx = speeds.vxMetersPerSecond;
+        double vy = speeds.vyMetersPerSecond;
+        
+        double vClosing = vx * Math.cos(turretAngleRad) + vy * Math.sin(turretAngleRad);
+
+        double dist = distanceSupplier.getAsDouble();
+
+        double effectiveDist = dist - vClosing * TurretConstants.shootingWhileMovingMultiplier; 
+
+
+       
+       
         if (useInterpTables && aimed) {
-            double dist = distanceSupplier.getAsDouble();
-            hood.setHoodAngle(Rotations.of(calculator.getHoodAngleRot(dist)));
-            shooter.setShooterSpeed(RotationsPerSecond.of(calculator.getFlywheelRPS(dist)));
+            
+            hood.setHoodAngle(Rotations.of(calculator.getHoodAngleRot(effectiveDist)));
+            shooter.setShooterSpeed(RotationsPerSecond.of(calculator.getFlywheelRPS(effectiveDist)));
         // } else if (useInterpTables) {
         //     // Not aimed: keep hood where operator left it, spin shooter at fallback RPS
         //     shooter.setShooterSpeed(RotationsPerSecond.of(FALLBACK_SHOOTER_RPS));

@@ -7,7 +7,9 @@ import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants.TurretConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
@@ -44,13 +46,15 @@ public class TurretAutoAimCommand extends Command {
 
     @Logged(importance = Logged.Importance.CRITICAL) private double lastGyroYawDeg = 0.0;
 
+    @Logged(importance = Logged.Importance.CRITICAL) private double omega = 0.0;
+
     private static final double DEADBAND_DEG = 3.0;
     private static final double MANUAL_DEADBAND = 0.08;
-    private static final double LOOP_PERIOD_SEC = 0.02;
     private static final boolean GYRO_FF_ENABLED = true;
 
     private double lastVisionTimestamp = 0.0;
     private boolean freshVisionThisCycle = false;
+
 
     public TurretAutoAimCommand(
             CommandSwerveDrivetrain drivetrain,
@@ -79,27 +83,37 @@ public class TurretAutoAimCommand extends Command {
 
     @Override
     public void execute() {
-        readVision();
-
-        double turretPos = turret.getTurretMotor().getPosition().getValueAsDouble();
-        currentPositionRot = turretPos;
-
         boolean manual = manualOverride.getAsBoolean();
+
         state = manual ? "MANUAL" : "TRACKING";
+        
+        double turretPos = turret.getTurretMotor().getPosition().getValueAsDouble();
 
         if (manual) {
             double input = MathUtil.applyDeadband(joystickSupplier.getAsDouble(), MANUAL_DEADBAND);
             turret.setTurretVoltage(MathUtil.clamp(input, -1, 1));
             targetPositionRot = turretPos;
         } else {
+            readVision();
+            ChassisSpeeds speeds = drivetrain.getState().Speeds;
+            omega = speeds.omegaRadiansPerSecond;
+
+            
+            currentPositionRot = turretPos;
             applyGyroFF();
             if (freshVisionThisCycle) {
                 targetPositionRot = currentPositionRot + visionTxDeg / 360.0;
             }
+            applyOmega();
             targetPositionRot = turret.moveTurret(Rotations.of(targetPositionRot)).in(Rotations);
         }
 
         turretErrorRot = targetPositionRot - turretPos;
+    }
+
+    private void applyOmega() {
+        targetPositionRot += (omega * TurretConstants.omegaFeedforwardMultiplier);
+
     }
 
     private void readVision() {

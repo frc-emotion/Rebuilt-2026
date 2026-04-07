@@ -33,6 +33,7 @@ import frc.robot.commands.climb.VoltageClimbCommand;
 import frc.robot.commands.intake.IntakeInCommand;
 import frc.robot.commands.intake.IntakeOutCommand;
 import frc.robot.commands.intake.runRoller;
+import frc.robot.commands.turret.PasssingShootCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.logging.FaultMonitor;
 import frc.robot.subsystems.Climb;
@@ -61,30 +62,30 @@ public class RobotContainer {
         //  CONTROLLERS
         // ================================================================
         private final CommandXboxController joystick = new CommandXboxController(0);
-        private final CommandXboxController operator = new CommandXboxController(1);
+        public static CommandXboxController operator = new CommandXboxController(1);
         private final CANBus mechanismBus = new CANBus("mechanisms");
 
         // ================================================================
         //  SUBSYSTEMS
         // ================================================================
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-        //@NotLogged public final Vision vision = null;
-        @Logged public final Vision vision = new Vision();
+        @NotLogged public final Vision vision = null;
+        // @Logged public final Vision vision = new Vision();
         // To re-enable intake: uncomment the line below and comment out the null line
-        //public final Intake intake = null;
-        public final Intake intake = new Intake(mechanismBus);
-        //public final Indexer indexer = null;
-        public final Indexer indexer = new Indexer(mechanismBus);
+        public final Intake intake = null;
+        // public final Intake intake = new Intake(mechanismBus);
+        public final Indexer indexer = null;
+        // public final Indexer indexer = new Indexer(mechanismBus);
         //public final Turret turret = null; 
         public final Turret turret = new Turret(mechanismBus);
-        //public final Hood hood = null; 
-        public final Hood hood = new Hood(mechanismBus);
-        //public final Shooter shooter = null; 
-        public final Shooter shooter = new Shooter(mechanismBus);
-        //public final Climb climb = null;
-        public final Climb climb = new Climb(mechanismBus);
+        public final Hood hood = null; 
+        // public final Hood hood = new Hood(mechanismBus);
+        public final Shooter shooter = null; 
+        // public final Shooter shooter = new Shooter(mechanismBus);
+        public final Climb climb = null;
+        // public final Climb climb = new Climb(mechanismBus);
 
-        @Logged private final TurretAutoAimCommand visionAutoAim;
+        @Logged public static TurretAutoAimCommand visionAutoAim;
 
         private final Telemetry logger = new Telemetry(MaxSpeed);
         @Logged public final FaultMonitor faultMonitor = new FaultMonitor();
@@ -105,14 +106,21 @@ public class RobotContainer {
         public RobotContainer() {
                 edu.wpi.first.wpilibj.DriverStation.silenceJoystickConnectionWarning(true);
 
+                if (turret != null){
+
                 visionAutoAim = new TurretAutoAimCommand(drivetrain, vision, turret,
                         () -> operator.getRightX(),
                         () -> operator.leftStick().getAsBoolean());
+
+                }
+                else{
+                        visionAutoAim = null;
+                }
                 if (hood != null){
                         hood.setDefaultCommand(hood.run(() ->
                         hood.setHoodAngle(Rotations.of(hood.getHoodPosition()))));
                 }
-                if (intake != null) {
+                if (intake != null && indexer != null){
                         indexer.setDefaultCommand(indexer.run(() -> {
                                 if (intake.isOut()) {
                                         indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED * 0.75, IndexerType.VERTICAL);
@@ -125,8 +133,8 @@ public class RobotContainer {
                 configureDriveBindings();
                 configureSharedBindings();
                 configureClimbBindings();
-                if (turret!=null){
-                turret.setDefaultCommand(visionAutoAim);
+                if (turret!=null && vision!=null){
+                        turret.setDefaultCommand(visionAutoAim);
                 }
                 registerMotorsForFaultMonitoring();
 
@@ -134,8 +142,9 @@ public class RobotContainer {
                 registerNamedCommands();
                 autoChooser = AutoBuilder.buildAutoChooser();
                 SmartDashboard.putData("Auto Chooser", autoChooser);
+                }
 
-        }
+        
 
         // ================================================================
         //  DRIVE BINDINGS (always active)
@@ -193,30 +202,44 @@ public class RobotContainer {
 
                 }
 
-
+                if (indexer != null && hood != null && shooter != null && vision != null && turret != null) {
 
                 operator.rightTrigger().whileTrue(Commands.defer(() -> {
+                        
                         return new ShootCommand(indexer, hood, shooter,
                                 visionAutoAim::getDistanceToHub,
                                 visionAutoAim.getCalculator(),
-                                visionAutoAim::isAimed);
+                                visionAutoAim::isAimed, 
+                                drivetrain, turret);
                 }, Set.of(indexer, hood, shooter)));
+
+                operator.leftBumper().whileTrue(new PasssingShootCommand(shooter, hood, indexer));
+        }
+
+        if ( indexer != null) {
 
                 operator.leftTrigger().whileTrue(
                         Commands.startEnd(
                                 () -> indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL),
                                 () -> indexer.stopIndexer(IndexerType.VERTICAL),
                                 indexer));
+        }
+                if (turret != null) {
 
                 operator.rightBumper().onTrue(Commands.runOnce(() -> {
                         turret.getTurretMotor().setPosition(0);
                         System.out.println("[TURRET] Zeroed at current position");
                 }));
+        }
 
                 // CalibrationShootCommand — uncomment for interp table calibration sessions only
+                if (turret != null && hood != null && shooter != null && indexer != null && vision != null){
                 joystick.b().whileTrue(new CalibrationShootCommand(turret, hood, shooter, indexer, vision));
-
+                }
+                
                 // Turret setpoints (D-pad) — interrupts auto-aim default while held
+
+                if (turret != null){
                 operator.povUp().whileTrue(turret.run(
                         () -> turret.moveTurret(Rotations.of(TURRET_POS_FORWARD))));
                 operator.povDown().whileTrue(turret.run(
@@ -225,6 +248,9 @@ public class RobotContainer {
                         () -> turret.moveTurret(Rotations.of(TURRET_POS_LEFT))));
                 operator.povRight().whileTrue(turret.run(
                         () -> turret.moveTurret(Rotations.of(TURRET_POS_RIGHT))));
+                }
+
+                if (indexer != null && hood != null && shooter != null) {
 
                 operator.rightStick().whileTrue(
                         Commands.startEnd(
@@ -235,7 +261,10 @@ public class RobotContainer {
                                         shooter.setShooterSpeed(RotationsPerSecond.of(TurretConstants.MAX_SHOOTER_RPS));
                                 },
                                 () -> indexer.stop(),
-                                indexer));
+                                indexer, shooter));
+                        }
+                
+                if (hood != null) {
 
                 operator.x().whileTrue(hood.run(
                         () -> hood.setHoodAngle(Rotations.of(HOOD_POS_DOWN))));
@@ -243,6 +272,8 @@ public class RobotContainer {
                         () -> hood.setHoodAngle(Rotations.of(HOOD_POS_MID))));
                 operator.b().whileTrue(hood.run(
                         () -> hood.setHoodAngle(Rotations.of(HOOD_POS_UP))));
+
+                }
         }
 
         // ================================================================
@@ -280,21 +311,34 @@ public class RobotContainer {
                         NamedCommands.registerCommand("intakeIn", new IntakeInCommand(intake));
                 }
 
+                if (indexer != null && hood != null && shooter != null && vision != null && turret != null){
+
                 NamedCommands.registerCommand("shoot",
                         new ShootCommand(indexer, hood, shooter,
                                 visionAutoAim::getDistanceToHub,
                                 visionAutoAim.getCalculator(),
-                                visionAutoAim::isAimed));
+                                visionAutoAim::isAimed,
+                                drivetrain, turret));
+                }
+
+                if (shooter!= null && indexer != null){
 
                 NamedCommands.registerCommand("stopAll",
                         Commands.sequence(
                                 Commands.runOnce(() -> shooter.stop(), shooter),
                                 Commands.runOnce(() -> indexer.stop(), indexer)));
 
+                }
+
+                if (shooter != null && hood != null && vision != null && shooter != null && turret != null){
+
                 NamedCommands.registerCommand("autoShoot",
                                 new AutoShootCommand(shooter, hood,
                                         visionAutoAim::getDistanceToHub,
                                         visionAutoAim.getCalculator()));
+                }
+
+                if (indexer != null){
 
                 NamedCommands.registerCommand("feedIndexers",
                         Commands.runEnd(
@@ -305,6 +349,7 @@ public class RobotContainer {
                                 },
                                 () -> indexer.stop(),
                                 indexer));
+                        }
 
         }
 

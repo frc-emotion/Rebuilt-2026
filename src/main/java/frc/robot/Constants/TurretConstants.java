@@ -19,7 +19,9 @@ public final class TurretConstants {
     // Total gear ratio from motor/CANcoder to turret output (SensorToMechanismRatio).
     // CANcoder is 1:1 with the motor rotor shaft.
     // Empirically measured: 5.08 rotor turns per 1 turret turn.
-    public static final double TURRET_GEAR_RATIO = 122.0/24.0; //5.08
+    public static final double TURRET_GEAR_RATIO = 122.0/24.0;// ??/18 //5.08
+    public static final double shootingWhileMovingMultiplier = 0.5; // multiplier on shooter RPS when moving at max speed toward/away from target
+    public static final double omegaFeedforwardMultiplier = 0.05; // multiplier on turret setpoint (rotations) to compensate for chassis angular velocity (omega)
     
     public static final double HOOD_GEAR_RATIO = 155.0 / 12.0; // SensorToMechanismRatio
 
