@@ -110,7 +110,8 @@ public class RobotContainer {
 
                 visionAutoAim = new TurretAutoAimCommand(drivetrain, vision, turret,
                         () -> operator.getRightX(),
-                        () -> operator.leftStick().getAsBoolean());
+                        () -> operator.leftStick().getAsBoolean(),
+                        () -> operator.leftBumper().getAsBoolean());
 
                 }
                 else{
@@ -216,8 +217,9 @@ public class RobotContainer {
                 
         }
 
-        if (indexer != null && hood != null && shooter != null && turret != null) {
-                operator.leftBumper().whileTrue(new PasssingShootCommand(shooter, hood, indexer));
+        if (indexer != null && hood != null && shooter != null && turret != null && vision != null) {
+                operator.leftBumper().whileTrue(new PasssingShootCommand(shooter, hood, indexer,
+                        visionAutoAim::isPassingLocked));
         }
 
         if ( indexer != null) {

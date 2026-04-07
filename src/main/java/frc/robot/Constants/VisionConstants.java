@@ -64,18 +64,18 @@ public final class VisionConstants {
     public static final int[] RED_HUB_TAG_IDS  = { 2, 3, 4, 5, 8, 9, 10, 11 };
     public static final int[] BLUE_HUB_TAG_IDS = { 18, 19, 20, 21, 24, 25, 26, 27 };
 
-    public static final int[] Blue_NEUTRAL_PASSING_TAG_IDS = {17, 19,20,22};
-    public static final int[] RED_NEUTRAL_PASSING_TAG_IDS = {1, 3, 4, 6};
-
-    public static final int[] RED_ZONE_PASSING_TAG_IDS = {7,9,10,12};
-    public static final int[] BLUE_ZONE_PASSING_TAG_IDS = {23,25,26,28};
-    
+    // Tags physically located in each zone
+    public static final int[] RED_ZONE_TAG_IDS = {7, 9, 10, 12};
+    public static final int[] BLUE_ZONE_TAG_IDS = {23, 25, 26, 28};
+    public static final int[] NEUTRAL_RED_SIDE_TAG_IDS = {1, 3, 4, 6};
+    public static final int[] NEUTRAL_BLUE_SIDE_TAG_IDS = {17, 19, 20, 22};
+        
     public static boolean isRedHubTag(int tagId) {
         for (int id : RED_HUB_TAG_IDS) { if (id == tagId) return true; }
         return false;
     }
 
-    public static boolean isBlueHubTag(int tagId) {
+    public static boolean isBlueHubTag(int tagId) { 
         for (int id : BLUE_HUB_TAG_IDS) { if (id == tagId) return true; }
         return false;
     }
@@ -88,6 +88,43 @@ public final class VisionConstants {
     public static boolean isOurHubTag(int tagId) {
         Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
         return (alliance == Alliance.Red) ? isRedHubTag(tagId) : isBlueHubTag(tagId);
+    }
+
+        // --- Passing Zone Tags (physical field location) ---
+    public static boolean isRedZonePassingTag(int tagId) {
+        for (int id : RED_ZONE_TAG_IDS) { if (id == tagId) return true; }
+        return false;
+    }
+
+    public static boolean isBlueZonePassingTag(int tagId) {
+        for (int id : BLUE_ZONE_TAG_IDS) { if (id == tagId) return true; }
+        return false;
+    }
+
+    public static boolean isNeutralRedSidePassingTag(int tagId) {
+        for (int id : NEUTRAL_RED_SIDE_TAG_IDS) { if (id == tagId) return true; }
+        return false;
+    }
+
+    public static boolean isNeutralBlueSidePassingTag(int tagId) {
+        for (int id : NEUTRAL_BLUE_SIDE_TAG_IDS) { if (id == tagId) return true; }
+        return false;
+    }
+
+    public static boolean isPassingTag(int tagId) {
+        return isRedZonePassingTag(tagId) || isBlueZonePassingTag(tagId)
+            || isNeutralRedSidePassingTag(tagId) || isNeutralBlueSidePassingTag(tagId);
+    }
+
+    /** Returns true if the tag is one we'd pass to when on our alliance. 
+     *  (We pass into the opponent's zone and use the opponent-side neutral tags.) */
+    public static boolean isOurPassingTag(int tagId) {
+        Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+        if (alliance == Alliance.Red) {
+            return isBlueZonePassingTag(tagId) || isNeutralBlueSidePassingTag(tagId);
+        } else {
+            return isRedZonePassingTag(tagId) || isNeutralRedSidePassingTag(tagId);
+        }
     }
 
     // ================================================================

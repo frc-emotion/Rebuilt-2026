@@ -1,15 +1,13 @@
 package frc.robot.commands;
 
-import static edu.wpi.first.units.Units.Rotations;
-
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import static edu.wpi.first.units.Units.Rotations;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.TurretConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
@@ -33,6 +31,7 @@ public class TurretAutoAimCommand extends Command {
     private final TurretAimingCalculator calculator;
     private final DoubleSupplier joystickSupplier;
     private final BooleanSupplier manualOverride;
+    private final BooleanSupplier isPassing;
 
     @Logged(importance = Logged.Importance.CRITICAL) private String state = "TRACKING";
     @Logged(importance = Logged.Importance.CRITICAL) private double distanceToHubMeters = 0.0;
@@ -54,6 +53,8 @@ public class TurretAutoAimCommand extends Command {
 
     private double lastVisionTimestamp = 0.0;
     private boolean freshVisionThisCycle = false;
+    private boolean wasPassing = false;
+    private boolean passingDirectionLocked = false;
 
 
     public TurretAutoAimCommand(
@@ -61,13 +62,15 @@ public class TurretAutoAimCommand extends Command {
             Vision vision,
             Turret turret,
             DoubleSupplier joystickSupplier,
-            BooleanSupplier manualOverride) {
+            BooleanSupplier manualOverride,
+            BooleanSupplier isPassing) {
         this.drivetrain = drivetrain;
         this.vision = vision;
         this.turret = turret;
         this.calculator = new TurretAimingCalculator();
         this.joystickSupplier = joystickSupplier;
         this.manualOverride = manualOverride;
+        this.isPassing = isPassing;
         addRequirements(turret);
     }
 
@@ -78,12 +81,15 @@ public class TurretAutoAimCommand extends Command {
         lastVisionTimestamp = 0.0;
         visionTxDeg = 0.0;
         freshVisionThisCycle = false;
+        wasPassing = false;
+        passingDirectionLocked = false;
         lastGyroYawDeg = drivetrain != null ? drivetrain.getPigeon2().getYaw().getValueAsDouble() : 0.0;
     }
 
     @Override
     public void execute() {
         boolean manual = manualOverride.getAsBoolean();
+        boolean passing = isPassing.getAsBoolean();
 
         state = manual ? "MANUAL" : "TRACKING";
         
@@ -93,12 +99,27 @@ public class TurretAutoAimCommand extends Command {
             double input = MathUtil.applyDeadband(joystickSupplier.getAsDouble(), MANUAL_DEADBAND);
             turret.setTurretVoltage(MathUtil.clamp(input, -1, 1));
             targetPositionRot = turretPos;
+        } else if (passing) {
+            state = "PASSING";
+            if (!wasPassing) {
+                passingDirectionLocked = false;
+            }
+            currentPositionRot = turretPos;
+            applyGyroFF();
+
+            if (!passingDirectionLocked) {
+                readVision(true);
+                if (freshVisionThisCycle) {
+                    targetPositionRot = currentPositionRot + visionTxDeg / 360.0;
+                    passingDirectionLocked = true;
+                }
+            }
+            targetPositionRot = turret.moveTurret(Rotations.of(targetPositionRot)).in(Rotations);
         } else {
-            readVision();
+            readVision(false);
             ChassisSpeeds speeds = drivetrain.getState().Speeds;
             omega = speeds.omegaRadiansPerSecond;
 
-            
             currentPositionRot = turretPos;
             applyGyroFF();
             if (freshVisionThisCycle) {
@@ -108,6 +129,7 @@ public class TurretAutoAimCommand extends Command {
             targetPositionRot = turret.moveTurret(Rotations.of(targetPositionRot)).in(Rotations);
         }
 
+        wasPassing = passing;
         turretErrorRot = targetPositionRot - turretPos;
     }
 
@@ -117,7 +139,24 @@ public class TurretAutoAimCommand extends Command {
 
     }
 
-    private void readVision() {
+    private void readVision(Boolean isPassing) {
+        if (isPassing){
+            freshVisionThisCycle = false;
+            visionActive = false; 
+            if (vision == null || !vision.isTurretResultFresh()) return;
+            double ts  = vision.getTurretResultTimestamp();
+            if (ts ==lastVisionTimestamp) return;
+            lastVisionTimestamp = ts;
+
+            if (!vision.isSeeingPassingTag()) return;
+            visionTxDeg = vision.getYawToPassingTagDeg();
+            distanceToHubMeters = vision.getDistanceToPassingTag();
+            trackedTagId = vision.getTrackedPassingTagId();
+            visionActive = true;
+            freshVisionThisCycle = true;
+            
+        }
+        else{
         freshVisionThisCycle = false;
         visionActive = false;
         if (vision == null || !vision.isTurretResultFresh()) return;
@@ -133,6 +172,7 @@ public class TurretAutoAimCommand extends Command {
         trackedTagId = vision.getTrackedTagId();
         visionActive = true;
         freshVisionThisCycle = true;
+        }
     }
 
     private void applyGyroFF() {
@@ -181,4 +221,10 @@ public class TurretAutoAimCommand extends Command {
     public TurretAimingCalculator getCalculator() {
         return calculator;
     }
+
+    public boolean isPassingLocked() {
+        return passingDirectionLocked;
+    }
+
+    
 }
