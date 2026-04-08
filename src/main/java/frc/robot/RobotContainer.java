@@ -355,6 +355,13 @@ public class RobotContainer {
                                 },
                                 () -> indexer.stop(),
                                 indexer));
+                NamedCommands.registerCommand("reverseIndexer", 
+                        Commands.runEnd(
+                                () -> {
+                                        indexer.setIndexerSpeed(-IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);
+                                },
+                                () -> indexer.stop(),
+                                indexer));
                         }
 
         }
