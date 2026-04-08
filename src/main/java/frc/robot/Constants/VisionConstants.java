@@ -121,9 +121,9 @@ public final class VisionConstants {
     public static boolean isOurPassingTag(int tagId) {
         Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
         if (alliance == Alliance.Red) {
-            return isBlueZonePassingTag(tagId) || isNeutralBlueSidePassingTag(tagId);
+            return isBlueZonePassingTag(tagId) || isNeutralRedSidePassingTag(tagId);
         } else {
-            return isRedZonePassingTag(tagId) || isNeutralRedSidePassingTag(tagId);
+            return isRedZonePassingTag(tagId) || isNeutralBlueSidePassingTag(tagId);
         }
     }
 
