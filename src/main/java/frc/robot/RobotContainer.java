@@ -210,16 +210,12 @@ public class RobotContainer {
                         return new ShootCommand(indexer, hood, shooter,
                                 visionAutoAim::getDistanceToHub,
                                 visionAutoAim.getCalculator(),
-                                visionAutoAim::isAimed, 
+                                visionAutoAim::isAimed,
+                                visionAutoAim::currentlyPassing,
                                 drivetrain, turret);
                 }, Set.of(indexer, hood, shooter)));
 
                 
-        }
-
-        if (indexer != null && hood != null && shooter != null && turret != null && vision != null) {
-                operator.leftBumper().whileTrue(new PasssingShootCommand(shooter, hood, indexer,
-                        visionAutoAim::isPassingLocked));
         }
 
         if ( indexer != null) {
@@ -324,6 +320,7 @@ public class RobotContainer {
                                 visionAutoAim::getDistanceToHub,
                                 visionAutoAim.getCalculator(),
                                 visionAutoAim::isAimed,
+                                () -> false,
                                 drivetrain, turret));
                 }
 

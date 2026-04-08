@@ -101,22 +101,18 @@ public class TurretAutoAimCommand extends Command {
             targetPositionRot = turretPos;
         } else if (passing) {
             state = "PASSING";
-            if (!wasPassing) {
-                passingDirectionLocked = false;
-            }
             currentPositionRot = turretPos;
             applyGyroFF();
-
-            if (!passingDirectionLocked) {
-                readVision(true);
-                if (freshVisionThisCycle) {
-                    targetPositionRot = currentPositionRot + visionTxDeg / 360.0;
-                    passingDirectionLocked = true;
-                }
+            readPassing();
+            if (freshVisionThisCycle) {
+                targetPositionRot = currentPositionRot + visionTxDeg / 360.0;
+                passingDirectionLocked = true;
             }
             targetPositionRot = turret.moveTurret(Rotations.of(targetPositionRot)).in(Rotations);
-        } else {
-            readVision(false);
+            }
+            
+         else {
+            readVision();
             ChassisSpeeds speeds = drivetrain.getState().Speeds;
             omega = speeds.omegaRadiansPerSecond;
 
@@ -139,24 +135,7 @@ public class TurretAutoAimCommand extends Command {
 
     }
 
-    private void readVision(Boolean isPassing) {
-        if (isPassing){
-            freshVisionThisCycle = false;
-            visionActive = false; 
-            if (vision == null || !vision.isTurretResultFresh()) return;
-            double ts  = vision.getTurretResultTimestamp();
-            if (ts ==lastVisionTimestamp) return;
-            lastVisionTimestamp = ts;
-
-            if (!vision.isSeeingPassingTag()) return;
-            visionTxDeg = vision.getYawToPassingTagDeg();
-            distanceToHubMeters = vision.getDistanceToPassingTag();
-            trackedTagId = vision.getTrackedPassingTagId();
-            visionActive = true;
-            freshVisionThisCycle = true;
-            
-        }
-        else{
+    private void readVision() {
         freshVisionThisCycle = false;
         visionActive = false;
         if (vision == null || !vision.isTurretResultFresh()) return;
@@ -172,7 +151,23 @@ public class TurretAutoAimCommand extends Command {
         trackedTagId = vision.getTrackedTagId();
         visionActive = true;
         freshVisionThisCycle = true;
-        }
+    }
+
+    public void readPassing() {
+            freshVisionThisCycle = false;
+            visionActive = false; 
+            if (vision == null || !vision.isTurretResultFresh()) return;
+            double ts  = vision.getTurretResultTimestamp();
+            if (ts ==lastVisionTimestamp) return;
+            lastVisionTimestamp = ts;
+
+            if (!vision.isSeeingPassingTag()) return;
+
+            visionTxDeg = vision.getYawToPassingTagDeg();
+            distanceToHubMeters = vision.getDistanceToPassingTag();
+            trackedTagId = vision.getTrackedPassingTagId();
+            visionActive = true;
+            freshVisionThisCycle = true;
     }
 
     private void applyGyroFF() {
@@ -224,6 +219,10 @@ public class TurretAutoAimCommand extends Command {
 
     public boolean isPassingLocked() {
         return passingDirectionLocked;
+    }
+
+    public boolean currentlyPassing() {
+        return isPassing.getAsBoolean();
     }
 
     

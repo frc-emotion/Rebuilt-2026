@@ -58,9 +58,9 @@ public final class TurretConstants {
         SHOOTER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Coast;
 
         SHOOTER_CONFIG.CurrentLimits.StatorCurrentLimitEnable = true;
-        SHOOTER_CONFIG.CurrentLimits.StatorCurrentLimit = 120.0;
+        SHOOTER_CONFIG.CurrentLimits.StatorCurrentLimit = 160.0;
         SHOOTER_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
-        SHOOTER_CONFIG.CurrentLimits.SupplyCurrentLimit = 60.0;
+        SHOOTER_CONFIG.CurrentLimits.SupplyCurrentLimit = 120.0;
         SHOOTER_CONFIG.Slot0.kG = 0.0;
         SHOOTER_CONFIG.Slot0.kS = 0.15;
         SHOOTER_CONFIG.Slot0.kV = 0.12;
@@ -69,7 +69,7 @@ public final class TurretConstants {
         SHOOTER_CONFIG.Slot0.kI = 0.0;
         SHOOTER_CONFIG.Slot0.kD = 0.0;
 
-        SHOOTER_CONFIG.Voltage.PeakForwardVoltage = 10.0;  // cap at 10V to protect motor/battery
+        SHOOTER_CONFIG.Voltage.PeakForwardVoltage = 12.0;  // cap at 10V to protect motor/battery
         SHOOTER_CONFIG.Voltage.PeakReverseVoltage = 0.0;   // never apply reverse voltage — let friction stop it
     }
 

@@ -40,12 +40,14 @@ public class ShootCommand extends Command {
     private final double manualShooterRPS;
     private final boolean useInterpTables;
     private final Turret turret;
+    private final BooleanSupplier isPassing;
 
     /** Vision mode: hood + shooter from interp tables, indexers gated on isAimed. */
     public ShootCommand(Indexer indexer, Hood hood, Shooter shooter,
                         DoubleSupplier distanceSupplier,
                         TurretAimingCalculator calculator,
-                        BooleanSupplier isAimed, 
+                        BooleanSupplier isAimed,
+                        BooleanSupplier isPassing, 
                         CommandSwerveDrivetrain drivetrain,
                         Turret turret) {
         this.indexer = indexer;
@@ -54,6 +56,7 @@ public class ShootCommand extends Command {
         this.distanceSupplier = distanceSupplier;
         this.calculator = calculator;
         this.isAimed = isAimed;
+        this.isPassing = isPassing;
         this.manualShooterRPS = 0;
         this.useInterpTables = true;
         this.drivetrain = drivetrain;
@@ -62,13 +65,14 @@ public class ShootCommand extends Command {
     }
 
     /** Manual mode: fixed shooter speed, hood flat, indexers always fire. */
-    public ShootCommand(Indexer indexer, Hood hood, Shooter shooter, Turret turret, double shooterRPS, CommandSwerveDrivetrain drivetrain) {
+    public ShootCommand(Indexer indexer, Hood hood, Shooter shooter, Turret turret, double shooterRPS, CommandSwerveDrivetrain drivetrain, BooleanSupplier manual) {
         this.indexer = indexer;
         this.hood = hood;
         this.shooter = shooter;
         this.distanceSupplier = () -> 0;
         this.calculator = null;
         this.isAimed = () -> true;
+        this.isPassing = () -> false;
         this.manualShooterRPS = shooterRPS;
         this.useInterpTables = false;
         this.drivetrain = drivetrain;
@@ -80,6 +84,8 @@ public class ShootCommand extends Command {
     public void execute() {
         boolean aimed = isAimed.getAsBoolean();
         ChassisSpeeds speeds = drivetrain.getState().Speeds;
+
+        boolean passing = isPassing.getAsBoolean();
 
         double turretAngleRad = turret.getTurretPosition().getRadians();
         double vx = speeds.vxMetersPerSecond;
@@ -94,7 +100,7 @@ public class ShootCommand extends Command {
 
        
        
-        if (useInterpTables && aimed) {
+        if (useInterpTables && aimed && !passing) {
             
             hood.setHoodAngle(Rotations.of(calculator.getHoodAngleRot(dist)));
             shooter.setShooterSpeed(RotationsPerSecond.of(calculator.getFlywheelRPS(dist)));
@@ -102,7 +108,13 @@ public class ShootCommand extends Command {
         //     // Not aimed: keep hood where operator left it, spin shooter at fallback RPS
         //     shooter.setShooterSpeed(RotationsPerSecond.of(FALLBACK_SHOOTER_RPS));
         } else {
+            if(passing){
+                hood.setHoodAngle(Rotations.of(0.067));
+                shooter.setShooterSpeed(RotationsPerSecond.of(95));
+            }
+            else{
             shooter.setShooterSpeed(RotationsPerSecond.of(manualShooterRPS));
+            }
         }
 
         indexer.setIndexerSpeed(IndexerConstants.VERTICAL_INDEXER_SPEED, IndexerType.VERTICAL);

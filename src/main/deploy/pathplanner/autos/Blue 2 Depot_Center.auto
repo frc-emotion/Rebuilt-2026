@@ -11,7 +11,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "autoShoot"
+                  "name": "intakeOut"
                 }
               },
               {
@@ -39,7 +39,7 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "feedIndexers"
+                        "name": "shoot"
                       }
                     }
                   ]

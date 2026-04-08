@@ -35,6 +35,7 @@ public class Vision extends SubsystemBase {
 
     // Stale-data hold: distance keeps its last good value when no tag is visible
     private double lastGoodDistance = 0.0;
+    private double lastGoodPassingDistance = 0.0;
 
     @Logged(importance = Logged.Importance.CRITICAL) private boolean cameraConnected = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean seeingHubTag = false;
@@ -59,6 +60,8 @@ public class Vision extends SubsystemBase {
     public void periodic() {
         // 1. Drain all unread frames, keep the newest one
         freshThisCycle = false;
+        seeingHubTag = false;    // FIX 3: reset both flags every cycle up here
+        seeingPassingTag = false;
         if (camera != null) {
             for (PhotonPipelineResult result : camera.getAllUnreadResults()) {
                 latestResult = result;
@@ -71,8 +74,8 @@ public class Vision extends SubsystemBase {
 
         // 2. Nothing new or no targets? Hold stale distance, clear tracking flag
         if (!freshThisCycle || latestResult == null || !latestResult.hasTargets()) {
-            seeingHubTag = false;
             distanceToHub = lastGoodDistance;
+            distanceToPassingTag = lastGoodPassingDistance;
             return;
         }
 
@@ -96,7 +99,7 @@ public class Vision extends SubsystemBase {
         if (bestTarget == null) {
             for (PhotonTrackedTarget target : latestResult.getTargets()) {
                 int id = target.getFiducialId();
-                if (!VisionConstants.BENCH_TEST_ANY_TAG && !VisionConstants.isOurHubTag(id)) continue;
+                if (!VisionConstants.BENCH_TEST_ANY_TAG && !VisionConstants.isOurHubTag(id) && !VisionConstants.isOurPassingTag(id)) continue;
                 double amb = target.getPoseAmbiguity();
                 if (!VisionConstants.BENCH_TEST_ANY_TAG && amb > VisionConstants.MAX_POSE_AMBIGUITY) continue;
                 if (amb < bestAmbiguity) {
@@ -106,125 +109,96 @@ public class Vision extends SubsystemBase {
             }
         }
 
+        // FIX 1: return early if no valid target found
         if (bestTarget == null) {
-            seeingHubTag = false;
             distanceToHub = lastGoodDistance;
+            distanceToPassingTag = lastGoodPassingDistance;
             return;
         }
 
-        // 4. Compute distance + yaw
+        // FIX 2: declare tagId once, use it for classification
         int tagId = bestTarget.getFiducialId();
 
+        if (VisionConstants.isOurHubTag(tagId)) {
+            seeingHubTag = true;
+        } else if (VisionConstants.isOurPassingTag(tagId)) {
+            seeingPassingTag = true;
+        }
+
+        // 4. Compute distance + yaw
         if (VisionConstants.BENCH_TEST_ANY_TAG) {
-            // Bench mode: use raw PhotonVision yaw + raw camera→tag distance
-            // This matches pre-refactor behavior exactly
+            seeingHubTag = true; // bench mode treats any tag as a hub tag
             yawToHubDeg = bestTarget.getYaw();
             Translation3d camToTag = bestTarget.getBestCameraToTarget().getTranslation();
             distanceToHub = Math.hypot(camToTag.getX(), camToTag.getY());
         } else {
-            rawDeg = bestTarget.getYaw();
-            // Competition mode: camera→tag + tag→hub vector addition
-            Transform3d cameraToTag = bestTarget.getBestCameraToTarget();
-            Transform3d tagToHub = VisionConstants.TAG_TO_HUB_CENTER.get(tagId);
+            if (seeingHubTag) {
+                rawDeg = bestTarget.getYaw();
+                Transform3d cameraToTag = bestTarget.getBestCameraToTarget();
+                Transform3d tagToHub = VisionConstants.TAG_TO_HUB_CENTER.get(tagId);
 
-            Translation3d toHub = (tagToHub != null)
-                    ? cameraToTag.plus(tagToHub).getTranslation()
-                    : cameraToTag.getTranslation();
+                Translation3d toHub = (tagToHub != null)
+                        ? cameraToTag.plus(tagToHub).getTranslation()
+                        : cameraToTag.getTranslation();
 
-            distanceToHub = Math.hypot(toHub.getX(), toHub.getY());
-            yawToHubDeg = -Math.toDegrees(Math.atan2(toHub.getY(), toHub.getX()));
-        }
+                distanceToHub = Math.hypot(toHub.getX(), toHub.getY());
+                yawToHubDeg = -Math.toDegrees(Math.atan2(toHub.getY(), toHub.getX()));
+            } else if (seeingPassingTag) {
+                rawDeg = bestTarget.getYaw();
+                Transform3d cameraToTag = bestTarget.getBestCameraToTarget();
 
-            // 6. Find best passing tag
-    PhotonTrackedTarget bestPassingTarget = null;
-    double bestPassingAmbiguity = 1.0;
+                // FIX 5: write to distanceToPassingTag, not distanceToHub
+                distanceToPassingTag = Math.hypot(cameraToTag.getTranslation().getX(), cameraToTag.getTranslation().getY());
 
-
-    if (trackedPassingTagId != -1) {
-        for (PhotonTrackedTarget target : latestResult.getTargets()) {
-            if (target.getFiducialId() != trackedPassingTagId) continue;
-            double amb = target.getPoseAmbiguity();
-            if (amb > VisionConstants.MAX_POSE_AMBIGUITY) break;
-            bestPassingTarget = target;
-            bestPassingAmbiguity = amb;
-            break;
-        }
-    }
-
-    if (bestPassingTarget == null) {
-        for (PhotonTrackedTarget target : latestResult.getTargets()) {
-            int id = target.getFiducialId();
-            if (!VisionConstants.isPassingTag(id)) continue;
-            double amb = target.getPoseAmbiguity();
-            if (amb > VisionConstants.MAX_POSE_AMBIGUITY) continue;
-            if (amb < bestPassingAmbiguity) {
-                bestPassingTarget = target;
-                bestPassingAmbiguity = amb;
+                Rotation3d tagToCamRot = cameraToTag.getRotation().unaryMinus();
+                Translation3d tagNormalInCam = new Translation3d(0, 0, 1).rotateBy(tagToCamRot);
+                yawToPassingTagDeg = -Math.toDegrees(
+                        Math.atan2(-tagNormalInCam.getY(), -tagNormalInCam.getX()));
             }
         }
-    }
-
-    if (bestPassingTarget != null) {
-        seeingPassingTag = true;
-        trackedPassingTagId = bestPassingTarget.getFiducialId();
-        Transform3d cameraToPassTag = bestPassingTarget.getBestCameraToTarget();
-        Translation3d camToPassTranslation = cameraToPassTag.getTranslation();
-        distanceToPassingTag = Math.hypot(camToPassTranslation.getX(), camToPassTranslation.getY());
-
-        // Compute perpendicular-to-tag yaw: face along the tag's inward normal
-        // (toward the wall/alliance side), not at the tag center.
-        // Tag Z-axis = outward normal (away from wall, toward camera).
-        // We want the opposite direction (toward the wall).
-        Rotation3d tagToCamRot = cameraToPassTag.getRotation().unaryMinus();
-        Translation3d tagNormalInCam = new Translation3d(0, 0, 1).rotateBy(tagToCamRot);
-        yawToPassingTagDeg = -Math.toDegrees(
-                Math.atan2(-tagNormalInCam.getY(), -tagNormalInCam.getX()));
-    } else {
-        seeingPassingTag = false;
-        trackedPassingTagId = -1;
-    }
 
         // 5. Update state
         trackedTagId = tagId;
         ambiguity = bestAmbiguity;
         latencyMs = latestResult.metadata.getLatencyMillis();
-        seeingHubTag = true;
-        lastGoodDistance = distanceToHub;
+
+        // FIX 3 & 4: only update the relevant stale holder, write trackedPassingTagId
+        if (seeingHubTag) {
+            lastGoodDistance = distanceToHub;
+        }
+        if (seeingPassingTag) {
+            trackedPassingTagId = tagId;
+            lastGoodPassingDistance = distanceToPassingTag;
+        }
     }
 
     // ── Public API ──
 
-    /** Horizontal distance from camera to hub center in meters. Holds last good value when no tag visible. */
     public double getDistanceToHub() {
         return distanceToHub;
     }
 
-    /** Degrees the hub center is off the camera's forward axis. 0 when no tag visible. */
     public double getYawToHubDeg() {
         return yawToHubDeg;
     }
 
-    /** True when a valid hub tag (or any tag in bench mode) passed ambiguity check this cycle. */
     public boolean isSeeingHubTag() {
         return seeingHubTag;
     }
 
-    /** True when the camera delivered a new frame this cycle. */
     public boolean isTurretResultFresh() {
         return freshThisCycle;
     }
 
-    /** Timestamp of the latest camera frame (for dedup in TurretAutoAimCommand). */
     public double getTurretResultTimestamp() {
         return resultTimestamp;
     }
 
-    /** The fiducial ID currently being tracked (-1 if none). */
     public int getTrackedTagId() {
         return trackedTagId;
     }
 
-        public boolean isSeeingPassingTag() {
+    public boolean isSeeingPassingTag() {
         return seeingPassingTag;
     }
 

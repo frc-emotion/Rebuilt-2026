@@ -18,18 +18,18 @@ public final class IntakeConstants {
     public static final int intakePivotEncoderID = 22;
     public static final double IntakeCurrentSpike = 20;
 
-    public static final Angle INTAKE_IN_ANGLE = Rotations.of(0.14); //0.135
-    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.5); //0.5
+    public static final Angle INTAKE_IN_ANGLE = Rotations.of(0.15); //0.135
+    public static final Angle INTAKE_OUT_ANGLE = Rotations.of(0.51); //0.5
 
     // Soft limits — prevent motor from commanding past safe range
-    public static final double INTAKE_REVERSE_SOFT_LIMIT = 0.13;                           // hard safety wall — past stow target
-    public static final double INTAKE_OVERTRAVEL_THRESHOLD = 0.13; //0.116  // if past this (toward reverse), recovery kicks in
-    public static final double INTAKE_FORWARD_SOFT_LIMIT =  0.5;    // past deploy target (forward direction)
+    public static final double INTAKE_REVERSE_SOFT_LIMIT = 0.14;                           // hard safety wall — past stow target
+    public static final double INTAKE_OVERTRAVEL_THRESHOLD = 0.14; //0.116  // if past this (toward reverse), recovery kicks in
+    public static final double INTAKE_FORWARD_SOFT_LIMIT =  0.515;    // past deploy target (forward direction)
 
     public static final Angle TOLERANCE = Degrees.of(5);          // default (used for stow)
     public static final Angle DEPLOY_TOLERANCE = Degrees.of(15);   // looser — rollers start sooner on deploy
 
-    // If pivot is more than this angle away from INTAKE_IN_ANGLE (toward deployed), intake is considered "out"
+    // If pivot is more than this angle away from INTAKE_IN_ANGLE (tow\][\ard deployed), intake is considered "out"
     public static final double INTAKE_OUT_THRESHOLD_ROT = 5.0 / 360.0; // 5 degrees in rotations
 
 
@@ -71,7 +71,7 @@ public final class IntakeConstants {
         INTAKE_CONFIG.SoftwareLimitSwitch.ForwardSoftLimitThreshold = INTAKE_FORWARD_SOFT_LIMIT;
     }
 
-    public static final double INTAKE_ROLLER_VELOCITY = 50;
+    public static final double INTAKE_ROLLER_VELOCITY = 40;
 
     public static final TalonFXConfiguration ROLLER_CONFIG = new TalonFXConfiguration();
 
