@@ -103,6 +103,12 @@ public class Indexer extends SubsystemBase {
         }
     }
 
+    public void setAllIndexers(double speed){
+        horizontalIndexerMotor.setControl(horizontalMotionController.withVelocity(speed));
+        verticalIndexerMotor.setControl(verticalMotionController.withVelocity(speed));
+        upwardIndexerMotor.setControl(upwardMotionController.withVelocity(speed));
+    }
+
     public void stopIndexer(IndexerType indexer) {
         switch (indexer) {
             case HORIZONTAL:

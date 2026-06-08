@@ -1,4 +1,4 @@
-package frc.robot.generated;
+package frc.robot.Constants;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;

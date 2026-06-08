@@ -159,4 +159,17 @@ public final class TurretConstants {
         HOOD_ENCODER_CONFIG.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
         HOOD_ENCODER_CONFIG.MagnetSensor.MagnetOffset = HOOD_ENCODER_OFFSET;
     }
+
+    // Turret D-pad setpoints (intuitive relative to robot)
+    // Up = forward (0°), Down = backward (-180°), Left = 90° left, Right = forward limit
+    public static final double TURRET_POS_FORWARD  =  0.0;     //   0° (front of robot)
+    public static final double TURRET_POS_RIGHT    =  0.25;    // +18° CW (forward limit)
+    public static final double TURRET_POS_LEFT     = -0.250;   // -90° CCW (perpendicular left)
+    public static final double TURRET_POS_BACK     = -0.500;   // -180° CCW (straight backward)
+
+    
+    // Hood setpoints (X/Y/B): range [0.0, 0.08]
+    public static final double HOOD_POS_DOWN = 0.005;
+    public static final double HOOD_POS_MID  = 0.040;
+    public static final double HOOD_POS_UP   = 0.070;
 }

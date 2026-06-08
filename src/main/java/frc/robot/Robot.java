@@ -110,16 +110,11 @@ public class Robot extends TimedRobot {
         if (m_autonomousCommand != null) {
             CommandScheduler.getInstance().cancel(m_autonomousCommand);
         }
-        m_robotContainer.faultMonitor.clearAllStickyFaults();
     }
 
     @Override
     public void teleopPeriodic() {
-        if (RobotContainer.visionAutoAim != null && RobotContainer.visionAutoAim.isAimed()) {
-            RobotContainer.operator.setRumble(RumbleType.kBothRumble, 0.1);
-        } else {
-            RobotContainer.operator.setRumble(RumbleType.kBothRumble, 0.0);
-}
+
     }
 
     @Override
