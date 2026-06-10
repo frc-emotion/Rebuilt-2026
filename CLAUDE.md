@@ -52,4 +52,5 @@ Seeded from FUNCTIONALITY_INVENTORY.md (Phase 1, 2026-06-09). W-numbers referenc
 
 ## Learned gotchas
 
-(Append entries here when a non-obvious problem gets solved. Follow the growth rule.)
+- Epilogue's annotation processor breaks on two `@Logged` classes with the same SIMPLE name in different packages (its generated binder single-type-imports both `FooLogger`s). That's why legacy classes had Epilogue stripped during the Phase 3 coexistence window.
+- JUnit tests touching any WPILib sim class must call `HAL.initialize(500, 0)` in `@BeforeAll` — sim classes read battery voltage through the HAL and SIGSEGV natively without it.

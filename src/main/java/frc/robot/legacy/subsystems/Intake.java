@@ -9,13 +9,10 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 
-import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.legacy.Constants.IntakeConstants;
 import static edu.wpi.first.units.Units.*;
-
-@Logged
 public class Intake extends SubsystemBase {
     private final TalonFX intakeMotor;
     private final TalonFX rollerMotor;
@@ -28,11 +25,11 @@ public class Intake extends SubsystemBase {
 
     private Angle currentSetpoint = Degrees.of(0);
 
-    @Logged(importance = Logged.Importance.CRITICAL) private boolean intakeIsOut = false;
-    @Logged(importance = Logged.Importance.DEBUG) private double pivotPositionRot = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double rollerVelocityRPS = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double pivotCurrentAmps = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private boolean overtravelRecovery = false;
+    private boolean intakeIsOut = false;
+    private double pivotPositionRot = 0.0;
+    private double rollerVelocityRPS = 0.0;
+    private double pivotCurrentAmps = 0.0;
+    private boolean overtravelRecovery = false;
 
     public Intake(CANBus canBus) {
         intakeMotor = new TalonFX(IntakeConstants.intakeMotorID, canBus);

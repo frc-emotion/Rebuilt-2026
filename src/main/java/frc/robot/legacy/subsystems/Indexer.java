@@ -6,12 +6,9 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 
-import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.legacy.Constants.IndexerConstants;
 import frc.robot.legacy.Constants.IndexerConstants.IndexerType;
-
-@Logged
 public class Indexer extends SubsystemBase {
     private final TalonFX horizontalIndexerMotor;
     private final TalonFX verticalIndexerMotor;
@@ -21,9 +18,9 @@ public class Indexer extends SubsystemBase {
     private final VelocityVoltage verticalMotionController;
     private final VelocityVoltage upwardMotionController;
 
-    @Logged(importance = Logged.Importance.DEBUG) private double horizontalVelocityRPS = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double verticalVelocityRPS = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double upwardVelocityRPS = 0.0;
+    private double horizontalVelocityRPS = 0.0;
+    private double verticalVelocityRPS = 0.0;
+    private double upwardVelocityRPS = 0.0;
 
     public Indexer(CANBus canBus) {
         horizontalIndexerMotor = new TalonFX(IndexerConstants.horizontalIndexerMotorID, canBus);

@@ -12,7 +12,6 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
-import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -41,8 +40,6 @@ import frc.robot.legacy.subsystems.Turret;
 import frc.robot.legacy.subsystems.Vision;
 
 import frc.robot.legacy.Constants.Gen;
-
-@Logged
 public class RobotContainer {
 
         //  DRIVE

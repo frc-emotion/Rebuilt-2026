@@ -4,7 +4,6 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
-import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -24,7 +23,6 @@ import frc.robot.legacy.Constants.VisionConstants;
  * BENCH_TEST_ANY_TAG mode skips the tag→hub offset so you can aim at any
  * wall tag without needing a real hub.
  */
-@Logged
 public class Vision extends SubsystemBase {
 
     private final PhotonCamera camera;
@@ -37,18 +35,18 @@ public class Vision extends SubsystemBase {
     private double lastGoodDistance = 0.0;
     private double lastGoodPassingDistance = 0.0;
 
-    @Logged(importance = Logged.Importance.CRITICAL) private boolean cameraConnected = false;
-    @Logged(importance = Logged.Importance.CRITICAL) private boolean seeingHubTag = false;
-    @Logged(importance = Logged.Importance.CRITICAL) private double distanceToHub = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double yawToHubDeg = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private int trackedTagId = -1;
-    @Logged(importance = Logged.Importance.CRITICAL) private double latencyMs = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double ambiguity = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double rawDeg = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private boolean seeingPassingTag = false;
-    @Logged(importance = Logged.Importance.CRITICAL) private double distanceToPassingTag = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double yawToPassingTagDeg = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private int trackedPassingTagId = -1;
+    private boolean cameraConnected = false;
+    private boolean seeingHubTag = false;
+    private double distanceToHub = 0.0;
+    private double yawToHubDeg = 0.0;
+    private int trackedTagId = -1;
+    private double latencyMs = 0.0;
+    private double ambiguity = 0.0;
+    private double rawDeg = 0.0;
+    private boolean seeingPassingTag = false;
+    private double distanceToPassingTag = 0.0;
+    private double yawToPassingTagDeg = 0.0;
+    private int trackedPassingTagId = -1;
 
     public Vision() {
         camera = VisionConstants.ENABLE_TURRET_CAM

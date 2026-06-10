@@ -9,7 +9,6 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.hardware.ParentDevice;
 
-import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import static edu.wpi.first.units.Units.Rotations;
@@ -17,8 +16,6 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.legacy.Constants.TurretConstants;
 import frc.robot.legacy.commands.TurretAutoAimCommand;
-
-@Logged
 public class Turret extends SubsystemBase {
     private final TalonFX turretMotor;
 
@@ -30,19 +27,19 @@ public class Turret extends SubsystemBase {
     private Angle turretCurrentSetpoint = Rotations.of(0);
 
     // CRITICAL: always on NT (match + debug)
-    @Logged(importance = Logged.Importance.CRITICAL) private double turretPositionRot = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double turretSetpointRot = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double turretErrorRot = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private boolean faultForwardSoftLimit = false;
-    @Logged(importance = Logged.Importance.CRITICAL) private boolean faultReverseSoftLimit = false;
-    @Logged(importance = Logged.Importance.CRITICAL) private boolean turretWrapped = false;
-    @Logged(importance = Logged.Importance.CRITICAL) private double wrappedSetpointRot = 0.0;
+    private double turretPositionRot = 0.0;
+    private double turretSetpointRot = 0.0;
+    private double turretErrorRot = 0.0;
+    private boolean faultForwardSoftLimit = false;
+    private boolean faultReverseSoftLimit = false;
+    private boolean turretWrapped = false;
+    private double wrappedSetpointRot = 0.0;
 
     // DEBUG: only on NT during testing, always in log files
-    @Logged(importance = Logged.Importance.DEBUG) private double turretVelocityRPS = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double turretCurrentAmps = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double turretVoltageVolts = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double cancoderAbsoluteRot = 0.0;
+    private double turretVelocityRPS = 0.0;
+    private double turretCurrentAmps = 0.0;
+    private double turretVoltageVolts = 0.0;
+    private double cancoderAbsoluteRot = 0.0;
 
     public Turret(CANBus canBus) {
         turretMotor = new TalonFX(TurretConstants.turretMotorID, canBus);

@@ -3,7 +3,6 @@ package frc.robot.legacy.commands;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
-import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import static edu.wpi.first.units.Units.Rotations;
@@ -22,7 +21,6 @@ import frc.robot.legacy.util.TurretAimingCalculator;
  * There is no timeout. The turret always tries to reach its setpoint.
  * Vision just updates the setpoint when a fresh tag is seen.
  */
-@Logged
 public class TurretAutoAimCommand extends Command {
 
     private final CommandSwerveDrivetrain drivetrain;
@@ -33,19 +31,19 @@ public class TurretAutoAimCommand extends Command {
     private final BooleanSupplier manualOverride;
     private final BooleanSupplier isPassing;
 
-    @Logged(importance = Logged.Importance.CRITICAL) private String state = "TRACKING";
-    @Logged(importance = Logged.Importance.CRITICAL) private double distanceToHubMeters = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double visionTxDeg = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private boolean visionActive = false;
-    @Logged(importance = Logged.Importance.CRITICAL) private int trackedTagId = -1;
-    @Logged(importance = Logged.Importance.CRITICAL) public double targetPositionRot = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double currentPositionRot = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double turretErrorRot = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double gyroFeedforwardRot = 0.0;
+    private String state = "TRACKING";
+    private double distanceToHubMeters = 0.0;
+    private double visionTxDeg = 0.0;
+    private boolean visionActive = false;
+    private int trackedTagId = -1;
+    public double targetPositionRot = 0.0;
+    private double currentPositionRot = 0.0;
+    private double turretErrorRot = 0.0;
+    private double gyroFeedforwardRot = 0.0;
 
-    @Logged(importance = Logged.Importance.CRITICAL) private double lastGyroYawDeg = 0.0;
+    private double lastGyroYawDeg = 0.0;
 
-    @Logged(importance = Logged.Importance.CRITICAL) private double omega = 0.0;
+    private double omega = 0.0;
 
     private static final double DEADBAND_DEG = 3.0;
     private static final double MANUAL_DEADBAND = 0.08;

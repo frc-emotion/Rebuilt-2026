@@ -5,13 +5,10 @@ import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
-import edu.wpi.first.epilogue.Logged;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.legacy.Constants.TurretConstants;
-
-@Logged
 public class Shooter extends SubsystemBase {
     private final TalonFX shooterMotor;
 
@@ -19,10 +16,10 @@ public class Shooter extends SubsystemBase {
 
     private double shooterCurrentSetpoint;
 
-    @Logged(importance = Logged.Importance.CRITICAL) private double shooterSetpointRPS = 0.0;
-    @Logged(importance = Logged.Importance.CRITICAL) private double shooterVelocityRPS = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double shooterCurrentAmps = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double shooterVoltageVolts = 0.0;
+    private double shooterSetpointRPS = 0.0;
+    private double shooterVelocityRPS = 0.0;
+    private double shooterCurrentAmps = 0.0;
+    private double shooterVoltageVolts = 0.0;
 
     public Shooter(CANBus canBus) {
         shooterMotor = new TalonFX(TurretConstants.shooterMotorID, canBus);

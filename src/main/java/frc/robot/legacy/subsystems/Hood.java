@@ -7,13 +7,10 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 
-import edu.wpi.first.epilogue.Logged;
 import static edu.wpi.first.units.Units.Rotations;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.legacy.Constants.TurretConstants;
-
-@Logged
 public class Hood extends SubsystemBase {
     private final TalonFX hoodMotor;
 
@@ -23,10 +20,10 @@ public class Hood extends SubsystemBase {
 
     private Angle hoodCurrentSetpoint = Rotations.of(0);
 
-    @Logged(importance = Logged.Importance.CRITICAL) private double hoodPositionRot = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double hoodVelocityRPS = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double hoodCurrentAmps = 0.0;
-    @Logged(importance = Logged.Importance.DEBUG) private double hoodVoltageVolts = 0.0;
+    private double hoodPositionRot = 0.0;
+    private double hoodVelocityRPS = 0.0;
+    private double hoodCurrentAmps = 0.0;
+    private double hoodVoltageVolts = 0.0;
 
     public Hood(CANBus canBus) {
         hoodMotor = new TalonFX(TurretConstants.hoodMotorID, canBus);

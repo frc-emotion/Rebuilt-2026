@@ -7,8 +7,6 @@ package frc.robot.legacy;
 import com.ctre.phoenix6.HootAutoReplay;
 import com.ctre.phoenix6.SignalLogger;
 
-import edu.wpi.first.epilogue.Epilogue;
-import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
@@ -22,7 +20,7 @@ import frc.robot.legacy.RobotContainer;
  * Main robot class with automated Epilogue telemetry.
  * 
  * <p>
- * The @Logged annotation enables automatic logging of all fields in this class
+ * The annotation enables automatic logging of all fields in this class
  * and any classes they reference (like RobotContainer and its subsystems).
  * 
  * <p>
@@ -33,7 +31,6 @@ import frc.robot.legacy.RobotContainer;
  * <li>HOOT files - Phoenix 6 device data via SignalLogger</li>
  * </ul>
  */
-@Logged
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
 
@@ -53,16 +50,9 @@ public class Robot extends TimedRobot {
             .withJoystickReplay();
 
     public Robot() {
-        Epilogue.configure(config -> {
-            config.root = "Robot";
-            config.minimumImportance = MATCH_MODE
-                    ? Logged.Importance.CRITICAL
-                    : Logged.Importance.DEBUG;
-        });
 
         DataLogManager.start();
         SignalLogger.start();
-        Epilogue.bind(this);
 
         m_robotContainer = new RobotContainer();
 
