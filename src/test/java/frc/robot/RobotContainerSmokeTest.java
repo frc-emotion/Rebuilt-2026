@@ -24,6 +24,8 @@ class RobotContainerSmokeTest {
   @BeforeAll
   static void setup() {
     HAL.initialize(500, 0);
+    // Drop any subsystems registered by other test classes in this JVM before we construct ours.
+    CommandScheduler.getInstance().unregisterAllSubsystems();
     DriverStationSim.setDsAttached(true);
     DriverStationSim.setEnabled(true);
     DriverStationSim.notifyNewData();
@@ -45,7 +47,7 @@ class RobotContainerSmokeTest {
   @Test
   void constructsAndRegistersEverything() {
     assertNotNull(container.superstructure, "all feature flags are on; superstructure must exist");
-    assertNotNull(container.getAutonomousCommand() == null ? "chooser exists (may be empty)" : "ok");
+    assertNotNull(container.getAutonomousCommand(), "auto chooser must yield a default command");
     // The exact legacy named-command strings the deploy .auto files reference:
     for (String name :
         new String[] {"intakeOut", "intakeIn", "shoot", "stopAll", "autoShoot", "feedIndexers",

@@ -292,11 +292,19 @@ public class Superstructure extends SubsystemBase {
     goal = Goal.IDLE;
   }
 
-  /** Re-seed aiming at enable (replaces the legacy command's initialize()). */
+  /**
+   * Re-seed aiming at enable (replaces the legacy command's initialize()). The scoring state also
+   * resets to IDLE: a disable mid-CLEARING must not resume an un-timed full-reverse clear.
+   * Manual mode deliberately PERSISTS across disable — a sensor-dead robot stays manual.
+   */
   public void onEnable() {
     aiming.reset(turret.getPositionRot(), drive.getContinuousYawDeg());
     clearingTimer.stop();
     clearingTimer.reset();
+    if (!manualMode) {
+      state = RobotState.IDLE;
+      goal = Goal.IDLE;
+    }
   }
 
   /** Auto routines hold a goal through this command; releasing it returns control to teleop. */

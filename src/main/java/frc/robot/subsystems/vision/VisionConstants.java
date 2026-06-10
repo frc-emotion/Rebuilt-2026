@@ -26,8 +26,6 @@ import java.util.Map;
 public final class VisionConstants {
   private VisionConstants() {}
 
-  public static final boolean ENABLE_TURRET_CAM = true;
-
   /** When true, tracks ANY visible AprilTag with raw camera→tag data (no hub offset). */
   public static final boolean BENCH_TEST_ANY_TAG = false;
 

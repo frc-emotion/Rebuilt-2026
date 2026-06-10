@@ -215,6 +215,59 @@ class TransitionsTest {
         Transitions.next(RobotState.PASSING, Goal.PASS, with(true, false, true, true, false, false)));
   }
 
+  // ── Remaining direct row coverage (gate-report gaps) ──
+
+  @Test
+  void shootingToPassChainOnLbMidVolley() { // T9
+    assertEquals(
+        RobotState.PASS_SPINNING_UP,
+        Transitions.next(RobotState.SHOOTING, Goal.SHOOT, with(true, true, true, true, false, false)));
+  }
+
+  @Test
+  void passAimingToUnjamming() { // T13
+    assertEquals(RobotState.UNJAMMING, Transitions.next(RobotState.PASS_AIMING, Goal.UNJAM, cond()));
+  }
+
+  @Test
+  void intakingSharesAllOutboundTransitions() { // T2/T3/T4 from INTAKING
+    Conditions deployed = with(true, false, false, false, true, false);
+    assertEquals(RobotState.PASS_SPINNING_UP, Transitions.next(RobotState.INTAKING, Goal.SHOOT, deployed));
+    assertEquals(RobotState.PASS_AIMING, Transitions.next(RobotState.INTAKING, Goal.PASS, deployed));
+    assertEquals(RobotState.UNJAMMING, Transitions.next(RobotState.INTAKING, Goal.UNJAM, deployed));
+  }
+
+  @Test
+  void spinUpExitsResolvePerGoal() { // T7 PASS/UNJAM variants
+    assertEquals(RobotState.PASS_AIMING, Transitions.next(RobotState.SPINNING_UP, Goal.PASS, cond()));
+    assertEquals(RobotState.UNJAMMING, Transitions.next(RobotState.SPINNING_UP, Goal.UNJAM, cond()));
+  }
+
+  @Test
+  void passSpinUpExitsResolvePerGoal() { // T16 PASS/UNJAM variants
+    assertEquals(RobotState.PASS_AIMING, Transitions.next(RobotState.PASS_SPINNING_UP, Goal.PASS, cond()));
+    assertEquals(RobotState.UNJAMMING, Transitions.next(RobotState.PASS_SPINNING_UP, Goal.UNJAM, cond()));
+  }
+
+  @Test
+  void passingIdleReleaseAlsoEntersClearing() { // T18 with goal IDLE
+    assertEquals(RobotState.CLEARING, Transitions.next(RobotState.PASSING, Goal.IDLE, gateOpen()));
+  }
+
+  @Test
+  void passAimingReturnsToIntakingWhenDeployed() { // T12 landing on INTAKING
+    assertEquals(
+        RobotState.INTAKING,
+        Transitions.next(RobotState.PASS_AIMING, Goal.IDLE, with(false, false, false, false, true, false)));
+  }
+
+  @Test
+  void passingLbReleaseFallsBackToHubChain() { // T15 mirror (documented in diagram)
+    assertEquals(
+        RobotState.SPINNING_UP,
+        Transitions.next(RobotState.PASSING, Goal.SHOOT, with(false, false, true, true, false, false)));
+  }
+
   // ── UNJAMMING (T19) ──
 
   @Test
