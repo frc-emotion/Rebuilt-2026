@@ -54,3 +54,6 @@ Seeded from FUNCTIONALITY_INVENTORY.md (Phase 1, 2026-06-09). W-numbers referenc
 
 - Epilogue's annotation processor breaks on two `@Logged` classes with the same SIMPLE name in different packages (its generated binder single-type-imports both `FooLogger`s). That's why legacy classes had Epilogue stripped during the Phase 3 coexistence window.
 - JUnit tests touching any WPILib sim class must call `HAL.initialize(500, 0)` in `@BeforeAll` — sim classes read battery voltage through the HAL and SIGSEGV natively without it.
+- The repo had duplicate Phoenix6 vendordeps (26.1.1 + 26.3.0, same UUID) — Gradle warns, behavior undefined. 26.1.1 deleted in Phase 3; never re-add a second Phoenix6 json.
+- Vision pose estimation is hard-gated behind `VisionConstants.kTransformsMeasured` — it stays inert until ROBOT_TO_TURRET/TURRET_TO_CAMERA hold real measurements. A guessed camera transform silently poisons odometry; this gate is deliberate.
+- New-robot manual mode uses no-op-outside-manual DEFAULT commands for turret/hood jog (a plain `manual.whileTrue(jog)` dies permanently the first time a preset command interrupts it — whileTrue only schedules on rising edge).
