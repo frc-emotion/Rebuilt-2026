@@ -138,6 +138,11 @@ public class Intake extends SubsystemBase {
     return pivotState == PivotState.DEPLOYING || pivotState == PivotState.DEPLOYED_ROLLING;
   }
 
+  /** Fully deployed with rollers latched on (stricter than isOut — see W17/W18). */
+  public boolean isDeployed() {
+    return pivotState == PivotState.DEPLOYED_ROLLING;
+  }
+
   /** Manual mode only: open-loop pivot jog; firmware soft limits remain the safety net. */
   public void setPivotVoltage(double volts) {
     pivotState = pivotPositionRot < IntakeConstants.kInAngle.in(Rotations) + 0.01

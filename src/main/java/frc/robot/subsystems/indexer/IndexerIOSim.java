@@ -29,12 +29,14 @@ public class IndexerIOSim implements IndexerIO {
       double velocityRps = sims[i].getAngularVelocityRPM() / 60.0;
       double volts = 0.0;
       if (!stopped[i]) {
+        // All three stages share gains; mirror the vertical config so retunes propagate.
+        com.ctre.phoenix6.configs.Slot0Configs slot0 = IndexerConstants.kVerticalConfig.Slot0;
         double error = setpointsRps[i] - velocityRps;
         volts =
             MathUtil.clamp(
-                0.15 * Math.signum(setpointsRps[i]) + 0.12 * setpointsRps[i] + 0.3 * error,
-                -10.0,
-                10.0);
+                slot0.kS * Math.signum(setpointsRps[i]) + slot0.kV * setpointsRps[i] + slot0.kP * error,
+                IndexerConstants.kVerticalConfig.Voltage.PeakReverseVoltage,
+                IndexerConstants.kVerticalConfig.Voltage.PeakForwardVoltage);
       }
       sims[i].setInputVoltage(volts);
       sims[i].update(RobotConstants.kLoopPeriodSeconds);
