@@ -12,13 +12,13 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 /**
  * Vision subsystem: single turret-mounted camera, two jobs.
  *
- * <p>1. TARGETING (ported verbatim from legacy): every cycle computes distanceToHub and
- * yawToHubDeg via camera→hub = camera→tag (PhotonVision) + tag→hub (fixed constant), with sticky
- * tag tracking, hub-before-passing classification, and stale-distance hold.
+ * <p>1. TARGETING (ported verbatim from legacy): every cycle computes distanceToHub and yawToHubDeg
+ * via camera→hub = camera→tag (PhotonVision) + tag→hub (fixed constant), with sticky tag tracking,
+ * hub-before-passing classification, and stale-distance hold.
  *
  * <p>2. POSE ESTIMATION (new, D11): frames are also fed to VisionPoseEstimator, which pushes
- * accepted measurements into the drivetrain. Wiring happens in RobotContainer via suppliers —
- * this subsystem holds no references to other subsystems.
+ * accepted measurements into the drivetrain. Wiring happens in RobotContainer via suppliers — this
+ * subsystem holds no references to other subsystems.
  */
 @Logged
 public class Vision extends SubsystemBase {
@@ -74,8 +74,8 @@ public class Vision extends SubsystemBase {
   private final java.util.function.DoubleSupplier turretVelocityRpsSupplier;
 
   /**
-   * Suppliers (not subsystem references) carry the turret angle/velocity in, and the pose
-   * estimator carries accepted measurements out to the drivetrain — wired in RobotContainer.
+   * Suppliers (not subsystem references) carry the turret angle/velocity in, and the pose estimator
+   * carries accepted measurements out to the drivetrain — wired in RobotContainer.
    */
   public Vision(
       VisionIO io,
@@ -181,9 +181,10 @@ public class Vision extends SubsystemBase {
       Transform3d cameraToTag = bestTarget.getBestCameraToTarget();
       Transform3d tagToHub = VisionConstants.TAG_TO_HUB_CENTER.get(tagId);
 
-      Translation3d toHub = (tagToHub != null)
-          ? cameraToTag.plus(tagToHub).getTranslation()
-          : cameraToTag.getTranslation();
+      Translation3d toHub =
+          (tagToHub != null)
+              ? cameraToTag.plus(tagToHub).getTranslation()
+              : cameraToTag.getTranslation();
 
       distanceToHub = Math.hypot(toHub.getX(), toHub.getY());
       // Negated so positive = "target to the right", matching PhotonVision's screen convention

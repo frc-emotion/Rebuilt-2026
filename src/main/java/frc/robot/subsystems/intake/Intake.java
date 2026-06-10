@@ -145,9 +145,10 @@ public class Intake extends SubsystemBase {
 
   /** Manual mode only: open-loop pivot jog; firmware soft limits remain the safety net. */
   public void setPivotVoltage(double volts) {
-    pivotState = pivotPositionRot < IntakeConstants.kInAngle.in(Rotations) + 0.01
-        ? PivotState.STOWED
-        : PivotState.DEPLOYED_ROLLING;
+    pivotState =
+        pivotPositionRot < IntakeConstants.kInAngle.in(Rotations) + 0.01
+            ? PivotState.STOWED
+            : PivotState.DEPLOYED_ROLLING;
     io.setPivotVoltage(volts);
   }
 

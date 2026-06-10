@@ -16,9 +16,9 @@ import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.vision.Vision;
 
 /**
- * Interp-table calibration workflow (legacy CalibrationShootCommand, verbatim semantics): hold
- * the binding, type hood/RPS values into /Calibration on Elastic until the ball scores, read the
- * echoed live distance, transcribe the triple into ShotCalculator's tables.
+ * Interp-table calibration workflow (legacy CalibrationShootCommand, verbatim semantics): hold the
+ * binding, type hood/RPS values into /Calibration on Elastic until the ball scores, read the echoed
+ * live distance, transcribe the triple into ShotCalculator's tables.
  *
  * <p>Turret is pinned to 0, all indexers run UNGATED (unlike match shooting). The binding stays
  * commented out in RobotContainer except during calibration sessions. While held, the
@@ -35,7 +35,8 @@ public class CalibrationCommand extends Command {
   private final DoubleEntry shooterEntry;
   private final DoubleEntry distanceEntry;
 
-  public CalibrationCommand(Turret turret, Hood hood, Shooter shooter, Indexer indexer, Vision vision) {
+  public CalibrationCommand(
+      Turret turret, Hood hood, Shooter shooter, Indexer indexer, Vision vision) {
     this.turret = turret;
     this.hood = hood;
     this.shooter = shooter;

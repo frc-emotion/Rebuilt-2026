@@ -12,48 +12,33 @@ Entries are one or two lines each. When an entry turns out to be a general princ
 
 ## Codebase facts
 
-Seeded from FUNCTIONALITY_INVENTORY.md (Phase 1, 2026-06-09). W-numbers reference the inventory's Weird Stuff section.
+**Layout:** `superstructure/` owns the robot-level state machine (`Transitions` is pure and fully unit-tested — change it and `TransitionsTest` + `docs/superstructure.md` in the same PR). Mechanisms live in `subsystems/<name>/` with IO real+sim pairs. `frc.robot.legacy` is the pre-refactor archive: in the tree for reference, EXCLUDED from compilation via build.gradle sourceSets — never import it.
 
-- W1/W2: Turret wrap = setpoint ±1.0 rotation when past soft limits (−0.73/+0.39 rot), then clamp; the wrapped value is returned by `moveTurret` and fed back into the aim command's accumulator. Both halves are load-bearing.
-- W3: Turret gyro FF integrates Pigeon2 yaw *deltas* (ADDED, not subtracted — sign encodes the turret/gyro convention). Rate-based version with 1.75 fudge was tried and abandoned (commented out).
-- W4: `applyOmega()` is a deliberate stub; omega still sampled+logged for future retuning (`omegaFeedforwardMultiplier=0.05` unused).
-- W5: Vision frame dedupe is exact-timestamp, shared between hub and passing reads — a fresh frame without the wanted tag burns the timestamp.
-- W6: Turret aiming is pure visual servoing (target = current + tx/360); `TurretAimingCalculator.calculate()` (pose-based) is never called.
-- W8: Turret AND hood are rotor-sensor zeroed at boot — robot must power on with turret straight forward and hood at bottom. Both CANcoders exist but are unfused (telemetry only). Operator RB re-zeroes turret mid-match.
-- W10: `isAimed()` = last vision tx < 3°, init 0 → false-ready window before first frame.
-- W11: Shoot-while-moving `effectiveDist` math computed but never used (lookups take raw `dist`).
-- W12: Vision-mode ShootCommand commands 0 RPS when not aimed; tolerance-of-zero can re-open the indexer gate into a dead flywheel (fallback branch commented out).
-- W13: Feed gating: vertical indexer always runs; horizontal+upward only when `atShooterSetpoint()` (±1.67 RPS), instantaneous re-close.
-- W14: Passing shot is hardcoded hood 0.067 rot / 95 RPS and beats aimed; auto pins passing false.
-- W15: ShootCommand.end() leaves hood holding; AutoShootCommand.end() stops hood. Deliberate.
-- W16: Intake over-travel recovery lives in `Intake.periodic()` (re-commands stow if pushed past 0.14 rot while stowing).
-- W17: IntakeOutCommand: rollers latch on at 15° tolerance; end() = auto-restow (toggleOnTrue A button).
-- W18: `isOut()` = pivot >5° off stow (not "deployed") — vertical indexer runs at 26.25 RPS for the whole pivot transit.
-- W19: reverseIndexers reverses all stages at 50% while spinning shooter FORWARD at clamp ceiling (400 RPS = flat-out) to eject pinched balls.
-- W20: indexerDefault has NO addRequirements yet is installed as default command — should throw at init; unresolved.
-- W21/W22/W23: Vision holds last-good distance on tag loss; sticky tag tracking prevents hub-face flip twitch; MAX_POSE_AMBIGUITY=1.0 (filter disabled; team decision: re-enable at 0.3 in refactor).
-- W24: Every tag→hub vector carries a −0.2 m lateral fudge (hand-tuned aim calibration); X always −0.604, Z ignored.
-- W25: Passing yaw = tag surface NORMAL direction (lob into the zone), not bearing-to-tag.
-- W28: Tag set overlap means hub-before-passing classification order is load-bearing; calculator caches alliance until command restart.
-- W29: Hood X/Y/B bindings: braceless if — Y and B escape the `hood != null` guard.
-- W30: `RobotContainer.visionAutoAim` and `operator` are public statics; the aim command is also the robot-wide aiming-state service for shoot commands.
-- W31: Teleop ShootCommand is deferred with requirements {indexer,hood,shooter} only — turret tracking and driving continue while firing.
-- W32: Hood default = sag-follow (re-samples position each loop), not a true hold.
-- W35: CANivore name is "Persian  Canivore" — DOUBLE SPACE is real. Mechanisms bus is "mechanisms".
-- W36: Several constants comments lie (shooter peak 12 V not 10; TURRET_POS_RIGHT 0.25 rot = 90° not 18°; stale turret-limit comments). VALUES are law, comments are not. Shooter clamp is upper-bound only; PeakReverseVoltage=0.
-- W38: PathPlanner: " Manual Depot to Outpost" has a leading space (referenced with it); Blue 2 Depot_Outpost starts mid-field with resetOdom (likely bug); Blue 3 to Depot is globally 1.0 m/s; 5 orphan paths; settings.json max speed 5.44 vs TunerConstants 5.85 (RobotConfig.fromGUISettings is a second source of truth).
-- Vision never feeds drivetrain pose: `addVisionMeasurement` has zero callers; pose is odometry-only; field-layout JSON deployed but never loaded. Team decision: refactor MUST implement full pose estimation, robust with a single camera.
-- Team-confirmed bugs in current code (fix in refactor, don't preserve): W12 (lose-aim 0 RPS ungates feed), W20 (indexerDefault requirements), shoot-while-moving (rebuild as toggle, default off). Recent partial rewrite means newer hand-written commands likely never ran on the robot.
-- Deprecated/delete list (team, 2026-06-09): LED, all Climb references, runRoller, manualIndexer, 5 orphan paths, SysId routines, FaultMonitor getters, AutoShootCommand.
-- Nothing in robot state influences the drivetrain (no heading snap / auto-aim drive); drivetrain yaw/omega flow INTO the turret.
-- No game-piece sensing exists (no beam breaks/color sensors); `IntakeCurrentSpike=20` is a vestigial unused detection idea.
-- Dead/orphaned: LED.java + LEDConstants (fully commented), ClimbConstants (no subsystem), runRoller (triply broken), manualIndexer (unbound), SysId routines (unbound), CANID enum (unreferenced registry duplicating per-file IDs).
-- Telemetry: Epilogue @Logged everywhere + CTRE SignalLogger + stock Telemetry class; `MATCH_MODE=false` in Robot.java toggles NT verbosity; HootAutoReplay runs unconditionally in robotPeriodic.
+- **Frozen generated files:** `subsystems/drive/TunerConstants.java` and `CommandSwerveDrivetrain.java` are stock Phoenix Tuner X output — never edit (Spotless excludes them; verify byte-identical with git diff). Everything else talks to `Drive`, the thin adapter.
+- **CANivore is named `"Persian  Canivore"` — the DOUBLE SPACE is the real device name.** Mechanisms are on a second bus, `"mechanisms"` (RobotConstants.kMechanismBus).
+- **Boot procedure is load-bearing:** turret physically straight forward and hood at bottom hard stop at power-on. Both are rotor-zeroed in their IOReal constructors; their CANcoders are configured but unfused (telemetry only). Operator RB re-zeroes the turret mid-match.
+- **Turret wrap** (`TurretWrap.apply`): setpoint past a soft limit (−0.73/+0.39 rot) gets ±1.0 full rotation then clamps; `Turret.setTargetPosition` returns the ACTUALLY-commanded value and `TurretAiming` must store it back or its accumulator winds up. Single ±1 correction only; decision ignores current position. All deliberate, all tested.
+- **Turret gyro feedforward ADDS Pigeon yaw deltas** (`TurretAiming.applyGyroFf`) — the sign encodes the turret/gyro convention and is load-bearing. Aiming is pure visual servoing (target = current + tx/360); there is no pose-based turret aiming.
+- **Vision frame dedupe is exact-timestamp and shared between hub and passing reads** — a fresh frame without the wanted tag burns the timestamp. Legacy quirk, kept deliberately.
+- **Tag→hub vectors carry a hand-tuned −0.2 m lateral fudge on all 16 entries** (VisionConstants.TAG_TO_HUB_CENTER) — team-confirmed correct; do not "fix". Hub-before-passing tag classification order is load-bearing (the ID sets overlap).
+- **Passing yaw aims along the tag's surface NORMAL** (lob into the zone the tag faces), not at the tag.
+- **Pose estimation is hard-gated behind `VisionConstants.kTransformsMeasured` (currently false)** — inert until ROBOT_TO_TURRET / TURRET_TO_CAMERA hold real measurements. A guessed camera-on-turret transform silently poisons odometry; the gate is deliberate. Ambiguity gate is 0.3.
+- **The feed gate is `aimed && atSpeed && shooterCommandedNonZero`** — the nonZero term prevents a 0-RPS setpoint from reading "at speed" and feeding a dead flywheel (the old robot's worst bug). Hood readiness is deliberately NOT in the gate (legacy behavior).
+- **CLEARING is the single atomic transition:** shot release stops the shooter and reverses all indexers FULL speed for 2.0 s (`kClearingSeconds`) to back balls away from the flywheel. SHOOT re-press, UNJAM, and manual all exit/preempt it instantly; IDLE/PASS wait.
+- **UNJAMMING spins the shooter FORWARD flat-out** (400 = clamp ceiling) while reversing indexers at half speed — intended, ejects pinched balls.
+- **Intake has the robot's only nested state machine** (deploy latch at 15°, stow-stops-rollers-first, over-travel recovery below 0.14 rot while stowing). `isOut()` means >5° off stow, NOT "deployed" — the idle vertical feed (26.25 RPS) keys off it. Over-travel recovery is active from boot and will fight a manual pivot jog below the threshold — that's protection, not a bug.
+- **Manual mode = operator Start.** Superstructure commands nothing; turret/hood jog via DEFAULT commands that no-op outside manual (a plain `manual.whileTrue(jog)` dies permanently the first time a preset interrupts it — whileTrue schedules on rising edge only). Manual PERSISTS across disable (deliberate: a sensor-dead robot stays manual); everything else resets to IDLE in `onEnable()`. POV turret presets and X/Y/B hood presets work ONLY in manual mode now.
+- **Shoot-while-moving** lives in `ShotCalculator.effectiveDistance` behind NT toggle `Tuning/ShootWhileMovingEnabled`, force-set OFF at every boot.
+- **Interp tables** (ShotCalculator) are calibrated field data (2026-03-17). Recalibrate via `CalibrationCommand` (binding commented in RobotContainer; requires manual mode active) → /Calibration NT entries.
+- **Constants comments may lie; VALUES are law** (e.g. TURRET_POS_RIGHT 0.25 rot = 90°, not the commented 18°). Never round, convert, or "clean" a tuned number.
+- PathPlanner loads robot config from `deploy/pathplanner/settings.json` (`RobotConfig.fromGUISettings`) — a second source of truth vs TunerConstants (5.44 vs 5.85 m/s max, known mismatch). The `.auto` files reference named commands by exact string: intakeOut, intakeIn, shoot, stopAll, autoShoot, feedIndexers, reverseIndexer. One path file has a LEADING SPACE in its name (" Manual Depot to Outpost") and is referenced with it — renaming breaks the auto.
+- `MATCH_MODE` in Robot.java gates Epilogue NT verbosity (false = DEBUG+, true = CRITICAL only). HootAutoReplay runs unconditionally in robotPeriodic (deterministic log replay; no-op on a field).
 
 ## Learned gotchas
 
-- Epilogue's annotation processor breaks on two `@Logged` classes with the same SIMPLE name in different packages (its generated binder single-type-imports both `FooLogger`s). That's why legacy classes had Epilogue stripped during the Phase 3 coexistence window.
+- Epilogue's annotation processor breaks on two `@Logged` classes with the same SIMPLE name in different packages (its generated binder single-type-imports both `FooLogger`s). That's why the legacy archive has no Epilogue annotations.
 - JUnit tests touching any WPILib sim class must call `HAL.initialize(500, 0)` in `@BeforeAll` — sim classes read battery voltage through the HAL and SIGSEGV natively without it.
-- The repo had duplicate Phoenix6 vendordeps (26.1.1 + 26.3.0, same UUID) — Gradle warns, behavior undefined. 26.1.1 deleted in Phase 3; never re-add a second Phoenix6 json.
-- Vision pose estimation is hard-gated behind `VisionConstants.kTransformsMeasured` — it stays inert until ROBOT_TO_TURRET/TURRET_TO_CAMERA hold real measurements. A guessed camera transform silently poisons odometry; this gate is deliberate.
-- New-robot manual mode uses no-op-outside-manual DEFAULT commands for turret/hood jog (a plain `manual.whileTrue(jog)` dies permanently the first time a preset command interrupts it — whileTrue only schedules on rising edge).
+- Test classes that construct subsystems must `CommandScheduler.getInstance().unregisterAllSubsystems()` in setup AND teardown — SubsystemBase self-registers, and a leaked subsystem's periodic runs inside OTHER test classes' scheduler loops.
+- `PhotonTrackedTarget`'s constructor asserts exactly 4 corners per corner list — synthetic test frames need real TargetCorner lists, not `List.of()`.
+- Never re-add a second Phoenix6 vendordep json — duplicates share a UUID and Gradle's behavior is undefined (26.1.1 was deleted for this).
+- The repo's working refactor docs (FUNCTIONALITY_INVENTORY/REFACTOR_DESIGN/REFACTOR_PROGRESS/docs/superstructure.md) are gitignored by team decision — they live on disk only. Keep docs/superstructure.md current anyway when transitions change (non-negotiable #8).

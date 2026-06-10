@@ -1,5 +1,8 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -44,13 +47,12 @@ import frc.robot.superstructure.Goal;
 import frc.robot.superstructure.Superstructure;
 import java.io.IOException;
 import java.nio.file.Path;
-import static edu.wpi.first.units.Units.Rotations;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 /** Wiring only: construct subsystems, bind goals to buttons, build autos. No logic. */
 @Logged
 public class RobotContainer {
-  private final CommandXboxController driver = new CommandXboxController(RobotConstants.kDriverPort);
+  private final CommandXboxController driver =
+      new CommandXboxController(RobotConstants.kDriverPort);
   private final CommandXboxController operator =
       new CommandXboxController(RobotConstants.kOperatorPort);
 
@@ -81,11 +83,13 @@ public class RobotContainer {
             : null;
     shooter =
         RobotConstants.kEnableShooter
-            ? new Shooter(real ? new ShooterIOReal(RobotConstants.kMechanismBus) : new ShooterIOSim())
+            ? new Shooter(
+                real ? new ShooterIOReal(RobotConstants.kMechanismBus) : new ShooterIOSim())
             : null;
     indexer =
         RobotConstants.kEnableIndexer
-            ? new Indexer(real ? new IndexerIOReal(RobotConstants.kMechanismBus) : new IndexerIOSim())
+            ? new Indexer(
+                real ? new IndexerIOReal(RobotConstants.kMechanismBus) : new IndexerIOSim())
             : null;
     intake =
         RobotConstants.kEnableIntake
@@ -109,7 +113,11 @@ public class RobotContainer {
             : null;
 
     boolean allPresent =
-        turret != null && hood != null && shooter != null && indexer != null && intake != null
+        turret != null
+            && hood != null
+            && shooter != null
+            && indexer != null
+            && intake != null
             && vision != null;
     superstructure =
         allPresent
@@ -181,27 +189,31 @@ public class RobotContainer {
     operator.start().onTrue(Commands.runOnce(superstructure::toggleManualMode));
     operator
         .rightBumper()
-        .onTrue(turret.runOnce(() -> {
-          turret.zeroAtCurrentPosition();
-          System.out.println("[TURRET] Zeroed at current position");
-        }));
+        .onTrue(
+            turret.runOnce(
+                () -> {
+                  turret.zeroAtCurrentPosition();
+                  System.out.println("[TURRET] Zeroed at current position");
+                }));
 
     // ── Manual mode (design §7): operator drives mechanisms directly; the Superstructure
     // commands nothing. Default commands are no-ops outside manual so they never fight it. ──
     turret.setDefaultCommand(
-        turret.run(() -> {
-          if (superstructure.isManualMode()) {
-            turret.setManualVoltage(
-                MathUtil.applyDeadband(
-                    operator.getRightX(), Superstructure.kManualJoystickDeadband));
-          }
-        }));
+        turret.run(
+            () -> {
+              if (superstructure.isManualMode()) {
+                turret.setManualVoltage(
+                    MathUtil.applyDeadband(
+                        operator.getRightX(), Superstructure.kManualJoystickDeadband));
+              }
+            }));
     hood.setDefaultCommand(
-        hood.run(() -> {
-          if (superstructure.isManualMode()) {
-            hood.setVoltage(-operator.getRightY() * HoodConstants.kManualVolts);
-          }
-        }));
+        hood.run(
+            () -> {
+              if (superstructure.isManualMode()) {
+                hood.setVoltage(-operator.getRightY() * HoodConstants.kManualVolts);
+              }
+            }));
 
     manual
         .and(operator.rightTrigger())
@@ -272,8 +284,7 @@ public class RobotContainer {
     // the feed gate replaces the old pre-spin/ungated-feed split (design D12, step 8).
     NamedCommands.registerCommand("autoShoot", superstructure.goalCommand(Goal.SHOOT));
     NamedCommands.registerCommand("feedIndexers", superstructure.goalCommand(Goal.SHOOT));
-    NamedCommands.registerCommand(
-        "stopAll", Commands.runOnce(superstructure::stopAllMechanisms));
+    NamedCommands.registerCommand("stopAll", Commands.runOnce(superstructure::stopAllMechanisms));
     NamedCommands.registerCommand("reverseIndexer", superstructure.goalCommand(Goal.UNJAM));
   }
 

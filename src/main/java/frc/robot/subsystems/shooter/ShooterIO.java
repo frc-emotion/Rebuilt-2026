@@ -3,8 +3,7 @@ package frc.robot.subsystems.shooter;
 /** Hardware boundary for the shooter flywheel. The subsystem reads only the inputs record. */
 public interface ShooterIO {
 
-  record ShooterIOInputs(
-      double velocityRps, double supplyCurrentAmps, double appliedVolts) {
+  record ShooterIOInputs(double velocityRps, double supplyCurrentAmps, double appliedVolts) {
     public static final ShooterIOInputs kEmpty = new ShooterIOInputs(0.0, 0.0, 0.0);
   }
 

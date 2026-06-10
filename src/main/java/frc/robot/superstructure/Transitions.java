@@ -1,15 +1,15 @@
 package frc.robot.superstructure;
 
 /**
- * Pure transition logic: (state, goal, conditions) → next state. No hardware, no subsystems —
- * this is the JUnit-tested heart of the robot. Transition IDs (T#) match REFACTOR_DESIGN.md §2
- * and docs/superstructure.md.
+ * Pure transition logic: (state, goal, conditions) → next state. No hardware, no subsystems — this
+ * is the JUnit-tested heart of the robot. Transition IDs (T#) match REFACTOR_DESIGN.md §2 and
+ * docs/superstructure.md.
  *
  * <p>MANUAL entry/exit (T20/T21) is a mode toggle handled by the Superstructure BEFORE this
  * function is consulted; a MANUAL input here stays MANUAL.
  *
- * <p>The single ATOMIC transition: CLEARING defers IDLE/PASS goal changes until
- * clearingElapsed. SHOOT re-request, UNJAM, and the manual toggle all exit it immediately.
+ * <p>The single ATOMIC transition: CLEARING defers IDLE/PASS goal changes until clearingElapsed.
+ * SHOOT re-request, UNJAM, and the manual toggle all exit it immediately.
  */
 public final class Transitions {
   private Transitions() {}
@@ -36,7 +36,8 @@ public final class Transitions {
   private static RobotState fromRest(Goal goal, Conditions c) {
     return switch (goal) {
       case IDLE, INTAKE -> rest(c);
-      case SHOOT -> c.passSelected() ? RobotState.PASS_SPINNING_UP : RobotState.SPINNING_UP; // T1/T2
+      case SHOOT ->
+          c.passSelected() ? RobotState.PASS_SPINNING_UP : RobotState.SPINNING_UP; // T1/T2
       case PASS -> RobotState.PASS_AIMING; // T3
       case UNJAM -> RobotState.UNJAMMING; // T4
     };

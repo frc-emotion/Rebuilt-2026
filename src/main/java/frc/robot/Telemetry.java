@@ -24,7 +24,8 @@ public class Telemetry {
 
   // Legacy Field2d emulation so Glass/Elastic render the robot on the field.
   private final NetworkTable poseTable = inst.getTable("Pose");
-  private final DoubleArrayPublisher fieldPub = poseTable.getDoubleArrayTopic("robotPose").publish();
+  private final DoubleArrayPublisher fieldPub =
+      poseTable.getDoubleArrayTopic("robotPose").publish();
   private final StringPublisher fieldTypePub = poseTable.getStringTopic(".type").publish();
 
   private final DoublePublisher batteryVoltage =
@@ -34,9 +35,8 @@ public class Telemetry {
   public void telemeterize(SwerveDriveState state) {
     drivePose.set(state.Pose);
     fieldTypePub.set("Field2d");
-    fieldPub.set(new double[] {
-      state.Pose.getX(), state.Pose.getY(), state.Pose.getRotation().getDegrees()
-    });
+    fieldPub.set(
+        new double[] {state.Pose.getX(), state.Pose.getY(), state.Pose.getRotation().getDegrees()});
     batteryVoltage.set(RobotController.getBatteryVoltage());
 
     SignalLogger.writeStruct("DriveState/Pose", Pose2d.struct, state.Pose);

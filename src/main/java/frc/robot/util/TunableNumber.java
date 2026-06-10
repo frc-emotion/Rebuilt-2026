@@ -17,7 +17,10 @@ public final class TunableNumber {
     this.defaultValue = defaultValue;
     if (RobotConstants.kTuningMode) {
       this.entry =
-          NetworkTableInstance.getDefault().getTable("Tuning").getDoubleTopic(name).getEntry(defaultValue);
+          NetworkTableInstance.getDefault()
+              .getTable("Tuning")
+              .getDoubleTopic(name)
+              .getEntry(defaultValue);
       this.entry.set(defaultValue);
     } else {
       this.entry = null;

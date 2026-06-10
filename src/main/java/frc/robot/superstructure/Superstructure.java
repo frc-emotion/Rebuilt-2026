@@ -201,7 +201,8 @@ public class Superstructure extends SubsystemBase {
         // flywheel runs forward flat-out so a pinched ball ejects instead of staying trapped.
         aiming.trackHub(turret, vision, yawDeg, omega);
         indexer.setVelocity(
-            Stage.HORIZONTAL, -IndexerConstants.kHorizontalSpeedRps * IndexerConstants.kUnjamFraction);
+            Stage.HORIZONTAL,
+            -IndexerConstants.kHorizontalSpeedRps * IndexerConstants.kUnjamFraction);
         indexer.setVelocity(
             Stage.VERTICAL, -IndexerConstants.kVerticalSpeedRps * IndexerConstants.kUnjamFraction);
         indexer.setVelocity(
@@ -294,8 +295,8 @@ public class Superstructure extends SubsystemBase {
 
   /**
    * Re-seed aiming at enable (replaces the legacy command's initialize()). The scoring state also
-   * resets to IDLE: a disable mid-CLEARING must not resume an un-timed full-reverse clear.
-   * Manual mode deliberately PERSISTS across disable — a sensor-dead robot stays manual.
+   * resets to IDLE: a disable mid-CLEARING must not resume an un-timed full-reverse clear. Manual
+   * mode deliberately PERSISTS across disable — a sensor-dead robot stays manual.
    */
   public void onEnable() {
     aiming.reset(turret.getPositionRot(), drive.getContinuousYawDeg());
@@ -310,8 +311,7 @@ public class Superstructure extends SubsystemBase {
   /** Auto routines hold a goal through this command; releasing it returns control to teleop. */
   public Command goalCommand(Goal heldGoal) {
     return Commands.startEnd(
-        () -> autoGoalOverride = Optional.of(heldGoal),
-        () -> autoGoalOverride = Optional.empty());
+        () -> autoGoalOverride = Optional.of(heldGoal), () -> autoGoalOverride = Optional.empty());
   }
 
   /** Named command "stopAll" (legacy semantics: stop shooter and all indexers). */

@@ -11,8 +11,8 @@ import frc.robot.subsystems.turret.TurretIO.TurretIOInputs;
 import frc.robot.subsystems.turret.TurretWrap.WrapResult;
 
 /**
- * Dumb position executor for the turret azimuth. The wrap (W1) is the turret's own safety
- * behavior; everything about WHERE to aim lives in the Superstructure's TurretAiming helper.
+ * Dumb position executor for the turret azimuth. The wrap (W1) is the turret's own safety behavior;
+ * everything about WHERE to aim lives in the Superstructure's TurretAiming helper.
  *
  * <p>No nested state machine, deliberately: the apparent turret states (tracking/passing/manual)
  * were robot-level aiming decisions all along and live in RobotState. Wrap is stateless math per
@@ -82,7 +82,9 @@ public class Turret extends SubsystemBase {
   public Angle setTargetPosition(Angle setpoint, double feedforwardVolts) {
     WrapResult result =
         TurretWrap.apply(
-            setpoint.in(Rotations), TurretConstants.kReverseLimitRot, TurretConstants.kForwardLimitRot);
+            setpoint.in(Rotations),
+            TurretConstants.kReverseLimitRot,
+            TurretConstants.kForwardLimitRot);
     setpointRot = result.commandedRot();
     wrapped = result.wrapped();
     io.setTargetPosition(setpointRot, feedforwardVolts);

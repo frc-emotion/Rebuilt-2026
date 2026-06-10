@@ -4,7 +4,9 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-/** Values copied verbatim from legacy TurretConstants (shooter section). Tuned numbers are sacred. */
+/**
+ * Values copied verbatim from legacy TurretConstants (shooter section). Tuned numbers are sacred.
+ */
 public final class ShooterConstants {
   private ShooterConstants() {}
 

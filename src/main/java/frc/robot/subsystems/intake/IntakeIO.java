@@ -1,6 +1,8 @@
 package frc.robot.subsystems.intake;
 
-/** Hardware boundary for the intake pivot and roller. The subsystem reads only the inputs record. */
+/**
+ * Hardware boundary for the intake pivot and roller. The subsystem reads only the inputs record.
+ */
 public interface IntakeIO {
 
   record IntakeIOInputs(

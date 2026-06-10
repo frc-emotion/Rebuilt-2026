@@ -35,7 +35,8 @@ public class TurretIOReal implements TurretIO {
     applyWithRetry(
         () -> encoder.getConfigurator().apply(TurretConstants.kEncoderConfig, 0.1),
         "turret encoder");
-    applyWithRetry(() -> motor.getConfigurator().apply(TurretConstants.kConfig, 0.1), "turret motor");
+    applyWithRetry(
+        () -> motor.getConfigurator().apply(TurretConstants.kConfig, 0.1), "turret motor");
 
     // Zero at current position (assumed straight-forward at boot — confirmed team procedure).
     // RotorSensor + SensorToMechanismRatio converts rotor ticks to turret output rotations.
@@ -81,11 +82,15 @@ public class TurretIOReal implements TurretIO {
     System.out.println("  FeedbackSource: " + readback.Feedback.FeedbackSensorSource);
     System.out.println("  SensorToMech: " + readback.Feedback.SensorToMechanismRatio);
     System.out.println(
-        "  FwdSoftLimit: enabled=" + readback.SoftwareLimitSwitch.ForwardSoftLimitEnable
-            + " threshold=" + readback.SoftwareLimitSwitch.ForwardSoftLimitThreshold);
+        "  FwdSoftLimit: enabled="
+            + readback.SoftwareLimitSwitch.ForwardSoftLimitEnable
+            + " threshold="
+            + readback.SoftwareLimitSwitch.ForwardSoftLimitThreshold);
     System.out.println(
-        "  RevSoftLimit: enabled=" + readback.SoftwareLimitSwitch.ReverseSoftLimitEnable
-            + " threshold=" + readback.SoftwareLimitSwitch.ReverseSoftLimitThreshold);
+        "  RevSoftLimit: enabled="
+            + readback.SoftwareLimitSwitch.ReverseSoftLimitEnable
+            + " threshold="
+            + readback.SoftwareLimitSwitch.ReverseSoftLimitThreshold);
   }
 
   @Override

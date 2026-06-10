@@ -10,8 +10,8 @@ import edu.wpi.first.networktables.NetworkTableInstance;
  * copied verbatim (calibrated 2026-03-17 via CalibrationCommand field measurements).
  *
  * <p>Calibration procedure: hold the calibration binding, set hood/RPS over NetworkTables under
- * /Calibration until the ball scores, record the echoed distance, and transcribe the
- * (distance, hoodRotations, shooterRPS) triple into the tables below.
+ * /Calibration until the ball scores, record the echoed distance, and transcribe the (distance,
+ * hoodRotations, shooterRPS) triple into the tables below.
  */
 public final class ShotCalculator {
   // Multiplier on the closing-velocity distance correction (legacy value, unchanged).
@@ -72,7 +72,8 @@ public final class ShotCalculator {
    * turret heading to get the closing speed toward the hub, and shorten the lookup distance
    * proportionally. Identity when the toggle is off (the default).
    */
-  public double effectiveDistance(double distanceMeters, ChassisSpeeds speeds, double turretAngleRad) {
+  public double effectiveDistance(
+      double distanceMeters, ChassisSpeeds speeds, double turretAngleRad) {
     if (!shootWhileMovingEnabled.get(false)) {
       return distanceMeters;
     }

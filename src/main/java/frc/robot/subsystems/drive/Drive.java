@@ -36,13 +36,15 @@ public class Drive {
   private final SwerveRequest.Idle idleRequest = new SwerveRequest.Idle();
 
   /** Legacy default drive: all three axes negated, field-centric, open-loop voltage. */
-  public Command teleopDriveCommand(DoubleSupplier leftY, DoubleSupplier leftX, DoubleSupplier rightX) {
+  public Command teleopDriveCommand(
+      DoubleSupplier leftY, DoubleSupplier leftX, DoubleSupplier rightX) {
     return drivetrain.applyRequest(
         () ->
             teleopRequest
                 .withVelocityX(-leftY.getAsDouble() * DriveConstants.kMaxSpeedMps)
                 .withVelocityY(-leftX.getAsDouble() * DriveConstants.kMaxSpeedMps)
-                .withRotationalRate(-rightX.getAsDouble() * DriveConstants.kMaxAngularRateRadPerSec));
+                .withRotationalRate(
+                    -rightX.getAsDouble() * DriveConstants.kMaxAngularRateRadPerSec));
   }
 
   public Command brakeCommand() {
@@ -59,8 +61,8 @@ public class Drive {
   }
 
   /**
-   * Continuous Pigeon2 yaw in degrees — the turret gyro feedforward's signal. Same source and
-   * sign as legacy (W3 is load-bearing); does NOT wrap at ±180 like pose heading does.
+   * Continuous Pigeon2 yaw in degrees — the turret gyro feedforward's signal. Same source and sign
+   * as legacy (W3 is load-bearing); does NOT wrap at ±180 like pose heading does.
    */
   public double getContinuousYawDeg() {
     return drivetrain.getPigeon2().getYaw().getValueAsDouble();
@@ -93,8 +95,8 @@ public class Drive {
   }
 
   /**
-   * PathPlanner AutoBuilder config, moved verbatim out of the generated class (drivetrain
-   * policy). Call once after construction, before buildAutoChooser.
+   * PathPlanner AutoBuilder config, moved verbatim out of the generated class (drivetrain policy).
+   * Call once after construction, before buildAutoChooser.
    */
   public void configureAutoBuilder() {
     SwerveRequest.ApplyRobotSpeeds pathRequest = new SwerveRequest.ApplyRobotSpeeds();
@@ -119,7 +121,8 @@ public class Drive {
     } catch (Exception ex) {
       DriverStation.reportError(
           "Failed to load PathPlanner config — open PathPlanner GUI, go to Settings, "
-              + "and configure your robot. Error: " + ex.getMessage(),
+              + "and configure your robot. Error: "
+              + ex.getMessage(),
           ex.getStackTrace());
     }
   }

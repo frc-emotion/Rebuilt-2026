@@ -7,9 +7,9 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.RobotConstants;
 
 /**
- * DCMotorSim-backed implementation (gravity was never compensated in the tuned gains, so an arm
- * sim would model physics the controller was not tuned for). Emulates the position loop with the
- * real kP and output limits; kI is omitted in sim to avoid windup the firmware handles internally.
+ * DCMotorSim-backed implementation (gravity was never compensated in the tuned gains, so an arm sim
+ * would model physics the controller was not tuned for). Emulates the position loop with the real
+ * kP and output limits; kI is omitted in sim to avoid windup the firmware handles internally.
  */
 public class HoodIOSim implements HoodIO {
   // Sim-only physics guesses, NOT tuned robot values.

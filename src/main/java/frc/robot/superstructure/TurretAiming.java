@@ -8,8 +8,8 @@ import frc.robot.subsystems.vision.Vision;
 
 /**
  * The aiming brain, ported verbatim from the legacy TurretAutoAimCommand: pure visual servoing
- * (target = current position + camera tx) carried between frames by gyro-delta feedforward.
- * Owned by the Superstructure; the Turret subsystem knows nothing about vision or the gyro.
+ * (target = current position + camera tx) carried between frames by gyro-delta feedforward. Owned
+ * by the Superstructure; the Turret subsystem knows nothing about vision or the gyro.
  */
 @Logged
 public class TurretAiming {

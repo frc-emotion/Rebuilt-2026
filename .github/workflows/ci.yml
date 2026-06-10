@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: Build, test, and check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Grant execute permission to gradlew
+        run: chmod +x gradlew
+      # `build` runs compileJava, the JUnit suite, and spotlessCheck (via check).
+      - name: Gradle build
+        run: ./gradlew build --no-daemon

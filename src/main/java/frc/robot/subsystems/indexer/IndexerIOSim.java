@@ -34,7 +34,9 @@ public class IndexerIOSim implements IndexerIO {
         double error = setpointsRps[i] - velocityRps;
         volts =
             MathUtil.clamp(
-                slot0.kS * Math.signum(setpointsRps[i]) + slot0.kV * setpointsRps[i] + slot0.kP * error,
+                slot0.kS * Math.signum(setpointsRps[i])
+                    + slot0.kV * setpointsRps[i]
+                    + slot0.kP * error,
                 IndexerConstants.kVerticalConfig.Voltage.PeakReverseVoltage,
                 IndexerConstants.kVerticalConfig.Voltage.PeakForwardVoltage);
       }

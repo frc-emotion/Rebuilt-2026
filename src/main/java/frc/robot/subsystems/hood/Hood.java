@@ -46,7 +46,9 @@ public class Hood extends SubsystemBase {
   public void setAngle(Angle angle) {
     setpointRot =
         MathUtil.clamp(
-            angle.in(Rotations), HoodConstants.kReverseHardStopRot, HoodConstants.kForwardHardStopRot);
+            angle.in(Rotations),
+            HoodConstants.kReverseHardStopRot,
+            HoodConstants.kForwardHardStopRot);
     io.setTargetPosition(setpointRot);
   }
 

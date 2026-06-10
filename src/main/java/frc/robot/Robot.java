@@ -24,17 +24,20 @@ public class Robot extends TimedRobot {
       new HootAutoReplay().withTimestampReplay().withJoystickReplay();
 
   public Robot() {
-    Epilogue.configure(config -> {
-      config.root = "Robot";
-      config.minimumImportance =
-          MATCH_MODE ? Logged.Importance.CRITICAL : Logged.Importance.DEBUG;
-    });
+    Epilogue.configure(
+        config -> {
+          config.root = "Robot";
+          config.minimumImportance =
+              MATCH_MODE ? Logged.Importance.CRITICAL : Logged.Importance.DEBUG;
+        });
     DataLogManager.start();
     SignalLogger.start();
     robotContainer = new RobotContainer();
     Epilogue.bind(this);
     System.out.println(
-        "[TELEMETRY] MATCH_MODE=" + MATCH_MODE + " -> NT publishes "
+        "[TELEMETRY] MATCH_MODE="
+            + MATCH_MODE
+            + " -> NT publishes "
             + (MATCH_MODE ? "CRITICAL only" : "DEBUG and up"));
   }
 

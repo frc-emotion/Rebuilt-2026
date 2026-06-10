@@ -7,7 +7,9 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 
-/** Values copied verbatim from legacy TurretConstants (turret section). Tuned numbers are sacred. */
+/**
+ * Values copied verbatim from legacy TurretConstants (turret section). Tuned numbers are sacred.
+ */
 public final class TurretConstants {
   private TurretConstants() {}
 

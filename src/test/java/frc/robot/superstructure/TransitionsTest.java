@@ -23,7 +23,12 @@ class TransitionsTest {
   }
 
   private static Conditions with(
-      boolean pass, boolean aimed, boolean atSpeed, boolean nonZero, boolean intake, boolean cleared) {
+      boolean pass,
+      boolean aimed,
+      boolean atSpeed,
+      boolean nonZero,
+      boolean intake,
+      boolean cleared) {
     return new Conditions(pass, aimed, atSpeed, nonZero, intake, cleared);
   }
 
@@ -33,7 +38,8 @@ class TransitionsTest {
   void idleToIntakingOnToggle() {
     assertEquals(
         RobotState.INTAKING,
-        Transitions.next(RobotState.IDLE, Goal.IDLE, with(false, false, false, false, true, false)));
+        Transitions.next(
+            RobotState.IDLE, Goal.IDLE, with(false, false, false, false, true, false)));
   }
 
   @Test
@@ -51,14 +57,16 @@ class TransitionsTest {
     // The intake axis never blocks a scoring request; deployment carries via the condition.
     assertEquals(
         RobotState.SPINNING_UP,
-        Transitions.next(RobotState.INTAKING, Goal.SHOOT, with(false, false, false, false, true, false)));
+        Transitions.next(
+            RobotState.INTAKING, Goal.SHOOT, with(false, false, false, false, true, false)));
   }
 
   @Test
   void idleToPassSpinningUpWithPassSelected() {
     assertEquals(
         RobotState.PASS_SPINNING_UP,
-        Transitions.next(RobotState.IDLE, Goal.SHOOT, with(true, false, false, false, false, false)));
+        Transitions.next(
+            RobotState.IDLE, Goal.SHOOT, with(true, false, false, false, false, false)));
   }
 
   @Test
@@ -78,18 +86,22 @@ class TransitionsTest {
     // The W12 regression test: aimed alone, speed alone, or a ZERO setpoint must never fire.
     assertEquals(
         RobotState.SPINNING_UP,
-        Transitions.next(RobotState.SPINNING_UP, Goal.SHOOT, with(false, true, false, false, false, false)));
+        Transitions.next(
+            RobotState.SPINNING_UP, Goal.SHOOT, with(false, true, false, false, false, false)));
     assertEquals(
         RobotState.SPINNING_UP,
-        Transitions.next(RobotState.SPINNING_UP, Goal.SHOOT, with(false, false, true, true, false, false)));
+        Transitions.next(
+            RobotState.SPINNING_UP, Goal.SHOOT, with(false, false, true, true, false, false)));
     assertEquals(
         RobotState.SPINNING_UP,
-        Transitions.next(RobotState.SPINNING_UP, Goal.SHOOT, with(false, true, true, false, false, false)));
+        Transitions.next(
+            RobotState.SPINNING_UP, Goal.SHOOT, with(false, true, true, false, false, false)));
   }
 
   @Test
   void spinningUpToShootingWhenGateSatisfied() {
-    assertEquals(RobotState.SHOOTING, Transitions.next(RobotState.SPINNING_UP, Goal.SHOOT, gateOpen()));
+    assertEquals(
+        RobotState.SHOOTING, Transitions.next(RobotState.SPINNING_UP, Goal.SHOOT, gateOpen()));
   }
 
   @Test
@@ -102,7 +114,8 @@ class TransitionsTest {
   void spinningUpToPassChainOnLb() {
     assertEquals(
         RobotState.PASS_SPINNING_UP,
-        Transitions.next(RobotState.SPINNING_UP, Goal.SHOOT, with(true, false, false, false, false, false)));
+        Transitions.next(
+            RobotState.SPINNING_UP, Goal.SHOOT, with(true, false, false, false, false, false)));
   }
 
   // ── SHOOTING (T8–T10u) ──
@@ -111,14 +124,16 @@ class TransitionsTest {
   void shootingReclosesOnSpeedDroop() {
     assertEquals(
         RobotState.SPINNING_UP,
-        Transitions.next(RobotState.SHOOTING, Goal.SHOOT, with(false, true, false, true, false, false)));
+        Transitions.next(
+            RobotState.SHOOTING, Goal.SHOOT, with(false, true, false, true, false, false)));
   }
 
   @Test
   void shootingReclosesOnAimLoss() {
     assertEquals(
         RobotState.SPINNING_UP,
-        Transitions.next(RobotState.SHOOTING, Goal.SHOOT, with(false, false, true, true, false, false)));
+        Transitions.next(
+            RobotState.SHOOTING, Goal.SHOOT, with(false, false, true, true, false, false)));
   }
 
   @Test
@@ -129,7 +144,8 @@ class TransitionsTest {
 
   @Test
   void unjamPreemptsShooting() {
-    assertEquals(RobotState.UNJAMMING, Transitions.next(RobotState.SHOOTING, Goal.UNJAM, gateOpen()));
+    assertEquals(
+        RobotState.UNJAMMING, Transitions.next(RobotState.SHOOTING, Goal.UNJAM, gateOpen()));
   }
 
   // ── CLEARING (T22–T24, the atomic transition) ──
@@ -145,17 +161,20 @@ class TransitionsTest {
   void clearingExitsToIdleOrIntakingPerIntakeToggle() {
     assertEquals(
         RobotState.IDLE,
-        Transitions.next(RobotState.CLEARING, Goal.IDLE, with(false, false, false, false, false, true)));
+        Transitions.next(
+            RobotState.CLEARING, Goal.IDLE, with(false, false, false, false, false, true)));
     assertEquals(
         RobotState.INTAKING,
-        Transitions.next(RobotState.CLEARING, Goal.IDLE, with(false, false, false, false, true, true)));
+        Transitions.next(
+            RobotState.CLEARING, Goal.IDLE, with(false, false, false, false, true, true)));
   }
 
   @Test
   void clearingExitsToPassAimingWhenLbHeld() {
     assertEquals(
         RobotState.PASS_AIMING,
-        Transitions.next(RobotState.CLEARING, Goal.PASS, with(true, false, false, false, false, true)));
+        Transitions.next(
+            RobotState.CLEARING, Goal.PASS, with(true, false, false, false, false, true)));
   }
 
   @Test
@@ -163,7 +182,8 @@ class TransitionsTest {
     assertEquals(RobotState.SPINNING_UP, Transitions.next(RobotState.CLEARING, Goal.SHOOT, cond()));
     assertEquals(
         RobotState.PASS_SPINNING_UP,
-        Transitions.next(RobotState.CLEARING, Goal.SHOOT, with(true, false, false, false, false, false)));
+        Transitions.next(
+            RobotState.CLEARING, Goal.SHOOT, with(true, false, false, false, false, false)));
   }
 
   @Test
@@ -177,7 +197,8 @@ class TransitionsTest {
   void passAimingToPassSpinningUpOnShoot() {
     assertEquals(
         RobotState.PASS_SPINNING_UP,
-        Transitions.next(RobotState.PASS_AIMING, Goal.SHOOT, with(true, false, false, false, false, false)));
+        Transitions.next(
+            RobotState.PASS_AIMING, Goal.SHOOT, with(true, false, false, false, false, false)));
   }
 
   @Test
@@ -198,21 +219,24 @@ class TransitionsTest {
   void lbReleaseMidPassSpinFallsBackToHubChain() {
     assertEquals(
         RobotState.SPINNING_UP,
-        Transitions.next(RobotState.PASS_SPINNING_UP, Goal.SHOOT, with(false, false, true, true, false, false)));
+        Transitions.next(
+            RobotState.PASS_SPINNING_UP, Goal.SHOOT, with(false, false, true, true, false, false)));
   }
 
   @Test
   void passingReclosesOnSpeedDroop() {
     assertEquals(
         RobotState.PASS_SPINNING_UP,
-        Transitions.next(RobotState.PASSING, Goal.SHOOT, with(true, false, false, false, false, false)));
+        Transitions.next(
+            RobotState.PASSING, Goal.SHOOT, with(true, false, false, false, false, false)));
   }
 
   @Test
   void passingReleaseEntersClearing() {
     assertEquals(
         RobotState.CLEARING,
-        Transitions.next(RobotState.PASSING, Goal.PASS, with(true, false, true, true, false, false)));
+        Transitions.next(
+            RobotState.PASSING, Goal.PASS, with(true, false, true, true, false, false)));
   }
 
   // ── Remaining direct row coverage (gate-report gaps) ──
@@ -221,32 +245,40 @@ class TransitionsTest {
   void shootingToPassChainOnLbMidVolley() { // T9
     assertEquals(
         RobotState.PASS_SPINNING_UP,
-        Transitions.next(RobotState.SHOOTING, Goal.SHOOT, with(true, true, true, true, false, false)));
+        Transitions.next(
+            RobotState.SHOOTING, Goal.SHOOT, with(true, true, true, true, false, false)));
   }
 
   @Test
   void passAimingToUnjamming() { // T13
-    assertEquals(RobotState.UNJAMMING, Transitions.next(RobotState.PASS_AIMING, Goal.UNJAM, cond()));
+    assertEquals(
+        RobotState.UNJAMMING, Transitions.next(RobotState.PASS_AIMING, Goal.UNJAM, cond()));
   }
 
   @Test
   void intakingSharesAllOutboundTransitions() { // T2/T3/T4 from INTAKING
     Conditions deployed = with(true, false, false, false, true, false);
-    assertEquals(RobotState.PASS_SPINNING_UP, Transitions.next(RobotState.INTAKING, Goal.SHOOT, deployed));
-    assertEquals(RobotState.PASS_AIMING, Transitions.next(RobotState.INTAKING, Goal.PASS, deployed));
+    assertEquals(
+        RobotState.PASS_SPINNING_UP, Transitions.next(RobotState.INTAKING, Goal.SHOOT, deployed));
+    assertEquals(
+        RobotState.PASS_AIMING, Transitions.next(RobotState.INTAKING, Goal.PASS, deployed));
     assertEquals(RobotState.UNJAMMING, Transitions.next(RobotState.INTAKING, Goal.UNJAM, deployed));
   }
 
   @Test
   void spinUpExitsResolvePerGoal() { // T7 PASS/UNJAM variants
-    assertEquals(RobotState.PASS_AIMING, Transitions.next(RobotState.SPINNING_UP, Goal.PASS, cond()));
-    assertEquals(RobotState.UNJAMMING, Transitions.next(RobotState.SPINNING_UP, Goal.UNJAM, cond()));
+    assertEquals(
+        RobotState.PASS_AIMING, Transitions.next(RobotState.SPINNING_UP, Goal.PASS, cond()));
+    assertEquals(
+        RobotState.UNJAMMING, Transitions.next(RobotState.SPINNING_UP, Goal.UNJAM, cond()));
   }
 
   @Test
   void passSpinUpExitsResolvePerGoal() { // T16 PASS/UNJAM variants
-    assertEquals(RobotState.PASS_AIMING, Transitions.next(RobotState.PASS_SPINNING_UP, Goal.PASS, cond()));
-    assertEquals(RobotState.UNJAMMING, Transitions.next(RobotState.PASS_SPINNING_UP, Goal.UNJAM, cond()));
+    assertEquals(
+        RobotState.PASS_AIMING, Transitions.next(RobotState.PASS_SPINNING_UP, Goal.PASS, cond()));
+    assertEquals(
+        RobotState.UNJAMMING, Transitions.next(RobotState.PASS_SPINNING_UP, Goal.UNJAM, cond()));
   }
 
   @Test
@@ -258,14 +290,16 @@ class TransitionsTest {
   void passAimingReturnsToIntakingWhenDeployed() { // T12 landing on INTAKING
     assertEquals(
         RobotState.INTAKING,
-        Transitions.next(RobotState.PASS_AIMING, Goal.IDLE, with(false, false, false, false, true, false)));
+        Transitions.next(
+            RobotState.PASS_AIMING, Goal.IDLE, with(false, false, false, false, true, false)));
   }
 
   @Test
   void passingLbReleaseFallsBackToHubChain() { // T15 mirror (documented in diagram)
     assertEquals(
         RobotState.SPINNING_UP,
-        Transitions.next(RobotState.PASSING, Goal.SHOOT, with(false, false, true, true, false, false)));
+        Transitions.next(
+            RobotState.PASSING, Goal.SHOOT, with(false, false, true, true, false, false)));
   }
 
   // ── UNJAMMING (T19) ──
@@ -275,10 +309,12 @@ class TransitionsTest {
     assertEquals(RobotState.IDLE, Transitions.next(RobotState.UNJAMMING, Goal.IDLE, cond()));
     assertEquals(
         RobotState.INTAKING,
-        Transitions.next(RobotState.UNJAMMING, Goal.IDLE, with(false, false, false, false, true, false)));
+        Transitions.next(
+            RobotState.UNJAMMING, Goal.IDLE, with(false, false, false, false, true, false)));
     assertEquals(
         RobotState.PASS_AIMING,
-        Transitions.next(RobotState.UNJAMMING, Goal.PASS, with(true, false, false, false, false, false)));
+        Transitions.next(
+            RobotState.UNJAMMING, Goal.PASS, with(true, false, false, false, false, false)));
   }
 
   // ── Illegal-transition rejections ──
@@ -333,13 +369,16 @@ class TransitionsTest {
     assertEquals(RobotState.CLEARING, Transitions.next(RobotState.CLEARING, Goal.IDLE, cond()));
     assertEquals(
         RobotState.IDLE,
-        Transitions.next(RobotState.CLEARING, Goal.IDLE, with(false, false, false, false, false, true)));
+        Transitions.next(
+            RobotState.CLEARING, Goal.IDLE, with(false, false, false, false, false, true)));
   }
 
   @Test
   void goalPreemptionWinsImmediately() {
     // A new goal replans from the current state in the same tick (UNJAM mid-volley).
-    assertEquals(RobotState.UNJAMMING, Transitions.next(RobotState.SHOOTING, Goal.UNJAM, gateOpen()));
-    assertEquals(RobotState.UNJAMMING, Transitions.next(RobotState.PASSING, Goal.UNJAM, gateOpen()));
+    assertEquals(
+        RobotState.UNJAMMING, Transitions.next(RobotState.SHOOTING, Goal.UNJAM, gateOpen()));
+    assertEquals(
+        RobotState.UNJAMMING, Transitions.next(RobotState.PASSING, Goal.UNJAM, gateOpen()));
   }
 }

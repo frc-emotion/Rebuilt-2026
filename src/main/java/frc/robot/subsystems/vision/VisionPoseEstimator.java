@@ -17,12 +17,12 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 /**
- * Minimal single-camera pose estimation for the turret-mounted camera (team requirement D11,
- * "as simple as possible"). The documented photonlib pattern plus three gates:
+ * Minimal single-camera pose estimation for the turret-mounted camera (team requirement D11, "as
+ * simple as possible"). The documented photonlib pattern plus three gates:
  *
  * <ol>
- *   <li>Turret slew gate — skip frames while the turret moves fast, so the CURRENT turret angle
- *       is a valid stand-in for the angle at capture time (no angle-history buffering).
+ *   <li>Turret slew gate — skip frames while the turret moves fast, so the CURRENT turret angle is
+ *       a valid stand-in for the angle at capture time (no angle-history buffering).
  *   <li>Ambiguity gate — single-tag frames above MAX_POSE_AMBIGUITY are dropped.
  *   <li>On-field gate — estimates outside the field rectangle are dropped.
  * </ol>
@@ -128,8 +128,10 @@ public class VisionPoseEstimator {
   /** robotToCamera = robotToTurret × rotate(turret angle) × turretToCamera — one compose line. */
   static Transform3d robotToCamera(double turretAngleRot) {
     return VisionConstants.ROBOT_TO_TURRET
-        .plus(new Transform3d(
-            new Translation3d(), new Rotation3d(0, 0, Units.rotationsToRadians(turretAngleRot))))
+        .plus(
+            new Transform3d(
+                new Translation3d(),
+                new Rotation3d(0, 0, Units.rotationsToRadians(turretAngleRot))))
         .plus(VisionConstants.TURRET_TO_CAMERA);
   }
 }

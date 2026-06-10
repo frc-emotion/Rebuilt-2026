@@ -39,7 +39,8 @@ public class IntakeIOReal implements IntakeIO {
         () -> pivotEncoder.getConfigurator().apply(IntakeConstants.kEncoderConfig, 0.1),
         "intake pivot encoder");
     applyWithRetry(
-        () -> pivotMotor.getConfigurator().apply(IntakeConstants.kPivotConfig, 0.1), "intake motor");
+        () -> pivotMotor.getConfigurator().apply(IntakeConstants.kPivotConfig, 0.1),
+        "intake motor");
     applyWithRetry(
         () -> rollerMotor.getConfigurator().apply(IntakeConstants.kRollerConfig, 0.1),
         "roller motor");

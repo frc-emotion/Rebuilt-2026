@@ -1,8 +1,8 @@
 package frc.robot.superstructure;
 
 /**
- * Everything the pure transition logic is allowed to know. Hood-at-setpoint is deliberately
- * absent: the legacy teleop feed gate ignored hood readiness (W13) and that is preserved.
+ * Everything the pure transition logic is allowed to know. Hood-at-setpoint is deliberately absent:
+ * the legacy teleop feed gate ignored hood readiness (W13) and that is preserved.
  */
 public record Conditions(
     boolean passSelected, // LB held (legacy isPassing supplier)

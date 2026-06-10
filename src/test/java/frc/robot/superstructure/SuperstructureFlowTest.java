@@ -25,7 +25,6 @@ import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionPoseEstimator;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,9 +36,9 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 /**
- * THE PHASE 3 SIM RUN: every goal flow end-to-end against physics sims and synthetic camera
- * frames, the atomic CLEARING preemption matrix, and manual mode in/out including from
- * mid-sequence states. Each test documents what was run and what was observed.
+ * THE PHASE 3 SIM RUN: every goal flow end-to-end against physics sims and synthetic camera frames,
+ * the atomic CLEARING preemption matrix, and manual mode in/out including from mid-sequence states.
+ * Each test documents what was run and what was observed.
  *
  * <p>(This robot has no CLIMB — deleted by team decision D8 — and TRACK is what IDLE does.)
  */
@@ -69,12 +68,15 @@ class SuperstructureFlowTest {
       List<PhotonTrackedTarget> targets =
           tagId < 0
               ? List.of()
-              : List.of(new PhotonTrackedTarget(
-                  0.0, 0.0, 1.0, 0.0, tagId, -1, 0.0f, kCamToTag, kCamToTag, 0.05,
-                  corners, corners));
+              : List.of(
+                  new PhotonTrackedTarget(
+                      0.0, 0.0, 1.0, 0.0, tagId, -1, 0.0f, kCamToTag, kCamToTag, 0.05, corners,
+                      corners));
       return new VisionIOInputs(
           true,
-          List.of(new PhotonPipelineResult(frame, timestampMicros, timestampMicros + 1000, 0, targets)));
+          List.of(
+              new PhotonPipelineResult(
+                  frame, timestampMicros, timestampMicros + 1000, 0, targets)));
     }
   }
 
@@ -116,8 +118,17 @@ class SuperstructureFlowTest {
             turret::getVelocityRps);
     superstructure =
         new Superstructure(
-            drive, turret, hood, shooter, indexer, intake, vision,
-            () -> shootHeld, () -> passHeld, () -> unjamHeld, () -> false);
+            drive,
+            turret,
+            hood,
+            shooter,
+            indexer,
+            intake,
+            vision,
+            () -> shootHeld,
+            () -> passHeld,
+            () -> unjamHeld,
+            () -> false);
   }
 
   @AfterAll

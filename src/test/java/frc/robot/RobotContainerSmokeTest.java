@@ -50,8 +50,9 @@ class RobotContainerSmokeTest {
     assertNotNull(container.getAutonomousCommand(), "auto chooser must yield a default command");
     // The exact legacy named-command strings the deploy .auto files reference:
     for (String name :
-        new String[] {"intakeOut", "intakeIn", "shoot", "stopAll", "autoShoot", "feedIndexers",
-          "reverseIndexer"}) {
+        new String[] {
+          "intakeOut", "intakeIn", "shoot", "stopAll", "autoShoot", "feedIndexers", "reverseIndexer"
+        }) {
       assertTrue(NamedCommands.hasCommand(name), "named command missing: " + name);
     }
   }

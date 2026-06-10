@@ -5,8 +5,8 @@ import org.photonvision.targeting.PhotonPipelineResult;
 
 /**
  * Hardware boundary for the turret camera. PhotonPipelineResult is pure DATA (PhotonVision's
- * serialized frame record), not a hardware handle — passing it through the seam keeps the
- * targeting pipeline and the pose estimator byte-faithful while real and sim stay swappable.
+ * serialized frame record), not a hardware handle — passing it through the seam keeps the targeting
+ * pipeline and the pose estimator byte-faithful while real and sim stay swappable.
  */
 public interface VisionIO {
 

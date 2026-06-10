@@ -15,13 +15,11 @@ import java.util.Map;
 
 /**
  * Vision constants, copied verbatim from legacy VisionConstants except MAX_POSE_AMBIGUITY
- * (re-enabled at 0.3 per team decision D5; legacy had it disabled at 1.0 with tuned 0.15
- * commented out). Pose-estimation constants are NEW (D11).
+ * (re-enabled at 0.3 per team decision D5; legacy had it disabled at 1.0 with tuned 0.15 commented
+ * out). Pose-estimation constants are NEW (D11).
  *
- * Coordinate System (WPILib / PhotonVision convention for Transform3d):
- *   X = forward (out of camera lens / out of tag face)
- *   Y = left
- *   Z = up
+ * <p>Coordinate System (WPILib / PhotonVision convention for Transform3d): X = forward (out of
+ * camera lens / out of tag face) Y = left Z = up
  */
 public final class VisionConstants {
   private VisionConstants() {}
@@ -66,6 +64,7 @@ public final class VisionConstants {
 
   /** Hub is a 47" × 47" rectangular prism. Half-width = depth from any face to center. */
   private static final double HUB_DEPTH_METERS = 0.604; // derived from FRC2026_WELDED.json
+
   private static final double HUB_LATERAL_OFFSET_METERS = 0.356; // offset tags, ~14"
 
   public static final Translation2d RED_HUB_CENTER = new Translation2d(11.916, 4.035);
@@ -132,8 +131,8 @@ public final class VisionConstants {
   }
 
   /**
-   * Returns true if the tag is one we'd pass to when on our alliance. (We pass into the
-   * opponent's zone and use the opponent-side neutral tags.)
+   * Returns true if the tag is one we'd pass to when on our alliance. (We pass into the opponent's
+   * zone and use the opponent-side neutral tags.)
    */
   public static boolean isOurPassingTag(int tagId) {
     Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
@@ -167,25 +166,27 @@ public final class VisionConstants {
   }
 
   /** Tag ID → Transform3d from tag frame to hub center. Only hub tags have entries. */
-  public static final Map<Integer, Transform3d> TAG_TO_HUB_CENTER = Map.ofEntries(
-      // ── Red Hub ──
-      Map.entry(2, hubVec(0.000 - 0.2)), // +Y face, centered
-      Map.entry(3, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // -X face, offset
-      Map.entry(4, hubVec(0.000 - 0.2)), // -X face, centered
-      Map.entry(5, hubVec(0.000 - 0.2)), // -Y face, centered
-      Map.entry(8, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // -Y face, offset
-      Map.entry(9, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // +X face, offset
-      Map.entry(10, hubVec(0.000 - 0.2)), // +X face, centered
-      Map.entry(11, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // +Y face, offset
+  public static final Map<Integer, Transform3d> TAG_TO_HUB_CENTER =
+      Map.ofEntries(
+          // ── Red Hub ──
+          Map.entry(2, hubVec(0.000 - 0.2)), // +Y face, centered
+          Map.entry(3, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // -X face, offset
+          Map.entry(4, hubVec(0.000 - 0.2)), // -X face, centered
+          Map.entry(5, hubVec(0.000 - 0.2)), // -Y face, centered
+          Map.entry(8, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // -Y face, offset
+          Map.entry(9, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // +X face, offset
+          Map.entry(10, hubVec(0.000 - 0.2)), // +X face, centered
+          Map.entry(11, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // +Y face, offset
 
-      // ── Blue Hub ──
-      Map.entry(18, hubVec(0.000 - 0.2)), // -Y face, centered
-      Map.entry(19, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // +X face, offset
-      Map.entry(20, hubVec(0.000 - 0.2)), // +X face, centered
-      Map.entry(21, hubVec(0.000 - 0.2)), // +Y face, centered
-      Map.entry(24, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // +Y face, offset
-      Map.entry(25, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // -X face, offset
-      Map.entry(26, hubVec(0.000 - 0.2)), // -X face, centered
-      Map.entry(27, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)) // -Y face, offset WAS POSITIVE BEFORE
-  );
+          // ── Blue Hub ──
+          Map.entry(18, hubVec(0.000 - 0.2)), // -Y face, centered
+          Map.entry(19, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // +X face, offset
+          Map.entry(20, hubVec(0.000 - 0.2)), // +X face, centered
+          Map.entry(21, hubVec(0.000 - 0.2)), // +Y face, centered
+          Map.entry(24, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // +Y face, offset
+          Map.entry(25, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)), // -X face, offset
+          Map.entry(26, hubVec(0.000 - 0.2)), // -X face, centered
+          Map.entry(
+              27, hubVec(+HUB_LATERAL_OFFSET_METERS - 0.2)) // -Y face, offset WAS POSITIVE BEFORE
+          );
 }

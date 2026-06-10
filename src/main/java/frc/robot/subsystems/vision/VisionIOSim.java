@@ -12,9 +12,9 @@ import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 
 /**
- * Photonlib VisionSystemSim drives a simulated turret camera from the simulated drive pose and
- * the simulated turret angle (the camera transform is adjusted every frame — the documented
- * photonlib pattern for cameras on moving mechanisms).
+ * Photonlib VisionSystemSim drives a simulated turret camera from the simulated drive pose and the
+ * simulated turret angle (the camera transform is adjusted every frame — the documented photonlib
+ * pattern for cameras on moving mechanisms).
  */
 public class VisionIOSim implements VisionIO {
   private final PhotonCamera camera = new PhotonCamera(VisionConstants.TURRET_CAM_NAME);
@@ -46,9 +46,10 @@ public class VisionIOSim implements VisionIO {
 
   private static Transform3d robotToCamera(double turretRot) {
     return VisionConstants.ROBOT_TO_TURRET
-        .plus(new Transform3d(
-            new edu.wpi.first.math.geometry.Translation3d(),
-            new Rotation3d(0, 0, edu.wpi.first.math.util.Units.rotationsToRadians(turretRot))))
+        .plus(
+            new Transform3d(
+                new edu.wpi.first.math.geometry.Translation3d(),
+                new Rotation3d(0, 0, edu.wpi.first.math.util.Units.rotationsToRadians(turretRot))))
         .plus(VisionConstants.TURRET_TO_CAMERA);
   }
 }
