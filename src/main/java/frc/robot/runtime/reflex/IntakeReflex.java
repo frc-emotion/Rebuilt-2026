@@ -1,7 +1,7 @@
 package frc.robot.runtime.reflex;
 
 import edu.wpi.first.epilogue.Logged;
-import frc.robot.runtime.Mechanisms;
+import frc.robot.runtime.MechanismCommander;
 
 /**
  * The intake deploy/stow nested state machine, ported VERBATIM from the legacy Intake subsystem —
@@ -47,7 +47,7 @@ public class IntakeReflex {
   }
 
   /** One loop of the intake axis. {@code deployRequested} is the operator A toggle state. */
-  public void update(Mechanisms m, boolean deployRequested) {
+  public void update(MechanismCommander m, boolean deployRequested) {
     pivotPositionRot = m.read(PIVOT).positionRot();
 
     // Legacy isOut threshold, verbatim: "out" means >5° away from stow (W18). The idle vertical
@@ -73,7 +73,7 @@ public class IntakeReflex {
     }
   }
 
-  private PivotState advanceDeploying(Mechanisms m) {
+  private PivotState advanceDeploying(MechanismCommander m) {
     if (!withinOfTarget(
         ReflexConstants.kIntakeOutAngleRot, ReflexConstants.kIntakeDeployToleranceRot)) {
       return PivotState.DEPLOYING;
@@ -93,7 +93,7 @@ public class IntakeReflex {
   // Over-travel recovery (legacy W16, verbatim): if external forces push the intake past the safe
   // stow zone, re-command the stow position every loop so the PID fights back before the mechanism
   // mechanically jams. Only runs while stowing — never blocks a deploy.
-  private void runOvertravelRecovery(Mechanisms m) {
+  private void runOvertravelRecovery(MechanismCommander m) {
     boolean tryingToStow = pivotState == PivotState.STOWED || pivotState == PivotState.STOWING;
     if (tryingToStow && pivotPositionRot < ReflexConstants.kIntakeOvertravelThresholdRot) {
       m.setPosition(PIVOT, ReflexConstants.kIntakeInAngleRot);
@@ -108,7 +108,7 @@ public class IntakeReflex {
   }
 
   /** Deploy: pivot out; rollers start automatically once within the deploy tolerance. */
-  private void requestDeploy(Mechanisms m) {
+  private void requestDeploy(MechanismCommander m) {
     if (pivotState == PivotState.DEPLOYING || pivotState == PivotState.DEPLOYED_ROLLING) {
       return;
     }
@@ -117,7 +117,7 @@ public class IntakeReflex {
   }
 
   /** Stow: rollers stop first (legacy end() semantics), then the pivot travels in. */
-  private void requestStow(Mechanisms m) {
+  private void requestStow(MechanismCommander m) {
     if (pivotState == PivotState.STOWED || pivotState == PivotState.STOWING) {
       return;
     }

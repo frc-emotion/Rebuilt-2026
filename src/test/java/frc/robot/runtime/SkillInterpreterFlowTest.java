@@ -189,6 +189,8 @@ class SkillInterpreterFlowTest {
     tick(400);
     assertEquals(Phase.INTAKING, interpreter.phase());
     assertTrue(interpreter.intakeReflex().isOut());
+    // W18: idle vertical feed is 26.25 RPS (35 * 0.75) while the intake is out.
+    assertEquals(26.25, rps(IndexerFeed.VERTICAL), 1e-9);
     intakeDeploy = false;
     tick(400);
     assertEquals(Phase.IDLE, interpreter.phase());

@@ -22,7 +22,7 @@ import java.util.Set;
  * <p>If the config is invalid (missing/malformed file), this layer holds no handles: every {@code
  * set} is a no-op and every {@code read} returns zeros — mechanisms idle, robot disabled-safe.
  */
-public class Mechanisms {
+public class Mechanisms implements MechanismCommander {
   private final Map<String, MechanismHandle> handles = new LinkedHashMap<>();
   private final Map<String, Double> commandedRps = new LinkedHashMap<>();
   private final Map<String, Double> commandedPositionRot = new LinkedHashMap<>();
