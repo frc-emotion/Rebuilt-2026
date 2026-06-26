@@ -49,9 +49,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
-    if (robotContainer.getSuperstructure() != null) {
-      robotContainer.getSuperstructure().onEnable();
-    }
+    robotContainer.getRuntime().onEnable();
     autonomousCommand = robotContainer.getAutonomousCommand();
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(autonomousCommand);
@@ -60,9 +58,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
-    if (robotContainer.getSuperstructure() != null) {
-      robotContainer.getSuperstructure().onEnable();
-    }
+    robotContainer.getRuntime().onEnable();
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
     }

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "_comment": "The declarative skill table (skill-server migration). Replaces the deleted Goal/RobotState/Transitions/Superstructure. Each scoring-axis skill names — by reference, never by embedded math — its per-mechanism setpoint SOURCE (resolved in Setpoints / TurretAiming), its indexer FEED mode (resolved in IndexerFeed), the REFLEXES that gate/override it (feedGate, passGate, clearing, turretTracking, staleness — resolved in the Reflexes library), a DONE predicate, and whether it is cancelable. The intake axis is orthogonal to scoring and runs every loop via the intake reflex. Schema-validated at load with a safe fallback (see SkillTable): an invalid table forces a hardcoded safe-idle (everything off/hold, intake stowed) and reports a DriverStation error.",
+  "axes": ["scoring", "intake", "drive"],
+  "skills": [
+    {
+      "name": "idle",
+      "axis": "scoring",
+      "turret": "turret.aimHub",
+      "hood": "hood.hold",
+      "shooter": "shooter.off",
+      "feed": "rest",
+      "reflexes": ["turretTracking", "staleness"],
+      "done": "never",
+      "cancelable": true
+    },
+    {
+      "name": "shoot",
+      "axis": "scoring",
+      "turret": "turret.aimHub",
+      "hood": "hood.shotCalc",
+      "shooter": "shooter.shotCalc",
+      "feed": "gatedHub",
+      "reflexes": ["turretTracking", "feedGate", "clearing", "staleness"],
+      "done": "never",
+      "cancelable": true
+    },
+    {
+      "name": "passAim",
+      "axis": "scoring",
+      "turret": "turret.aimPassing",
+      "hood": "hood.uncommanded",
+      "shooter": "shooter.off",
+      "feed": "rest",
+      "reflexes": ["turretTracking"],
+      "done": "never",
+      "cancelable": true
+    },
+    {
+      "name": "passShoot",
+      "axis": "scoring",
+      "turret": "turret.aimPassing",
+      "hood": "hood.passing",
+      "shooter": "shooter.passing",
+      "feed": "gatedPass",
+      "reflexes": ["turretTracking", "passGate", "clearing"],
+      "done": "never",
+      "cancelable": true
+    },
+    {
+      "name": "unjam",
+      "axis": "scoring",
+      "turret": "turret.aimHub",
+      "hood": "hood.uncommanded",
+      "shooter": "shooter.unjamMax",
+      "feed": "unjam",
+      "reflexes": ["turretTracking"],
+      "done": "never",
+      "cancelable": true
+    },
+    {
+      "name": "intake",
+      "axis": "intake",
+      "done": "never",
+      "cancelable": true
+    }
+  ]
+}

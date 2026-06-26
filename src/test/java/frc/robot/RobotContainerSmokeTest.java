@@ -8,15 +8,18 @@ import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.superstructure.RobotState;
+import frc.robot.runtime.SkillInterpreter.AxisStatus;
+import frc.robot.runtime.reflex.ScoringSequencer.Phase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * End-to-end wiring smoke test: the WHOLE new robot constructs in sim (drive, all mechanism sim
- * IOs, vision sim, superstructure, bindings, PathPlanner autos), the scheduler runs, and manual
- * mode is reachable and exits to IDLE. Full goal-flow demonstration: ./gradlew simulateJava.
+ * End-to-end wiring smoke test for the skill-server robot: the WHOLE robot constructs in sim
+ * (drive, the generic mechanism layer from mechanisms.json, vision sim, the interpreter from
+ * skills.json, the NT skill server, the local driver, PathPlanner autos), the scheduler runs, and
+ * the runtime rests at IDLE. Per-skill behavior equivalence is covered by EquivalenceHarnessTest;
+ * this is wiring only.
  */
 class RobotContainerSmokeTest {
   private static RobotContainer container;
@@ -24,7 +27,6 @@ class RobotContainerSmokeTest {
   @BeforeAll
   static void setup() {
     HAL.initialize(500, 0);
-    // Drop any subsystems registered by other test classes in this JVM before we construct ours.
     CommandScheduler.getInstance().unregisterAllSubsystems();
     DriverStationSim.setDsAttached(true);
     DriverStationSim.setEnabled(true);
@@ -46,7 +48,9 @@ class RobotContainerSmokeTest {
 
   @Test
   void constructsAndRegistersEverything() {
-    assertNotNull(container.superstructure, "all feature flags are on; superstructure must exist");
+    assertNotNull(container.runtime, "the runtime subsystem must exist");
+    assertNotNull(container.mechanisms, "the mechanism layer must exist");
+    assertTrue(container.mechanisms.isValid(), "mechanisms.json must load valid");
     assertNotNull(container.getAutonomousCommand(), "auto chooser must yield a default command");
     // The exact legacy named-command strings the deploy .auto files reference:
     for (String name :
@@ -59,45 +63,32 @@ class RobotContainerSmokeTest {
 
   @Test
   void schedulerRunsAndRestsAtIdle() {
-    container.getSuperstructure().onEnable();
+    container.getRuntime().onEnable();
     runScheduler(25);
-    assertEquals(RobotState.IDLE, container.getSuperstructure().getState());
+    assertEquals(Phase.IDLE, container.getRuntime().interpreter().phase());
+    assertEquals(AxisStatus.OK, container.getRuntime().interpreter().scoringStatus());
   }
 
   @Test
-  void manualModeEntersFromAnyStateAndExitsToIdle() {
-    container.getSuperstructure().onEnable();
+  void manualModeReachableAndExitsToIdle() {
+    container.getRuntime().onEnable();
     runScheduler(5);
-    container.getSuperstructure().toggleManualMode();
+    container.getRuntime().server().setManualMode(true);
     runScheduler(5);
-    assertEquals(RobotState.MANUAL, container.getSuperstructure().getState());
-    container.getSuperstructure().toggleManualMode();
+    assertEquals(Phase.MANUAL, container.getRuntime().interpreter().phase());
+    container.getRuntime().server().setManualMode(false);
     runScheduler(5);
-    assertEquals(RobotState.IDLE, container.getSuperstructure().getState());
+    assertEquals(Phase.IDLE, container.getRuntime().interpreter().phase());
   }
 
   @Test
-  void intakeToggleReachesIntakingState() {
-    container.getSuperstructure().onEnable();
-    container.getSuperstructure().setIntakeRequested(true);
+  void intakeToggleReachesIntakingPhase() {
+    container.getRuntime().onEnable();
+    container.getRuntime().server().setIntakeDeploy(true);
     runScheduler(400); // arm sim needs time to swing past the 5-degree isOut threshold
-    assertEquals(RobotState.INTAKING, container.getSuperstructure().getState());
-    container.getSuperstructure().setIntakeRequested(false);
+    assertEquals(Phase.INTAKING, container.getRuntime().interpreter().phase());
+    container.getRuntime().server().setIntakeDeploy(false);
     runScheduler(400);
-    assertEquals(RobotState.IDLE, container.getSuperstructure().getState());
-  }
-
-  @Test
-  void shootWithoutVisionStaysSpinningUpAndNeverFeeds() {
-    // The W12 safety end-to-end: no camera frames -> never aimed -> feed gate never opens.
-    container.getSuperstructure().onEnable();
-    edu.wpi.first.wpilibj2.command.Command hold =
-        container.getSuperstructure().goalCommand(frc.robot.superstructure.Goal.SHOOT);
-    hold.schedule();
-    runScheduler(300);
-    assertEquals(RobotState.SPINNING_UP, container.getSuperstructure().getState());
-    hold.cancel();
-    runScheduler(5);
-    assertEquals(RobotState.IDLE, container.getSuperstructure().getState());
+    assertEquals(Phase.IDLE, container.getRuntime().interpreter().phase());
   }
 }
