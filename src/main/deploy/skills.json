@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "_comment": "The declarative skill table (skill-server migration). Replaces the deleted Goal/RobotState/Transitions/Superstructure. Each scoring-axis skill names — by reference, never by embedded math — its per-mechanism setpoint SOURCE (resolved in Setpoints / TurretAiming), its indexer FEED mode (resolved in IndexerFeed), the REFLEXES that gate/override it (feedGate, passGate, clearing, turretTracking, staleness — resolved in the Reflexes library), a DONE predicate, and whether it is cancelable. The intake axis is orthogonal to scoring and runs every loop via the intake reflex. Schema-validated at load with a safe fallback (see SkillTable): an invalid table forces a hardcoded safe-idle (everything off/hold, intake stowed) and reports a DriverStation error.",
+  "_comment": "The declarative skill table (skill-server migration). Replaces the deleted Goal/RobotState/Transitions/Superstructure. Each scoring-axis skill names — by reference, never by embedded math — its per-mechanism setpoint SOURCE (resolved in Setpoints / TurretAiming), its indexer FEED mode (resolved in IndexerFeed), the REFLEXES that gate/override it (feedGate, passGate, clearing, turretTracking, staleness — resolved in the Reflexes library), a DONE predicate (resolved in DonePredicates — 'never' or 'feeding'; advisory status only, never auto-cancels), an OPTIONAL status 'timeoutSeconds' (instrumentation only: when a firing skill spends longer than this trying to reach the feeding phase the interpreter reports BLOCKED — it NEVER cancels the skill or changes a mechanism command; absent = never blocks), and whether it is cancelable. The intake axis is orthogonal to scoring and runs every loop via the intake reflex. Schema-validated at load with a safe fallback (see SkillTable): an invalid table forces a hardcoded safe-idle (everything off/hold, intake stowed) and reports a DriverStation error.",
   "axes": ["scoring", "intake", "drive"],
   "skills": [
     {
@@ -22,7 +22,8 @@
       "shooter": "shooter.shotCalc",
       "feed": "gatedHub",
       "reflexes": ["turretTracking", "feedGate", "clearing", "staleness"],
-      "done": "never",
+      "done": "feeding",
+      "timeoutSeconds": 3.0,
       "cancelable": true
     },
     {
@@ -44,7 +45,8 @@
       "shooter": "shooter.passing",
       "feed": "gatedPass",
       "reflexes": ["turretTracking", "passGate", "clearing"],
-      "done": "never",
+      "done": "feeding",
+      "timeoutSeconds": 3.0,
       "cancelable": true
     },
     {

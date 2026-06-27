@@ -80,6 +80,9 @@ public final class SkillTable {
     }
     String done = n.has("done") ? n.get("done").asText() : "never";
     boolean cancelable = !n.has("cancelable") || n.get("cancelable").asBoolean();
+    // Optional status-instrumentation timeout; absent = never blocks (POSITIVE_INFINITY).
+    double timeoutSeconds =
+        n.has("timeoutSeconds") ? n.get("timeoutSeconds").asDouble() : Double.POSITIVE_INFINITY;
 
     if ("scoring".equals(axis)) {
       // Scoring skills must fully specify their mechanism sources + feed mode.
@@ -92,10 +95,11 @@ public final class SkillTable {
           req(n, "feed").asText(),
           reflexes,
           done,
+          timeoutSeconds,
           cancelable);
     }
     // Non-scoring (intake / drive) axes carry only name + axis; behavior is their reflex.
-    return new SkillSpec(name, axis, "", "", "", "", reflexes, done, cancelable);
+    return new SkillSpec(name, axis, "", "", "", "", reflexes, done, timeoutSeconds, cancelable);
   }
 
   private static JsonNode req(JsonNode parent, String field) {

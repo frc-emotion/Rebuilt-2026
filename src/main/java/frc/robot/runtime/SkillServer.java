@@ -9,6 +9,7 @@ import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StringSubscriber;
 import frc.robot.runtime.SkillInterpreter.AxisStatus;
 import frc.robot.runtime.SkillInterpreter.InterpreterInputs;
+import frc.robot.runtime.SkillInterpreter.ScoringStatus;
 import frc.robot.runtime.perception.PerceptionProvider;
 
 /**
@@ -21,8 +22,11 @@ import frc.robot.runtime.perception.PerceptionProvider;
  *   <li><b>/skills/request/</b> — inbound: {@code skill} (string), {@code manualMode}, {@code
  *       manualFeed}, {@code intakeDeploy} (bools), {@code remoteActive} (bool — when false, the
  *       local driver's request is used).
- *   <li><b>/skills/status/</b> — outbound per-axis: {@code scoring}, {@code intake} (ok|running|
- *       fail), {@code activeSkill}, {@code phase}.
+ *   <li><b>/skills/status/</b> — outbound per-axis: {@code scoring} (idle|running|succeeded|failed|
+ *       blocked — the richer scoring status the orchestration brain reads), {@code intake} (ok|
+ *       running|fail), {@code activeSkill}, {@code phase}, plus instrumentation topics {@code
+ *       reason} (string), {@code blocked} (bool), {@code done} (bool — the skill's done predicate,
+ *       advisory; never auto-cancels), {@code timeoutRemaining} (seconds).
  *   <li><b>/state/</b> — outbound state estimate: {@code aimed}, {@code distanceToHub}, {@code
  *       turretTargetRot}, {@code hasPose} (pose estimation is gated off locally).
  * </ul>
@@ -50,6 +54,10 @@ public class SkillServer {
   private final StringPublisher statusIntake;
   private final StringPublisher statusActiveSkill;
   private final StringPublisher statusPhase;
+  private final StringPublisher statusReason;
+  private final BooleanPublisher statusBlocked;
+  private final BooleanPublisher statusDone;
+  private final DoublePublisher statusTimeoutRemaining;
 
   // Outbound state estimate.
   private final BooleanPublisher stateAimed;
@@ -76,6 +84,10 @@ public class SkillServer {
     statusIntake = status.getStringTopic("intake").publish();
     statusActiveSkill = status.getStringTopic("activeSkill").publish();
     statusPhase = status.getStringTopic("phase").publish();
+    statusReason = status.getStringTopic("reason").publish();
+    statusBlocked = status.getBooleanTopic("blocked").publish();
+    statusDone = status.getBooleanTopic("done").publish();
+    statusTimeoutRemaining = status.getDoubleTopic("timeoutRemaining").publish();
 
     stateAimed = state.getBooleanTopic("aimed").publish();
     stateDistanceToHub = state.getDoubleTopic("distanceToHub").publish();
@@ -131,10 +143,15 @@ public class SkillServer {
 
   /** Publish status + the state estimate seam (call once per loop after the interpreter runs). */
   public void publish(SkillInterpreter interpreter, PerceptionProvider perception) {
-    statusScoring.set(name(interpreter.scoringStatus()));
+    ScoringStatus scoring = interpreter.scoringStatus();
+    statusScoring.set(name(scoring));
     statusIntake.set(name(interpreter.intakeStatus()));
     statusActiveSkill.set(interpreter.activeScoringSkill());
     statusPhase.set(interpreter.phase().name());
+    statusReason.set(interpreter.scoringReason());
+    statusBlocked.set(scoring == ScoringStatus.BLOCKED);
+    statusDone.set(interpreter.isDone());
+    statusTimeoutRemaining.set(interpreter.timeoutRemainingSeconds());
 
     stateAimed.set(interpreter.aiming().isAimed());
     stateDistanceToHub.set(interpreter.aiming().getDistanceToHub());
@@ -147,6 +164,16 @@ public class SkillServer {
       case OK -> "ok";
       case RUNNING -> "running";
       case FAIL -> "fail";
+    };
+  }
+
+  private static String name(ScoringStatus status) {
+    return switch (status) {
+      case IDLE -> "idle";
+      case RUNNING -> "running";
+      case SUCCEEDED -> "succeeded";
+      case FAILED -> "failed";
+      case BLOCKED -> "blocked";
     };
   }
 }

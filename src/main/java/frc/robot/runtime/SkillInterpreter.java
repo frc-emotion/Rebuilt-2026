@@ -52,10 +52,42 @@ public class SkillInterpreter {
       boolean manualFeedHeld,
       boolean intakeDeployRequested) {}
 
+  /**
+   * The simple intake-axis status (the intake is a held mechanism toggle, never a goal that fails).
+   */
   public enum AxisStatus {
     OK,
     RUNNING,
     FAIL
+  }
+
+  /**
+   * The richer SCORING-axis status reported to the orchestration brain (NT + getters). It is PURE
+   * INSTRUMENTATION: it reflects what the sequencer + reflexes are doing; it never changes a phase
+   * transition or a mechanism command.
+   *
+   * <ul>
+   *   <li>{@code IDLE} — no scoring request (resting at IDLE/INTAKING) or manual mode.
+   *   <li>{@code RUNNING} — a skill is actively working toward its objective (a firing skill
+   *       spinning up / aiming within its timeout, or a held unjam/passAim).
+   *   <li>{@code SUCCEEDED} — a firing skill reached the productive feeding phase
+   *       (SHOOTING/PASSING). CAVEAT: this robot has NO game-piece sensor (the indexer has no ball
+   *       count), so SUCCEEDED means "the feed gate opened and the robot is feeding/firing" — the
+   *       best available proxy for a shot. It CANNOT confirm a ball physically launched.
+   *   <li>{@code FAILED} — a safe-fallback / dead-pipeline condition: an invalid skill table, an
+   *       unknown/non-scoring skill request, or perception stale beyond threshold while a firing
+   *       skill was trying to fire (the staleness reflex has already backed the shooter + feed
+   *       off).
+   *   <li>{@code BLOCKED} — a firing skill exceeded its {@code timeoutSeconds} (skills.json) while
+   *       still not feeding. Status only — the sequencer keeps trying; the brain may re-plan.
+   * </ul>
+   */
+  public enum ScoringStatus {
+    IDLE,
+    RUNNING,
+    SUCCEEDED,
+    FAILED,
+    BLOCKED
   }
 
   private final Mechanisms mechanisms;
@@ -80,10 +112,17 @@ public class SkillInterpreter {
   private final HoodHold hoodHold = new HoodHold();
   private final StalenessReflex staleness = new StalenessReflex();
   private final Timer clearingTimer = new Timer();
+  // Wall-clock timer for the per-skill BLOCKED timeout: started when a firing skill enters a
+  // non-productive (spin-up/aim) phase, reset when it begins feeding, the skill changes, or on
+  // enable/manual. Status only — it never touches the sequencer or a mechanism command.
+  private final Timer timeoutTimer = new Timer();
+  private String timeoutTrackedSkill = "";
   private Phase phase = Phase.IDLE;
   private boolean prevManualMode = false;
 
-  private AxisStatus scoringStatus = AxisStatus.OK;
+  private ScoringStatus scoringStatus = ScoringStatus.IDLE;
+  private String scoringReason = "idle";
+  private boolean scoringDone = false;
   private AxisStatus intakeStatus = AxisStatus.OK;
   private String activeScoringSkill = "idle";
 
@@ -131,7 +170,11 @@ public class SkillInterpreter {
     hoodHold.reset();
     clearingTimer.stop();
     clearingTimer.reset();
+    resetTimeout();
     phase = Phase.IDLE;
+    scoringStatus = ScoringStatus.IDLE;
+    scoringReason = "idle";
+    scoringDone = false;
   }
 
   /** One robot loop. {@code mechanisms.updateInputs()} must have run already this loop. */
@@ -156,7 +199,10 @@ public class SkillInterpreter {
       prevManualMode = true;
       phase = Phase.MANUAL;
       activeScoringSkill = "manual";
-      scoringStatus = AxisStatus.OK;
+      scoringStatus = ScoringStatus.IDLE;
+      scoringReason = "manual";
+      scoringDone = false;
+      resetTimeout();
       return;
     }
     if (prevManualMode) {
@@ -167,8 +213,7 @@ public class SkillInterpreter {
     // ── Safe fallback: an invalid skill table forces safe-idle (everything off/hold). ──
     if (!skills.isValid()) {
       runSafeIdle(turretRot, yawDeg, omega);
-      scoringStatus = AxisStatus.FAIL;
-      activeScoringSkill = "safe-idle";
+      failScoring("safe-idle", "invalid skill table");
       return;
     }
 
@@ -176,12 +221,10 @@ public class SkillInterpreter {
     SkillSpec skill = skills.get(skillName).filter(SkillSpec::isScoring).orElse(null);
     if (skill == null) {
       runSafeIdle(turretRot, yawDeg, omega);
-      scoringStatus = AxisStatus.FAIL;
-      activeScoringSkill = "safe-idle";
+      failScoring("safe-idle", "unknown scoring skill '" + skillName + "'");
       return;
     }
     activeScoringSkill = skillName;
-    scoringStatus = "idle".equals(skillName) ? AxisStatus.OK : AxisStatus.RUNNING;
 
     // ── Sequence one transition, then execute the phase (legacy sampleConditions + Transitions +
     //    onStateEntry + applyStateBehavior). ──
@@ -202,6 +245,12 @@ public class SkillInterpreter {
       phase = next;
     }
     applyPhaseBehavior(inputs, turretRot, yawDeg, omega, speeds);
+
+    // Status instrumentation only (after the phase + mechanism commands are settled this loop).
+    manageTimeout(skillName);
+    updateScoringStatus(skillName);
+    scoringDone =
+        skills.get(skillName).map(s -> DonePredicates.evaluate(s.done(), phase)).orElse(false);
   }
 
   private static Goal goalOf(String skill) {
@@ -256,10 +305,11 @@ public class SkillInterpreter {
             || phase == Phase.PASS_SPINNING_UP
             || phase == Phase.PASSING;
     if (firing && staleness.isStale()) {
+      // Effect unchanged: back the shooter + feed off rather than fire blind. The FAILED status is
+      // reported by updateScoringStatus (which re-derives this same firing+stale condition).
       mechanisms.stop(SHOOTER);
       IndexerFeed.rest(mechanisms, false, intake.isOut());
       hoodHold.update(HoodHold.Mode.UNCOMMANDED, mechanisms.read(HOOD).positionRot());
-      scoringStatus = AxisStatus.FAIL;
       return;
     }
 
@@ -380,10 +430,125 @@ public class SkillInterpreter {
     phase = Phase.IDLE;
   }
 
+  // ── Status instrumentation (pure; no mechanism or sequencer side effects) ──
+
+  private static boolean isFiringSkill(String skill) {
+    return "shoot".equals(skill) || "passShoot".equals(skill);
+  }
+
+  private double timeoutOf(String skill) {
+    return skills.get(skill).map(SkillSpec::timeoutSeconds).orElse(Double.POSITIVE_INFINITY);
+  }
+
+  private void resetTimeout() {
+    timeoutTrackedSkill = "";
+    timeoutTimer.stop();
+    timeoutTimer.reset();
+  }
+
+  /**
+   * Track wall-clock time the firing skill spends in a non-productive (spin-up/aim) phase. Started
+   * fresh when such a phase is first entered for a skill, left running while it persists, and reset
+   * the moment feeding begins, the skill changes, or the phase leaves the non-productive set. This
+   * sets no mechanism command and is invisible to the sequencer.
+   */
+  private void manageTimeout(String skill) {
+    boolean nonProductive =
+        isFiringSkill(skill)
+            && (phase == Phase.SPINNING_UP
+                || phase == Phase.PASS_SPINNING_UP
+                || phase == Phase.PASS_AIMING);
+    if (nonProductive && skill.equals(timeoutTrackedSkill)) {
+      return; // already counting for this skill
+    }
+    if (nonProductive) {
+      timeoutTrackedSkill = skill;
+      timeoutTimer.restart();
+    } else {
+      resetTimeout();
+    }
+  }
+
+  private boolean timeoutExceeded(String skill) {
+    double t = timeoutOf(skill);
+    return Double.isFinite(t) && skill.equals(timeoutTrackedSkill) && timeoutTimer.hasElapsed(t);
+  }
+
+  private void failScoring(String activeSkill, String reason) {
+    activeScoringSkill = activeSkill;
+    scoringStatus = ScoringStatus.FAILED;
+    scoringReason = reason;
+    scoringDone = false;
+    resetTimeout();
+  }
+
+  // Map the current phase + skill to the richer scoring status (see ScoringStatus javadoc).
+  private void updateScoringStatus(String skill) {
+    boolean firingPhase =
+        phase == Phase.SPINNING_UP
+            || phase == Phase.SHOOTING
+            || phase == Phase.PASS_SPINNING_UP
+            || phase == Phase.PASSING;
+    if (firingPhase && staleness.isStale()) {
+      scoringStatus = ScoringStatus.FAILED;
+      scoringReason = "perception stale — firing aborted";
+      return;
+    }
+    if ("idle".equals(skill)) {
+      scoringStatus = ScoringStatus.IDLE;
+      scoringReason = "idle";
+      return;
+    }
+    if (isFiringSkill(skill)) {
+      if (phase == Phase.SHOOTING || phase == Phase.PASSING) {
+        scoringStatus = ScoringStatus.SUCCEEDED;
+        scoringReason = "feeding (feed-gate-open proxy; no game-piece sensor)";
+        return;
+      }
+      if (timeoutExceeded(skill)) {
+        scoringStatus = ScoringStatus.BLOCKED;
+        scoringReason = "no feed within " + timeoutOf(skill) + "s";
+        return;
+      }
+      scoringStatus = ScoringStatus.RUNNING;
+      scoringReason = "spinning up / aiming";
+      return;
+    }
+    // Held non-firing skill (passAim / unjam): active, never times out.
+    scoringStatus = ScoringStatus.RUNNING;
+    scoringReason = skill + " active";
+  }
+
   // ── Accessors for the SkillServer status + tests ──
 
-  public AxisStatus scoringStatus() {
+  public ScoringStatus scoringStatus() {
     return scoringStatus;
+  }
+
+  /** Human-readable reason behind the current scoring status (for the dashboard / brain logs). */
+  public String scoringReason() {
+    return scoringReason;
+  }
+
+  /**
+   * The active skill's "done" predicate result (advisory only — held skills are NOT auto-canceled).
+   * See {@link DonePredicates}; "feeding" is the feed-gate-open proxy for a shot (no ball sensor).
+   */
+  public boolean isDone() {
+    return scoringDone;
+  }
+
+  /**
+   * Seconds remaining before the active firing skill is reported BLOCKED, or {@link
+   * Double#POSITIVE_INFINITY} when no timeout is being tracked (not firing / no configured
+   * timeout).
+   */
+  public double timeoutRemainingSeconds() {
+    if (timeoutTrackedSkill.isEmpty()) {
+      return Double.POSITIVE_INFINITY;
+    }
+    double t = timeoutOf(timeoutTrackedSkill);
+    return Double.isFinite(t) ? Math.max(0.0, t - timeoutTimer.get()) : Double.POSITIVE_INFINITY;
   }
 
   public AxisStatus intakeStatus() {

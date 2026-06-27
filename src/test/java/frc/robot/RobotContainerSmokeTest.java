@@ -8,7 +8,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.runtime.SkillInterpreter.AxisStatus;
+import frc.robot.runtime.SkillInterpreter.ScoringStatus;
 import frc.robot.runtime.reflex.ScoringSequencer.Phase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -66,7 +66,7 @@ class RobotContainerSmokeTest {
     container.getRuntime().onEnable();
     runScheduler(25);
     assertEquals(Phase.IDLE, container.getRuntime().interpreter().phase());
-    assertEquals(AxisStatus.OK, container.getRuntime().interpreter().scoringStatus());
+    assertEquals(ScoringStatus.IDLE, container.getRuntime().interpreter().scoringStatus());
   }
 
   @Test

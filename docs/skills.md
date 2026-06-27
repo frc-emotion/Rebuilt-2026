@@ -62,6 +62,24 @@ arithmetic or control flow. `aimHub`/`aimPassing` are named setpoint sources in 
 `shotCalc`/`passing`/`unjamMax` are named scalar sources in `Setpoints`. Same safe-fallback contract
 as the mechanism layer (an invalid table forces a hardcoded safe-idle).
 
+Each scoring skill also carries a `done` predicate (resolved by `DonePredicates` — `never` or
+`feeding`; `shoot`/`passShoot` use `feeding`) and an OPTIONAL `timeoutSeconds` (`shoot`/`passShoot` =
+3.0). Both are **pure status instrumentation** for the orchestration brain: `done` is advisory and
+NEVER auto-cancels a held skill, and `timeoutSeconds` only drives the `BLOCKED` status below — neither
+touches a sequencer transition or a mechanism command.
+
+## Scoring status (instrumentation seam)
+
+`SkillInterpreter.scoringStatus()` maps the live phase + skill to the richer `ScoringStatus` the brain
+reads: `IDLE` (no request / manual), `RUNNING` (a firing skill spinning up/aiming within its timeout,
+or a held unjam/passAim), `SUCCEEDED` (reached the productive feeding phase SHOOTING/PASSING),
+`FAILED` (invalid table / unknown skill / perception stale while firing), `BLOCKED` (a firing skill
+exceeded its `timeoutSeconds` while still not feeding). **No game-piece sensor exists** (the indexer
+has no ball count), so `SUCCEEDED` / the `feeding` done predicate mean "the feed gate opened and the
+robot is feeding" — the best proxy for a shot; they cannot confirm a ball launched. The BLOCKED
+timeout is a wall-clock `Timer` started when a firing skill enters a non-productive phase and reset on
+feed / skill change / enable / manual.
+
 ## Scoring-phase sequencer (the tested transition logic)
 
 The interpreter is stateless except for enumerated reflex latches. The one that gives the scoring
@@ -149,8 +167,9 @@ The seam a future coprocessor drives the robot over. Pure transport — it never
 
 - **`/skills/request/`** (inbound): `skill` (string), `manualMode`, `manualFeed`, `intakeDeploy`
   (bools), `remoteActive` (bool — when false, the local driver's request is used).
-- **`/skills/status/`** (outbound): `scoring`, `intake` (`ok`|`running`|`fail`), `activeSkill`,
-  `phase`.
+- **`/skills/status/`** (outbound): `scoring` (`idle`|`running`|`succeeded`|`failed`|`blocked`),
+  `intake` (`ok`|`running`|`fail`), `activeSkill`, `phase`, `reason` (string), `blocked` (bool),
+  `done` (bool — the skill's done predicate, advisory), `timeoutRemaining` (seconds).
 - **`/state/`** (outbound): `aimed`, `distanceToHub`, `turretTargetRot`, `hasPose` (pose estimation
   is gated off locally — `VisionConstants.kTransformsMeasured = false`).
 
