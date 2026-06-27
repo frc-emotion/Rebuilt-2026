@@ -83,6 +83,24 @@ deploy-path anchors so the sim drives between two distinct points. Dwell/timeout
 the pathfinding constraints (clamped to the PathPlanner 5.44 m/s, not TunerConstants' 5.85) live
 here too. When the real field is known, only this file changes.
 
+## Watching / debugging it in sim
+- **Headless trace:** `AutonomySimObservationTest` runs the WHOLE real autonomy (real `Drive` + real
+  `PathPlannerNavigator` pathfinding + the swerve sim advanced via `updateSimState`, DS set to
+  autonomous+enabled) and dumps a per-loop trace (pose, BT phase, interpreter phase + scoring status,
+  resolved skill) to `build/autonomy-obs.txt`. It's observation-only (no firing assertion — real
+  pathfinding + a background AD* thread is timing/order dependent and would flake CI; the
+  deterministic "collects and fires" guarantee is `MatchTreeTest` with a fake navigator). Run it and
+  read the file to see exactly what the robot does.
+- **Alliance flip gotcha (matters in the GUI sim too):** the navigator uses
+  `pathfindToPoseFlipped`, which mirrors the blue-authored poses for the RED alliance. **Set the sim
+  alliance deliberately** — if it's left on Red, every target mirrors to the red side. The autonomy
+  is correct for either alliance; it just has to know which one.
+- A typical good trace: `COLLECT/INTAKING` near the collection region → `SHOOT` driving to the shoot
+  pose → `SPINNING_UP/RUNNING` → `SHOOTING/SUCCEEDED` (feed gate open, it fires) → `CLEARING` → back
+  to `COLLECT`, repeating. If it never leaves `idle`, the robot isn't reaching the shoot region
+  (check pose vs `kShootPose`); if it spins but `scoring` stays `RUNNING`/`BLOCKED`, the camera isn't
+  seeing a hub tag (aiming never locks — the W12 gate correctly holds fire).
+
 ## Files
 - `bt/` — the tiny framework: `Status`, `Node`, `Fallback`, `Sequence`, `Leaf`.
 - `Navigator` + `PathPlannerNavigator` + `DriveToNode` — movement.

@@ -136,31 +136,42 @@ public final class MatchTree {
     return new Fallback(shootBranch(), collectBranch());
   }
 
-  // SHOOT: only when the cycle latch is in the shoot phase. Drive to the shoot pose (idle while
-  // traveling), then hold the shoot skill. We can score from anywhere on our side, so this is just
-  // "park at a safe pose and shoot" — no aiming on the move (the turret auto-aims via the skill).
+  // SHOOT: only when the cycle latch is in the shoot phase. Drive toward the shoot pose; once in
+  // the
+  // shoot region, PARK and run the shoot skill (we can score from anywhere on our side, so the
+  // trigger is "in the region" — same loose tolerance the dwell uses — not a pinpoint pose, and the
+  // turret auto-aims via the skill: no aim-on-the-move). The flywheel spins / feed gate engages as
+  // soon as we're parked in range, robust to not hitting an exact pose.
   private Node shootBranch() {
     return new Sequence(
         Leaf.condition(cycle::inShootPhase),
-        travelTo(() -> AutonomyConstants.kShootPose, false),
         Leaf.action(
             () -> {
-              requestSkill.accept("shoot");
+              // Drive to AND hold the shoot pose (the navigator parks there); request the shoot
+              // skill once we're in the region. Holding keeps us inside the region so the skill
+              // stays stably "shoot" (no coast-out / shoot-clear thrash).
+              navigator.goTo(AutonomyConstants.kShootPose);
+              requestSkill.accept(inRegion(AutonomyConstants.kShootPose) ? "shoot" : "idle");
               requestIntakeDeploy.accept(false);
-              return Status.RUNNING; // hold shooting; the cycle decides when we leave
+              return Status.RUNNING; // hold; the cycle decides when we leave
             }));
   }
 
-  // COLLECT: drive to the (sweeping) collection region with the intake out, then dwell/sweep there.
+  // COLLECT: drive to / sweep the collection region with the intake out (always RUNNING — the
+  // cycle's arrival-based dwell decides when we leave).
   private Node collectBranch() {
-    return new Sequence(
-        travelTo(this::sweepTarget, true),
-        Leaf.action(
-            () -> {
-              requestSkill.accept("idle");
-              requestIntakeDeploy.accept(true);
-              return Status.RUNNING; // hold collecting; the cycle's dwell decides when we leave
-            }));
+    return Leaf.action(
+        () -> {
+          navigator.goTo(sweepTarget());
+          requestSkill.accept("idle");
+          requestIntakeDeploy.accept(true);
+          return Status.RUNNING;
+        });
+  }
+
+  private boolean inRegion(Pose2d pose) {
+    return navigator.pose().getTranslation().getDistance(pose.getTranslation())
+        < AutonomyConstants.kDwellRegionToleranceMeters;
   }
 
   // Travel = set the desired skill/intake for the trip, then drive there. Returns SUCCESS only once

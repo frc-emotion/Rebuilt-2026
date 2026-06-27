@@ -14,7 +14,6 @@ import java.util.function.Supplier;
 public final class DriveToNode implements Node {
   private final Navigator navigator;
   private final Supplier<Pose2d> target;
-  private Pose2d committed;
 
   public DriveToNode(Navigator navigator, Supplier<Pose2d> target) {
     this.navigator = navigator;
@@ -23,16 +22,9 @@ public final class DriveToNode implements Node {
 
   @Override
   public Status tick() {
-    Pose2d desired = target.get();
-    if (committed == null || !committed.equals(desired)) {
-      navigator.goTo(desired);
-      committed = desired;
-    }
+    // The navigator dedupes a repeated target, so it is safe to (re)issue every tick — no stale
+    // per-node cache to get out of sync across cycles.
+    navigator.goTo(target.get());
     return navigator.atTarget() ? Status.SUCCESS : Status.RUNNING;
-  }
-
-  @Override
-  public void reset() {
-    committed = null;
   }
 }

@@ -32,6 +32,16 @@ public final class PathPlannerNavigator implements Navigator {
 
   @Override
   public void goTo(Pose2d target) {
+    // Idempotent: re-issuing the SAME target every loop must NOT restart pathfinding (that would
+    // thrash the planner). Only (re)schedule when the target changes or the route finished/was
+    // cancelled. This also removes any need for callers to cache a "committed" target.
+    boolean sameTarget = target.equals(this.target);
+    boolean stillRunning = active != null && active.isScheduled();
+    if (sameTarget && (stillRunning || atTarget())) {
+      // En route to, or already parked at, this target — don't respawn the planner. (Only re-drive
+      // if the robot has DRIFTED beyond tolerance after the route finished.)
+      return;
+    }
     this.target = target;
     if (active != null) {
       active.cancel();
