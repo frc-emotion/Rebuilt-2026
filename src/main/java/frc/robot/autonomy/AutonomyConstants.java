@@ -16,8 +16,11 @@ public final class AutonomyConstants {
   private AutonomyConstants() {}
 
   // ── Field poses (PLACEHOLDER — blue origin, meters) ──
-  /** A safe pose on our side to shoot from (we can score from anywhere on our side). */
-  public static final Pose2d kShootPose = new Pose2d(3.58, 0.75, Rotation2d.fromDegrees(0));
+  // Blue hub center is (4.626, 4.035) with hub tags 18-27 around it (VisionConstants). The shoot
+  // pose sits ~3 m in front of the hub FACING it, so the turret camera can see a hub tag and the
+  // feed gate can open — without line-of-sight to a tag the shot deliberately never fires (W12).
+  /** A safe pose on our side to shoot from, facing the blue hub. */
+  public static final Pose2d kShootPose = new Pose2d(1.65, 4.035, Rotation2d.fromDegrees(0));
 
   /** The collection region (near the Depot anchor in the current paths). */
   public static final Pose2d kCollectionPose = new Pose2d(0.72, 5.9, Rotation2d.fromDegrees(0));
@@ -34,18 +37,31 @@ public final class AutonomyConstants {
       new PathConstraints(
           3.0, 3.0, Units.degreesToRadians(540.0), Units.degreesToRadians(720.0), 12.0);
 
-  /** How close (meters) counts as "arrived" at a pose. */
+  /** How close (meters) counts as "arrived" at a pose (the navigator's path tolerance). */
   public static final double kArrivalToleranceMeters = 0.15;
 
-  // ── Cycle dwell + debounce (anti-thrash) ──
-  /** Minimum time gathering at the collection region before going to shoot (the dwell). */
+  /**
+   * How close (meters) to a phase's nominal pose counts as "parked in the region" for the dwell —
+   * loose enough that the collection sweep oscillating within the region still counts as parked.
+   */
+  public static final double kDwellRegionToleranceMeters = 0.6;
+
+  // ── Cycle dwell + debounce (anti-thrash). Dwells are ARRIVAL-based — they count only while the
+  //    robot is parked at the phase's pose, so travel time never eats the window (see MatchCycle).
+  // ──
+  /** Minimum time PARKED at the collection region before going to shoot (the gathering dwell). */
   public static final double kCollectSeconds = 2.0;
 
-  /** Minimum time committed to the shoot phase once there (prevents instant bail). */
+  /** Minimum time PARKED at the shoot pose before a confirmed shot may end the phase. */
   public static final double kMinShootSeconds = 1.0;
 
-  /** Hard cap on the shoot phase so a never-confirming shot can't hang the cycle. */
-  public static final double kShootTimeoutSeconds = 3.0;
+  /** Max time PARKED at the shoot pose firing before giving up this shot and going to collect. */
+  public static final double kShootMaxSeconds = 4.0;
+
+  /**
+   * Per-phase HARD cap (even if the pose can never be reached) — guarantees the cycle progresses.
+   */
+  public static final double kPhaseHardTimeoutSeconds = 12.0;
 
   /** Half-period of the collection sweep oscillation. */
   public static final double kSweepHalfPeriodSeconds = 0.8;

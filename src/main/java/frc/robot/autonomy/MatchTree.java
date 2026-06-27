@@ -67,7 +67,16 @@ public final class MatchTree {
 
   /** Tick the whole tree once. Call every robot loop. */
   public Status tick() {
-    cycle.update(possession.isFull(), scoringStatus.get() == ScoringStatus.SUCCEEDED);
+    // "Parked in the region" = within a loose tolerance of the current phase's NOMINAL pose (not
+    // the
+    // exact, possibly-sweeping navigator target). The dwell only accrues while parked, so travel
+    // time never eats the shoot/collect window and the sweep oscillation doesn't reset the dwell.
+    Pose2d phasePose =
+        cycle.inShootPhase() ? AutonomyConstants.kShootPose : AutonomyConstants.kCollectionPose;
+    boolean parked =
+        navigator.pose().getTranslation().getDistance(phasePose.getTranslation())
+            < AutonomyConstants.kDwellRegionToleranceMeters;
+    cycle.update(possession.isFull(), parked, scoringStatus.get() == ScoringStatus.SUCCEEDED);
     return root.tick();
   }
 
