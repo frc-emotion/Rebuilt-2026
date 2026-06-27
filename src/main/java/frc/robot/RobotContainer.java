@@ -13,6 +13,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import frc.robot.autonomy.AutonomyCommand;
+import frc.robot.autonomy.AutonomyConstants;
+import frc.robot.autonomy.MatchTree;
+import frc.robot.autonomy.PathPlannerNavigator;
+import frc.robot.autonomy.PossessionProvider;
 import frc.robot.runtime.ChassisStateProvider;
 import frc.robot.runtime.Mechanisms;
 import frc.robot.runtime.RuntimeSubsystem;
@@ -115,6 +120,25 @@ public class RobotContainer {
     drive.configureAutoBuilder();
     localDriver.registerNamedCommands();
     autoChooser = AutoBuilder.buildAutoChooser();
+
+    // v1 match autonomy: a behavior tree that plays the whole match on its own (collect↔shoot)
+    // using
+    // the existing skills + PathPlanner pathfinding. Selectable from the auto chooser. See
+    // docs/autonomy.md. Opponent/possession/learned-nav-cost are empty seams (no sensors yet).
+    PathPlannerNavigator navigator =
+        new PathPlannerNavigator(
+            drive, AutonomyConstants.kPathConstraints, AutonomyConstants.kArrivalToleranceMeters);
+    MatchTree matchTree =
+        new MatchTree(
+            navigator,
+            skillServer::invoke,
+            skillServer::setIntakeDeploy,
+            () -> runtime.interpreter().scoringStatus(),
+            PossessionProvider.UNKNOWN,
+            () -> false, // human-takeover gate stub (no takeover signal yet)
+            DriverStation::getMatchTime);
+    autoChooser.addOption("BT Match (autonomy)", new AutonomyCommand(matchTree));
+
     SmartDashboard.putData("Auto Chooser", autoChooser);
 
     drive.registerTelemetry(telemetry::telemeterize);

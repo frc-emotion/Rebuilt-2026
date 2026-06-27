@@ -6,6 +6,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.PathConstraints;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -92,6 +93,17 @@ public class Drive {
   /** The subsystem handle for default-command installation and PathPlanner requirements. */
   public CommandSwerveDrivetrain subsystem() {
     return drivetrain;
+  }
+
+  /**
+   * On-the-fly pathfinding to a field pose (the autonomy seam — see docs/live-steering.md). Returns
+   * a PathPlanner command that computes a fresh navgrid-aware route from the current pose to {@code
+   * target} and follows it; it requires the drivetrain, so scheduling it preempts the default
+   * teleop command. The target is blue-origin; {@code pathfindToPoseFlipped} mirrors it for the red
+   * alliance. Requires {@link #configureAutoBuilder()} to have run.
+   */
+  public Command driveToPose(Pose2d target, PathConstraints constraints) {
+    return AutoBuilder.pathfindToPoseFlipped(target, constraints);
   }
 
   /**
