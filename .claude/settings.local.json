@@ -29,7 +29,8 @@
       "Read(//Users/aaranchahal/wpilib/2026/**)",
       "Read(//Users/aaranchahal/wpilib/**)",
       "Read(//Applications/**)",
-      "Bash(mdfind -name \"WPILib VS Code 2026\")"
+      "Bash(mdfind -name \"WPILib VS Code 2026\")",
+      "Bash(./gradlew test *)"
     ]
   }
 }

@@ -4,16 +4,17 @@ import edu.wpi.first.math.geometry.Translation2d;
 import java.util.List;
 
 /**
- * SEAM (empty today): dynamic field obstacles — primarily other robots — for the navigator to route
- * around. This version has NO opponent perception (single turret AprilTag camera; no depth/object
- * detection), so {@link #NONE} returns an empty list and {@link PathPlannerNavigator} only avoids
- * the static navgrid. When opponent detection lands (problems.md #4), feed live obstacle positions
- * here and have the navigator inject them into PathPlanner's dynamic obstacle set; the behavior
- * tree does not change.
+ * SEAM: dynamic field obstacles — primarily other robots — for the navigator to route around. The
+ * centers returned here are pushed into PathPlanner's {@code setDynamicObstacles} each loop by
+ * {@link PathPlannerNavigator} (inflated to keep-out boxes), so anything listed makes the planner
+ * path around it. This robot has no opponent perception yet (single turret AprilTag camera); {@link
+ * #NONE} is the production default, and {@link SimOpponentProvider} is a dashboard-driven stand-in
+ * for proving avoidance in sim. When real detection lands (problems.md #4) it implements this
+ * interface and nothing else changes — not the navigator, not the behavior tree.
  */
 public interface ObstacleProvider {
 
-  /** Field positions to avoid this loop. Empty until opponent perception exists. */
+  /** Detected robot CENTER positions to avoid this loop (blue-origin meters). Empty = nothing. */
   List<Translation2d> dynamicObstacles();
 
   /** The no-op default: nothing to avoid. */

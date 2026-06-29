@@ -18,6 +18,9 @@ import frc.robot.autonomy.AutonomyConstants;
 import frc.robot.autonomy.MatchTree;
 import frc.robot.autonomy.PathPlannerNavigator;
 import frc.robot.autonomy.PossessionProvider;
+import frc.robot.autonomy.ShiftSchedule;
+import frc.robot.autonomy.SimOpponentProvider;
+import frc.robot.autonomy.StrategyConfig;
 import frc.robot.runtime.ChassisStateProvider;
 import frc.robot.runtime.Mechanisms;
 import frc.robot.runtime.RuntimeSubsystem;
@@ -121,13 +124,32 @@ public class RobotContainer {
     localDriver.registerNamedCommands();
     autoChooser = AutoBuilder.buildAutoChooser();
 
-    // v1 match autonomy: a behavior tree that plays the whole match on its own (collect↔shoot)
-    // using
-    // the existing skills + PathPlanner pathfinding. Selectable from the auto chooser. See
-    // docs/autonomy.md. Opponent/possession/learned-nav-cost are empty seams (no sensors yet).
+    // Shift-aware teleop autonomy: a behavior tree that plays the whole TELEOP on its own, driven
+    // by
+    // the editable strategy.json + the 2026 SHIFT clock (see docs/strategy.md). AUTO stays on the
+    // PathPlanner routine picked above; this brain takes over teleop ONLY when the dashboard toggle
+    // "TeleopAutonomy" is on, so manual driving is always available (non-negotiable #5). Targets
+    // are
+    // clamped legal by LegalRegion; opponent/possession/ball-detection are empty seams (no sensors
+    // yet).
+    StrategyConfig strategy =
+        StrategyConfig.load(Filesystem.getDeployDirectory().toPath().resolve("strategy.json"));
+
+    // Sim/debug mode override: a plain editable string next to TeleopAutonomy so you can FORCE a
+    // mode
+    // without running a practice match + game-data string. Valid values: MATCH (default, real shift
+    // clock), ACTIVE, INACTIVE, ENDGAME (see ShiftSchedule.parseModeOverride).
+    SmartDashboard.putString("AutonomyModeOverride", "MATCH");
+
+    // Dynamic obstacle avoidance: a sim opponent you can place/move from the dashboard (the seam
+    // the
+    // real robot detector will replace). The navigator pushes it into PathPlanner each loop.
     PathPlannerNavigator navigator =
         new PathPlannerNavigator(
-            drive, AutonomyConstants.kPathConstraints, AutonomyConstants.kArrivalToleranceMeters);
+            drive,
+            AutonomyConstants.kPathConstraints,
+            AutonomyConstants.kArrivalToleranceMeters,
+            new SimOpponentProvider());
     MatchTree matchTree =
         new MatchTree(
             navigator,
@@ -136,10 +158,39 @@ public class RobotContainer {
             () -> runtime.interpreter().scoringStatus(),
             PossessionProvider.UNKNOWN,
             () -> false, // human-takeover gate stub (no takeover signal yet)
-            DriverStation::getMatchTime);
-    autoChooser.addOption("BT Match (autonomy)", new AutonomyCommand(matchTree));
+            // Teleop clock remaining (s); <0 outside teleop so the shift schedule reads PRE_MATCH.
+            () -> DriverStation.isTeleopEnabled() ? DriverStation.getMatchTime() : -1.0,
+            // FMS auto-winner game data → which hub is inactive in SHIFT 1 (empty => assume
+            // active).
+            () ->
+                ShiftSchedule.parseOurHubInactiveFirst(
+                    DriverStation.getGameSpecificMessage(),
+                    DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue)),
+            strategy,
+            () ->
+                ShiftSchedule.parseModeOverride(
+                    SmartDashboard.getString("AutonomyModeOverride", "MATCH")));
 
+    // In SIM the robot boots at the (0,0) corner — a blocked navgrid cell, so pathfinding can't
+    // start and the robot never moves (and AD* thrashes, causing loop overruns). Seed a legal
+    // start.
+    Runnable seedSimPose =
+        () -> {
+          if (RobotBase.isSimulation() && drive.getPose().getTranslation().getNorm() < 0.5) {
+            drive.resetPose(AutonomyConstants.kSimStartPose);
+          }
+        };
+
+    // EASIEST sim path: run the shift brain straight from the auto chooser (one Autonomous+Enable,
+    // no teleop toggle dance). Use AutonomyModeOverride to force a mode while watching.
+    autoChooser.addOption("Shift Brain (autonomy)", new AutonomyCommand(matchTree, seedSimPose));
     SmartDashboard.putData("Auto Chooser", autoChooser);
+
+    // Real-match path: take over TELEOP when the dashboard toggle is on (manual driving otherwise).
+    SmartDashboard.putBoolean("TeleopAutonomy", false);
+    RobotModeTriggers.teleop()
+        .and(() -> SmartDashboard.getBoolean("TeleopAutonomy", false))
+        .whileTrue(new AutonomyCommand(matchTree, seedSimPose));
 
     drive.registerTelemetry(telemetry::telemeterize);
   }

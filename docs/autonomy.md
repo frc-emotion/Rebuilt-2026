@@ -1,6 +1,13 @@
 # v1 Match Autonomy (behavior tree)
 
-A behavior tree that plays the whole match on its own with what exists **today** — the skills from
+> **SUPERSEDED for the decision layer:** the collect↔shoot tree below was evolved into a
+> **shift-aware, strategy-driven** brain that plays the whole **teleop** from an editable
+> `strategy.json` keyed on the 2026 SHIFT clock. Read **`docs/strategy.md`** first — it is the current
+> source of truth for `MatchTree`, the modes, the strategy file, `ShiftSchedule`, `LegalRegion`, and
+> `FieldGeometry`. This file still documents the unchanged movement plumbing (the `Navigator` seam,
+> `pathfindToPose`, the dwell latch, the headless harness) — all of which the strategy layer reuses.
+
+A behavior tree that plays the match on its own with what exists **today** — the skills from
 the skill-server migration + PathPlanner runtime pathfinding. It decides **when** and **where**, and
 reuses the existing skills for **how**; it does not re-implement shooting/intaking. Lives in
 `frc.robot.autonomy`.

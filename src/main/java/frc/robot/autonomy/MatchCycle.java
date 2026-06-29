@@ -12,15 +12,15 @@ import edu.wpi.first.wpilibj.Timer;
  * <ul>
  *   <li>COLLECT → SHOOT once parked at the collection region for {@link
  *       AutonomyConstants#kCollectSeconds} (or positively full).
- *   <li>SHOOT → COLLECT once parked at the shoot pose and either firing for {@link
- *       AutonomyConstants#kMinShootSeconds} with the shot confirmed, or {@link
- *       AutonomyConstants#kShootMaxSeconds} have passed at the pose (give up this shot).
+ *   <li>SHOOT → COLLECT once the feed gate has been OPEN (firing) for {@link
+ *       AutonomyConstants#kShootEmptySeconds} — long enough to empty the hopper (no ball sensor, so
+ *       we drain by time). Spin-up/aim time before the gate opens does not count toward the empty.
  * </ul>
  *
  * <p>A per-phase HARD cap ({@link AutonomyConstants#kPhaseHardTimeoutSeconds}) guarantees forward
- * progress even if a pose can never be reached (blocked), so the cycle can never hang. "Full" comes
- * from {@link PossessionProvider} (always false — no ball sensor); "shot confirmed" is the scoring
- * status reaching SUCCEEDED (feed gate open).
+ * progress even if a pose can never be reached (blocked) or we can never aim, so the cycle can
+ * never hang. "Full" comes from {@link PossessionProvider} (always false — no ball sensor);
+ * "feeding" is the scoring status reaching SUCCEEDED (feed gate open).
  */
 public final class MatchCycle {
 
@@ -32,6 +32,7 @@ public final class MatchCycle {
   private Phase phase = Phase.COLLECT;
   private final Timer phaseTimer = new Timer(); // time since entering the phase (hard cap)
   private final Timer parkedTimer = new Timer(); // time parked at the phase's pose (the dwell)
+  private final Timer feedingTimer = new Timer(); // time the feed gate has been open (the empty)
 
   public MatchCycle() {
     restartPhase();
@@ -43,15 +44,28 @@ public final class MatchCycle {
   }
 
   /**
+   * Jump straight into the SHOOT phase. Used when our HUB re-activates after an off-shift harvest —
+   * the robot has already staged home loaded, so it should fire immediately rather than burn the
+   * collect dwell again.
+   */
+  public void startShootPhase() {
+    phase = Phase.SHOOT;
+    restartPhase();
+  }
+
+  /**
    * Advance the latch one loop.
    *
    * @param full possession says we are holding (false today — no sensor)
    * @param atTarget the robot is parked at the current phase's pose
-   * @param shootConfirmed the scoring status has reached SUCCEEDED (feed gate open)
+   * @param feeding the feed gate is open (scoring SUCCEEDED) — i.e. balls are leaving the hopper
    */
-  public void update(boolean full, boolean atTarget, boolean shootConfirmed) {
+  public void update(boolean full, boolean atTarget, boolean feeding) {
     if (!atTarget) {
       parkedTimer.restart(); // dwell only accrues while actually parked
+    }
+    if (!feeding) {
+      feedingTimer.restart(); // the empty only accrues while the gate is actually open
     }
     boolean hardCap = phaseTimer.hasElapsed(AutonomyConstants.kPhaseHardTimeoutSeconds);
 
@@ -64,11 +78,8 @@ public final class MatchCycle {
         }
       }
       case SHOOT -> {
-        boolean minCommitMet =
-            atTarget && parkedTimer.hasElapsed(AutonomyConstants.kMinShootSeconds);
-        boolean shotWindowDone =
-            atTarget && parkedTimer.hasElapsed(AutonomyConstants.kShootMaxSeconds);
-        if ((minCommitMet && shootConfirmed) || shotWindowDone || hardCap) {
+        boolean emptied = feedingTimer.hasElapsed(AutonomyConstants.kShootEmptySeconds);
+        if (emptied || hardCap) {
           phase = Phase.COLLECT;
           restartPhase();
         }
@@ -79,6 +90,7 @@ public final class MatchCycle {
   private void restartPhase() {
     phaseTimer.restart();
     parkedTimer.restart();
+    feedingTimer.restart();
   }
 
   public boolean inShootPhase() {

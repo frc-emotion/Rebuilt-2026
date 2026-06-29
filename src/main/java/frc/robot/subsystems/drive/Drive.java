@@ -77,6 +77,11 @@ public class Drive {
     return drivetrain.getState().Pose;
   }
 
+  /** Reset the pose estimate (used to seed a sim start pose; PathPlanner also resets here). */
+  public void resetPose(Pose2d pose) {
+    drivetrain.resetPose(pose);
+  }
+
   public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
     return drivetrain.samplePoseAt(timestampSeconds);
   }

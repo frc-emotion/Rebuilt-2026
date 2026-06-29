@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "_comment": "THE EDITABLE MATCH STRATEGY (teleop, shift-aware). This is the one file to change to re-task the autonomous robot per match / per alliance partner — no code change. Coordinates are BLUE-ORIGIN meters (x toward red, y toward the far sideline); the navigator alliance-flips them and LegalRegion clamps every target into legal space, so you cannot author a coordinate that drives through the hub/tower/trench or out of our zone. 'locations' are named waypoints; 'plans' assign behavior + a route of those names to each match mode. Modes come from ShiftSchedule: OUR_HUB_ACTIVE (transition + our active shifts: shoot+cycle on our side), OUR_HUB_INACTIVE (opponent's shift: harvest deep in the neutral zone, then pre-stage so we arrive home as our hub re-activates), ENDGAME (both hubs active: score-cycle; this robot has no climb). 'returnLeadSeconds' is how early, before our hub re-activates, the harvest plan abandons collecting and stages home. AUTO is intentionally NOT here — the 20s auto runs the PathPlanner .auto picked in the chooser. Schema-validated at load with a safe fallback (see StrategyConfig): an invalid file logs a DriverStation error and the brain degrades to a plain legal score-and-cycle.",
+  "returnLeadSeconds": 4.5,
+  "locations": {
+    "shoot_main":     {"x": 2.60, "y": 4.035, "headingDeg": 0},
+    "stage_home":     {"x": 3.30, "y": 4.035, "headingDeg": 0},
+    "harvest_center": {"x": 6.50, "y": 4.000, "headingDeg": 0},
+    "harvest_left":   {"x": 1.80, "y": 6.800, "headingDeg": 0},
+    "harvest_right":  {"x": 1.80, "y": 1.300, "headingDeg": 0}
+  },
+  "plans": {
+    "OUR_HUB_ACTIVE":   {"shootFrom": "shoot_main", "collectRoute": ["harvest_left", "harvest_right"]},
+    "OUR_HUB_INACTIVE": {"harvestRoute": ["harvest_center", "harvest_right"], "stageAt": "stage_home"},
+    "ENDGAME":          {"shootFrom": "shoot_main", "collectRoute": ["harvest_center"]}
+  }
+}

@@ -23,11 +23,13 @@ import frc.robot.runtime.SkillServer;
 import frc.robot.runtime.config.MechanismsConfig;
 import frc.robot.runtime.config.SkillTable;
 import frc.robot.runtime.perception.VisionPerception;
+import frc.robot.runtime.reflex.ScoringSequencer;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionPoseEstimator;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,12 +39,15 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
 
 /**
- * The v1 autonomy acceptance test: the behavior tree, driving the REAL skill runtime (mechanisms in
- * sim + interpreter + skill server) with a fake navigator, runs repeated collect→shoot cycles with
- * ZERO human input. Movement is faked (the navigator seam) so this tests the DECISION layer
- * deterministically without depending on full swerve-sim physics; the real PathPlannerNavigator is
- * exercised in simulateJava. Asserts ≥2 full cycles, that the shoot skill actually spins the
- * flywheel while shooting, and that the intake deploys while collecting.
+ * The shift-aware autonomy acceptance test: the strategy-driven behavior tree, driving the REAL
+ * skill runtime (mechanisms in sim + interpreter + skill server) with a fake navigator, plays each
+ * match mode with ZERO human input. Movement is faked (the navigator seam) so this tests the
+ * DECISION layer deterministically without depending on full swerve-sim physics; the real
+ * PathPlannerNavigator is exercised in {@link AutonomySimObservationTest}. Asserts: (1) in an
+ * active shift it runs ≥2 collect→shoot cycles, spins the flywheel while shooting, deploys the
+ * intake while collecting, and reaches the strategy shoot pose; (2) in an inactive shift it
+ * harvests deep into the neutral zone and never fires at the dead hub; (3) when our hub
+ * re-activates it jumps straight to the SHOOT phase (staged loaded).
  */
 class MatchTreeTest {
 
@@ -127,7 +132,13 @@ class MatchTreeTest {
   private SkillInterpreter interpreter;
   private SkillServer server;
   private FakeNavigator nav;
+  private StrategyConfig strategy;
   private MatchTree tree;
+
+  // Test-controllable match signals (the suppliers read these live).
+  private double teleopTime = 135.0; // TRANSITION (both hubs active) by default
+  private Optional<Boolean> inactiveFirst = Optional.empty();
+  private Optional<ShiftSchedule.Mode> modeOverride = Optional.empty();
 
   @BeforeAll
   static void once() {
@@ -145,6 +156,9 @@ class MatchTreeTest {
   @BeforeEach
   void build() {
     CommandScheduler.getInstance().unregisterAllSubsystems();
+    teleopTime = 135.0;
+    inactiveFirst = Optional.empty();
+    modeOverride = Optional.empty();
     FakeVisionIO visionIo = new FakeVisionIO();
     AprilTagFieldLayout layout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
     MechanismsConfig mechConfig =
@@ -177,7 +191,9 @@ class MatchTreeTest {
             SkillTable.load(Filesystem.getDeployDirectory().toPath().resolve("skills.json")),
             mechConfig);
     server = new SkillServer();
-    nav = new FakeNavigator(new Pose2d(2.0, 3.0, Rotation2d.kZero));
+    strategy =
+        StrategyConfig.load(Filesystem.getDeployDirectory().toPath().resolve("strategy.json"));
+    nav = new FakeNavigator(new Pose2d(2.6, 4.035, Rotation2d.kZero));
     tree =
         new MatchTree(
             nav,
@@ -186,48 +202,56 @@ class MatchTreeTest {
             () -> interpreter.scoringStatus(),
             PossessionProvider.UNKNOWN,
             () -> false, // no human takeover
-            () -> -1.0); // no match time -> endgame branch inert
+            () -> teleopTime,
+            () -> inactiveFirst,
+            strategy,
+            () -> modeOverride);
     interpreter.onEnable();
   }
 
+  /** One full robot loop: decide → move the fake pose → run the real runtime. */
+  private void loop() {
+    tree.tick();
+    nav.step();
+    vision.periodic();
+    mechanisms.updateInputs();
+    interpreter.periodic(server.resolve());
+    SimHooks.stepTiming(0.02);
+  }
+
   @Test
-  void runsRepeatedCollectShootCyclesWithZeroHumanInput() {
+  void activeShiftRunsCollectShootCyclesAndFires() {
+    assertTrue(strategy.isValid(), "deploy/strategy.json must load for this test");
+    teleopTime = 135.0; // TRANSITION → OUR_HUB_ACTIVE
+
+    Pose2d shootPose = strategy.pose("shoot_main").orElseThrow();
+    Pose2d collectPose = strategy.pose("harvest_left").orElseThrow();
+
     MatchCycle.Phase prev = tree.cyclePhase();
     int collectToShoot = 0;
     boolean shooterSpunWhileShooting = false;
     boolean intakeOutWhileCollecting = false;
     boolean reachedShootPose = false;
-    boolean reachedCollectPose = false;
+    boolean reachedCollect = false;
 
     for (int i = 0; i < 2500; i++) {
-      tree.tick(); // decide + request skill + command the navigator
-      nav.step(); // advance the faked pose toward the target
-      vision.periodic();
-      mechanisms.updateInputs();
-      interpreter.periodic(server.resolve()); // execute the requested skill on the real runtime
-      SimHooks.stepTiming(0.02);
-
+      loop();
       MatchCycle.Phase phase = tree.cyclePhase();
       if (prev == MatchCycle.Phase.COLLECT && phase == MatchCycle.Phase.SHOOT) {
         collectToShoot++;
       }
       prev = phase;
-
       if (phase == MatchCycle.Phase.SHOOT && mechanisms.commandedRps("shooter") > 0.0) {
         shooterSpunWhileShooting = true;
       }
       if (phase == MatchCycle.Phase.COLLECT && server.localIntakeDeploy()) {
         intakeOutWhileCollecting = true;
       }
-      if (nav.pose().getTranslation().getDistance(AutonomyConstants.kShootPose.getTranslation())
-          < 0.3) {
+      if (nav.pose().getTranslation().getDistance(shootPose.getTranslation()) < 0.3) {
         reachedShootPose = true;
       }
-      if (nav.pose()
-              .getTranslation()
-              .getDistance(AutonomyConstants.kCollectionPose.getTranslation())
-          < 0.8) {
-        reachedCollectPose = true;
+      if (nav.pose().getTranslation().getDistance(collectPose.getTranslation()) < 0.8) {
+        reachedCollect = true;
       }
     }
 
@@ -235,7 +259,98 @@ class MatchTreeTest {
         collectToShoot >= 2, "expected >=2 full collect->shoot cycles, got " + collectToShoot);
     assertTrue(shooterSpunWhileShooting, "the shoot skill must spin the flywheel while shooting");
     assertTrue(intakeOutWhileCollecting, "the intake must be deployed while collecting");
-    assertTrue(reachedShootPose, "the robot must reach the shoot pose");
-    assertTrue(reachedCollectPose, "the robot must reach the collection region");
+    assertTrue(reachedShootPose, "the robot must reach the strategy shoot pose");
+    assertTrue(reachedCollect, "the robot must reach a strategy collect waypoint");
+  }
+
+  @Test
+  void inactiveShiftHarvestsNeutralZoneAndNeverFires() {
+    inactiveFirst = Optional.of(true); // our hub inactive in SHIFT 1
+    teleopTime = 120.0; // SHIFT 1 → OUR_HUB_INACTIVE (and >returnLead from re-activation)
+
+    boolean everRequestedShoot = false;
+    boolean intakeOutWhileHarvesting = false;
+    double maxX = 0.0;
+
+    for (int i = 0; i < 1500; i++) {
+      loop();
+      String requested = server.resolve().scoringSkill();
+      if ("shoot".equals(requested) || "passShoot".equals(requested)) {
+        everRequestedShoot = true;
+      }
+      if (server.localIntakeDeploy()) {
+        intakeOutWhileHarvesting = true;
+      }
+      maxX = Math.max(maxX, nav.pose().getX());
+    }
+
+    assertTrue(maxX > 5.0, "harvest must push deep into the neutral zone, got maxX=" + maxX);
+    assertTrue(intakeOutWhileHarvesting, "the intake must be deployed while harvesting");
+    assertTrue(everRequestedShoot == false, "must never fire at an inactive hub");
+  }
+
+  @Test
+  void shootWindowFeedsForTheConfiguredEmptyDuration() {
+    teleopTime = 135.0; // OUR_HUB_ACTIVE
+
+    // Advance to the first shoot window.
+    int guard = 0;
+    while (tree.cyclePhase() != MatchCycle.Phase.SHOOT && guard++ < 3000) {
+      loop();
+    }
+    assertTrue(tree.cyclePhase() == MatchCycle.Phase.SHOOT, "must reach a shoot window");
+
+    // Count feed-gate-open (SHOOTING) loops across this whole shoot window.
+    int feedingLoops = 0;
+    int windowLoops = 0;
+    while (tree.cyclePhase() == MatchCycle.Phase.SHOOT && windowLoops++ < 1000) {
+      if (interpreter.phase() == ScoringSequencer.Phase.SHOOTING) {
+        feedingLoops++;
+      }
+      loop();
+    }
+
+    double fedSeconds = feedingLoops * 0.02;
+    double windowSeconds = windowLoops * 0.02;
+    assertTrue(
+        fedSeconds >= AutonomyConstants.kShootEmptySeconds - 0.5,
+        "must keep feeding ~"
+            + AutonomyConstants.kShootEmptySeconds
+            + "s to empty the hopper, fed "
+            + fedSeconds
+            + "s");
+    assertTrue(
+        windowSeconds <= AutonomyConstants.kPhaseHardTimeoutSeconds + 0.5,
+        "the shoot window must end (hard cap), lasted " + windowSeconds + "s");
+  }
+
+  @Test
+  void forcedInactiveOverrideHarvestsInsteadOfStaging() {
+    // Sim/debug: force INACTIVE with no real match clock (teleop time < 0). The robot must HARVEST
+    // into the neutral zone, not stage home and stop (the override has no upcoming re-activation).
+    teleopTime = -1.0;
+    modeOverride = Optional.of(ShiftSchedule.Mode.OUR_HUB_INACTIVE);
+
+    double maxX = 0.0;
+    for (int i = 0; i < 1500; i++) {
+      loop();
+      maxX = Math.max(maxX, nav.pose().getX());
+    }
+    assertTrue(maxX > 5.0, "forced INACTIVE must harvest into the neutral zone, got maxX=" + maxX);
+  }
+
+  @Test
+  void reActivationJumpsStraightToShootPhase() {
+    inactiveFirst = Optional.of(true);
+    teleopTime = 108.0; // SHIFT 1, ~3 s left → within returnLead → staging home
+    for (int i = 0; i < 200; i++) {
+      loop();
+    }
+    // Our hub re-activates at the start of SHIFT 2.
+    teleopTime = 104.0; // SHIFT 2 → OUR_HUB_ACTIVE
+    loop();
+    assertTrue(
+        tree.cyclePhase() == MatchCycle.Phase.SHOOT,
+        "re-activation after harvest must jump straight to the SHOOT phase (staged loaded)");
   }
 }

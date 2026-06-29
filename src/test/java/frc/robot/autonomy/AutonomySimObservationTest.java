@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -37,14 +38,68 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
 
 /**
- * Headless sim OBSERVATION harness (not an assertion test). It wires the REAL autonomy exactly as
- * the robot does — real Drive + the real PathPlannerNavigator (actual pathfinding) + the swerve sim
- * advanced manually via {@code updateSimState} + DriverStationSim set to autonomous+enabled — and
- * dumps a per-loop trace (pose, BT phase, interpreter phase + scoring status, resolved skill) to
- * build/autonomy-obs.txt so the actual sim behavior can be read directly. Uses a guaranteed-tag
- * fake vision to ISOLATE the decision/movement path from whether the camera happens to see a tag.
+ * Headless sim OBSERVATION harness (not an assertion test). It runs the REAL skill runtime
+ * (mechanisms in sim + interpreter + skill server + the shift-aware {@link MatchTree}) with a
+ * compressed teleop clock swept through every SHIFT, and dumps a per-loop trace + a per-shift
+ * feed-gate-open count to build/autonomy-obs.txt so the actual behavior can be read directly.
+ *
+ * <p>Movement is a DETERMINISTIC kinematic navigator (teleports toward the target) on purpose: the
+ * real PathPlanner navigator's headless swerve-sim physics is timing/thread dependent and fires
+ * inconsistently run-to-run, which is misleading in a demonstration trace — so movement is
+ * idealized here to isolate (and reliably show) the DECISION + SKILL + shooting chain. The real
+ * navigator is still constructed so the wiring is smoke-tested, and exercised for real in {@code
+ * simulateJava}. Uses a guaranteed-tag fake vision so aiming isn't gated on whether the camera sees
+ * a tag.
+ *
+ * <p>Expected trace: harvest (no fire) during our INACTIVE shifts; park at the shoot pose and fire
+ * (SHOOTING/SUCCEEDED) during our ACTIVE shifts + endgame.
  */
 class AutonomySimObservationTest {
+
+  /** Kinematic navigator: teleports the stored pose toward the commanded target (no physics). */
+  private static final class FakeNavigator implements Navigator {
+    private Pose2d pose;
+    private Pose2d target;
+
+    FakeNavigator(Pose2d start) {
+      this.pose = start;
+    }
+
+    @Override
+    public void goTo(Pose2d target) {
+      this.target = target;
+    }
+
+    @Override
+    public boolean atTarget() {
+      return target != null && pose.getTranslation().getDistance(target.getTranslation()) < 0.1;
+    }
+
+    @Override
+    public void stop() {
+      target = null;
+    }
+
+    @Override
+    public Pose2d pose() {
+      return pose;
+    }
+
+    void step() {
+      if (target == null) {
+        return;
+      }
+      edu.wpi.first.math.geometry.Translation2d to =
+          target.getTranslation().minus(pose.getTranslation());
+      double dist = to.getNorm();
+      if (dist < 1e-6) {
+        return;
+      }
+      double stepDist = Math.min(dist, 4.0 * 0.02); // 4 m/s over a 20 ms loop
+      pose =
+          new Pose2d(pose.getTranslation().plus(to.times(stepDist / dist)), target.getRotation());
+    }
+  }
 
   private static final class FakeVisionIO implements VisionIO {
     private static final edu.wpi.first.math.geometry.Transform3d kCamToTag =
@@ -102,6 +157,10 @@ class AutonomySimObservationTest {
     // Red alliance from another suite mirrors every target and the robot drives off-field. (Real
     // takeaway: set the sim alliance deliberately; the autonomy flips correctly for either side.)
     DriverStationSim.setAllianceStationId(edu.wpi.first.hal.AllianceStationID.Blue1);
+    // The shift brain is a teleop autonomy, but its mode comes from the INJECTED teleop clock
+    // below,
+    // not the DS — so we drive the sim physics in autonomous-enabled (the stable config the swerve
+    // sim harness was validated in) while sweeping the clock through every shift for observation.
     DriverStationSim.setAutonomous(true);
     DriverStationSim.setEnabled(true);
     DriverStationSim.notifyNewData();
@@ -146,9 +205,24 @@ class AutonomySimObservationTest {
         new RuntimeSubsystem(
             mechanisms, interpreter, server, localDriver, new VisionPerception(vision));
 
-    PathPlannerNavigator navigator =
-        new PathPlannerNavigator(
-            drive, AutonomyConstants.kPathConstraints, AutonomyConstants.kArrivalToleranceMeters);
+    StrategyConfig strategy =
+        StrategyConfig.load(Filesystem.getDeployDirectory().toPath().resolve("strategy.json"));
+    // DETERMINISTIC movement: a kinematic navigator (teleports toward the target) so the trace
+    // reliably demonstrates the DECISION + SKILL + shooting chain (the real PathPlanner navigator's
+    // headless swerve-sim physics is too jittery to fire consistently — watch that in
+    // simulateJava).
+    // Construct the real navigator anyway so the wiring is smoke-tested.
+    new PathPlannerNavigator(
+        drive,
+        AutonomyConstants.kPathConstraints,
+        AutonomyConstants.kArrivalToleranceMeters,
+        ObstacleProvider.NONE);
+    FakeNavigator navigator =
+        new FakeNavigator(new Pose2d(0.5, 4.0, edu.wpi.first.math.geometry.Rotation2d.kZero));
+    // A compressed teleop clock (0.1 s per loop) so a single run sweeps every SHIFT; our hub is
+    // inactive in SHIFT 1 so the trace shows score → harvest → stage → re-activated score →
+    // endgame.
+    double[] teleopClock = {ShiftSchedule.kTeleopLengthSeconds};
     MatchTree tree =
         new MatchTree(
             navigator,
@@ -157,49 +231,80 @@ class AutonomySimObservationTest {
             () -> interpreter.scoringStatus(),
             PossessionProvider.UNKNOWN,
             () -> false,
-            () -> -1.0);
-    AutonomyCommand auto = new AutonomyCommand(tree);
+            () -> teleopClock[0],
+            () -> Optional.of(true),
+            strategy,
+            () -> Optional.empty());
+    AutonomyCommand auto = new AutonomyCommand(tree, () -> {});
 
     runtime.onEnable();
     auto.schedule();
 
     List<String> log = new ArrayList<>();
     log.add(
-        "loop  pose(x,y)            btPhase   interpPhase     scoring   resolvedSkill  intakeReq  pathfindCfg");
+        "loop  clk   shift        mode             pose(x,y)            btPhase   interpPhase     scoring   skill   intakeReq");
     int firedLoops = 0; // loops where the feed gate opened (SHOOTING / SUCCEEDED)
     int shootRequests = 0; // loops where the BT requested the shoot skill
-    for (int i = 0; i < 1500; i++) {
-      CommandScheduler.getInstance().run(); // subsystem periodics + the autonomy command
-      for (int s = 0; s < 5; s++) {
-        drive.subsystem().updateSimState(0.004, 12.0); // match the real 4 ms swerve sim cadence
-      }
+    int[] firedByShift = new int[ShiftSchedule.Shift.values().length];
+    frc.robot.runtime.reflex.ScoringSequencer.Phase prevPhase = interpreter.phase();
+    // Clock runs at 0.04 s per 0.02 s loop (2x), so each 25 s shift is ~12.5 s of sim time — enough
+    // for a full 7 s hopper-empty shot to complete within an active shift.
+    for (int i = 0; i < 3600; i++) {
+      teleopClock[0] = Math.max(-1.0, ShiftSchedule.kTeleopLengthSeconds - i * 0.04);
+      // CommandScheduler runs Vision + RuntimeSubsystem periodics (the real interpreter/skills) and
+      // the AutonomyCommand (the tree, which commands the navigator); then advance the fake pose.
+      CommandScheduler.getInstance().run();
+      navigator.step();
       SimHooks.stepTiming(0.02);
 
       SkillInterpreter.ScoringStatus status = interpreter.scoringStatus();
-      if (status == SkillInterpreter.ScoringStatus.SUCCEEDED
-          || interpreter.phase() == frc.robot.runtime.reflex.ScoringSequencer.Phase.SHOOTING) {
+      frc.robot.runtime.reflex.ScoringSequencer.Phase phase = interpreter.phase();
+      boolean firing =
+          status == SkillInterpreter.ScoringStatus.SUCCEEDED
+              || phase == frc.robot.runtime.reflex.ScoringSequencer.Phase.SHOOTING;
+      if (firing) {
         firedLoops++;
+        firedByShift[ShiftSchedule.shiftOf(teleopClock[0]).ordinal()]++;
       }
       if ("shoot".equals(server.resolve().scoringSkill())) {
         shootRequests++;
       }
-
-      if (i % 25 == 0) {
-        Pose2d p = drive.getPose();
+      // Always log the moment it actually opens the feed gate (so brief shots aren't sampled away).
+      if (phase == frc.robot.runtime.reflex.ScoringSequencer.Phase.SHOOTING
+          && prevPhase != frc.robot.runtime.reflex.ScoringSequencer.Phase.SHOOTING) {
+        Pose2d sp = navigator.pose();
         log.add(
             String.format(
-                "%4d  (%6.2f,%6.2f)  %-8s  %-14s  %-8s  %-12s  %-8s  %s",
+                ">>> SHOT  loop %4d  clk %5.1f  %-11s  pose(%6.2f,%6.2f)  SUCCEEDED feed-gate open",
+                i, teleopClock[0], ShiftSchedule.shiftOf(teleopClock[0]), sp.getX(), sp.getY()));
+      }
+      prevPhase = phase;
+
+      if (i % 25 == 0) {
+        Pose2d p = navigator.pose();
+        log.add(
+            String.format(
+                "%4d  %5.1f %-11s  %-15s  (%6.2f,%6.2f)  %-8s  %-14s  %-9s  %-6s  %s",
                 i,
+                teleopClock[0],
+                ShiftSchedule.shiftOf(teleopClock[0]),
+                tree.mode(),
                 p.getX(),
                 p.getY(),
                 tree.cyclePhase(),
                 interpreter.phase(),
                 interpreter.scoringStatus(),
                 server.resolve().scoringSkill(),
-                server.localIntakeDeploy(),
-                com.pathplanner.lib.auto.AutoBuilder.isPathfindingConfigured()));
+                server.localIntakeDeploy()));
       }
     }
+
+    log.add("");
+    log.add("feed-gate-open (SHOOTING/SUCCEEDED) loops per shift — fires only in ACTIVE shifts:");
+    for (ShiftSchedule.Shift sh : ShiftSchedule.Shift.values()) {
+      log.add(String.format("  %-11s = %d", sh, firedByShift[sh.ordinal()]));
+    }
+    log.add("totals: shootRequests=" + shootRequests + "  firedLoops=" + firedLoops);
 
     Path out = Path.of("build", "autonomy-obs.txt");
     Files.write(out, log);

@@ -35,6 +35,15 @@ Entries are one or two lines each. When an entry turns out to be a general princ
 - PathPlanner loads robot config from `deploy/pathplanner/settings.json` (`RobotConfig.fromGUISettings`) — a second source of truth vs TunerConstants (5.44 vs 5.85 m/s max, known mismatch). The `.auto` files reference named commands by exact string: intakeOut, intakeIn, shoot, stopAll, autoShoot, feedIndexers, reverseIndexer. One path file has a LEADING SPACE in its name (" Manual Depot to Outpost") and is referenced with it — renaming breaks the auto.
 - `MATCH_MODE` in Robot.java gates Epilogue NT verbosity (false = DEBUG+, true = CRITICAL only). HootAutoReplay runs unconditionally in robotPeriodic (deterministic log replay; no-op on a field).
 
+## Autonomy / strategy (shift-aware teleop brain — `docs/strategy.md` is the source of truth)
+
+- **Strategy is DATA in `deploy/strategy.json`** (`autonomy.StrategyConfig`, safe-fallback like skills.json): named blue-origin waypoints + per-mode plans. The TELEOP brain (`autonomy.MatchTree`) runs ONLY when the dashboard bool `TeleopAutonomy` is true (default OFF, so manual driving is preserved); AUTO stays on the PathPlanner `.auto` from the chooser. Edit the JSON to re-task per match — no recompile.
+- **`ShiftSchedule.kTeleopLengthSeconds = 140`** (TRANSITION 10 + 4×25 + ENDGAME 30) drives every shift boundary off `DriverStation.getMatchTime()`. If FMS uses a different teleop length, that one constant moves.
+- **`ShiftSchedule.parseOurHubInactiveFirst` is a GUESS** (first char `R`/`B`) — the real `getGameSpecificMessage()` format is published on the FRC Control System site, not the manual. Safe fallback = treat our hub as ALWAYS ACTIVE (plain legal score-cycle). Fix only that one method at kickoff.
+- **`navgrid.json` is GENERATED from `FieldGeometry` by `tools/gen_navgrid.py`** (true=blocked); re-run it after editing FieldGeometry. The pre-existing committed navgrid wrongly blocked most of the alliance zones. `LegalRegion` (pure, tested) is the hard legality guarantee; the navgrid is just the planner's hint — they share `FieldGeometry` so they can't drift. FieldGeometry's TRENCH rects are APPROXIMATE pending real field CAD (hubs/towers are tag-anchored).
+- **Shots empty the hopper by TIME** (`AutonomyConstants.kShootEmptySeconds = 7.0`; no ball sensor): `MatchCycle` holds SHOOT until the feed gate has been OPEN that long. Spin-up before the gate opens doesn't count.
+- **`AutonomySimObservationTest` uses a KINEMATIC navigator** for a deterministic, readable `build/autonomy-obs.txt` trace — the real PathPlanner swerve-sim is too jittery headless to demonstrate shooting (fires 0 one run, 34 the next). Watch real pathfinding in `simulateJava`; the deterministic guarantees live in `MatchTreeTest`.
+
 ## Learned gotchas
 
 - Epilogue's annotation processor breaks on two `@Logged` classes with the same SIMPLE name in different packages (its generated binder single-type-imports both `FooLogger`s) — keep `@Logged` runtime class names unique.

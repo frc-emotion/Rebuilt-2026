@@ -11,13 +11,16 @@ import edu.wpi.first.wpilibj2.command.Command;
  */
 public final class AutonomyCommand extends Command {
   private final MatchTree tree;
+  private final Runnable onStart;
 
-  public AutonomyCommand(MatchTree tree) {
+  public AutonomyCommand(MatchTree tree, Runnable onStart) {
     this.tree = tree;
+    this.onStart = onStart;
   }
 
   @Override
   public void initialize() {
+    onStart.run(); // seed the sim start pose off the (0,0) corner, etc.
     tree.reset();
   }
 
