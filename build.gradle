@@ -1,7 +1,6 @@
 plugins {
     id "java"
     id "edu.wpi.first.GradleRIO" version "2026.2.1"
-    id "com.diffplug.spotless" version "7.0.2"
 }
 
 java {
@@ -10,28 +9,6 @@ java {
 }
 
 def ROBOT_MAIN_CLASS = "frc.robot.Main"
-
-// The legacy robot is an archive: kept in the tree for reference, excluded from compilation.
-sourceSets {
-    main {
-        java {
-            exclude 'frc/robot/legacy/**'
-        }
-    }
-}
-
-// Formatting is enforced, not debated (architecture skill, non-negotiable #9). The frozen
-// Phoenix Tuner X generated files and the legacy archive are never reformatted.
-spotless {
-    java {
-        target 'src/main/java/**/*.java', 'src/test/java/**/*.java'
-        targetExclude 'src/main/java/frc/robot/legacy/**',
-                'src/main/java/frc/robot/subsystems/drive/TunerConstants.java',
-                'src/main/java/frc/robot/subsystems/drive/CommandSwerveDrivetrain.java'
-        googleJavaFormat()
-        removeUnusedImports()
-    }
-}
 
 // Define my targets (RoboRIO) and artifacts (deployable files)
 // This is added by GradleRIO's backing project DeployUtils.

@@ -1,75 +1,48 @@
 package frc.robot;
 
-import com.ctre.phoenix6.HootAutoReplay;
 import com.ctre.phoenix6.SignalLogger;
+
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.constants.RobotConstants;
 
-/** The new robot. Main points here after the Phase 4 cutover. */
 @Logged
 public class Robot extends TimedRobot {
-  // Flip to true for competition: Epilogue publishes only CRITICAL fields to NetworkTables
-  // (everything still lands in the log files).
-  public static final boolean MATCH_MODE = false;
+    private final RobotContainer robotContainer;
 
-  private Command autonomousCommand;
-  private final RobotContainer robotContainer;
-
-  // Phoenix hoot replay (timestamps + joysticks) for deterministic log replay; no-op on a field.
-  private final HootAutoReplay timeAndJoystickReplay =
-      new HootAutoReplay().withTimestampReplay().withJoystickReplay();
-
-  public Robot() {
-    Epilogue.configure(
-        config -> {
-          config.root = "Robot";
-          config.minimumImportance =
-              MATCH_MODE ? Logged.Importance.CRITICAL : Logged.Importance.DEBUG;
+    public Robot() {
+        Epilogue.configure(config -> {
+            config.root = "Robot";
+            config.minimumImportance = RobotConstants.NT_MIN_IMPORTANCE;
         });
-    DataLogManager.start();
-    SignalLogger.start();
-    robotContainer = new RobotContainer();
-    Epilogue.bind(this);
-    System.out.println(
-        "[TELEMETRY] MATCH_MODE="
-            + MATCH_MODE
-            + " -> NT publishes "
-            + (MATCH_MODE ? "CRITICAL only" : "DEBUG and up"));
-  }
+        DataLogManager.start();
+        SignalLogger.start();
+        Epilogue.bind(this);
 
-  @Override
-  public void robotPeriodic() {
-    timeAndJoystickReplay.update();
-    CommandScheduler.getInstance().run();
-  }
+        robotContainer = new RobotContainer();
+    }
 
-  @Override
-  public void autonomousInit() {
-    if (robotContainer.getSuperstructure() != null) {
-      robotContainer.getSuperstructure().onEnable();
+    @Override
+    public void robotPeriodic() {
+        CommandScheduler.getInstance().run();
+        robotContainer.stateMachine.periodic();
     }
-    autonomousCommand = robotContainer.getAutonomousCommand();
-    if (autonomousCommand != null) {
-      CommandScheduler.getInstance().schedule(autonomousCommand);
-    }
-  }
 
-  @Override
-  public void teleopInit() {
-    if (robotContainer.getSuperstructure() != null) {
-      robotContainer.getSuperstructure().onEnable();
+    @Override
+    public void autonomousInit() {
+        robotContainer.stateMachine.onEnable();
     }
-    if (autonomousCommand != null) {
-      autonomousCommand.cancel();
-    }
-  }
 
-  @Override
-  public void testInit() {
-    CommandScheduler.getInstance().cancelAll();
-  }
+    @Override
+    public void teleopInit() {
+        robotContainer.stateMachine.onEnable();
+    }
+
+    @Override
+    public void testInit() {
+        CommandScheduler.getInstance().cancelAll();
+    }
 }

@@ -188,8 +188,9 @@ compile_commands.json
 .factorypath
 
 .claude/
-# Refactor working documents — local only, not committed (team decision)
-FUNCTIONALITY_INVENTORY.md
-REFACTOR_DESIGN.md
-REFACTOR_PROGRESS.md
-docs/superstructure.md
+### Project ###
+PLAN.md
+*.hoot
+networktables.json
+simgui-ds.json
+simgui-window.json
