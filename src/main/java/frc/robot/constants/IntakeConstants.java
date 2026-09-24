@@ -14,17 +14,17 @@ public final class IntakeConstants {
     public static final int ROLLER_MOTOR_ID = 21;
     public static final int PIVOT_ENCODER_ID = 22;
 
-    /** Set so the CANcoder reads 0 at stow: measure raw absolute position at stow and negate it. */
+    /** Positions below are what the CANcoder reads with this offset. To re-zero at stow, set this to the negated raw reading and shift the positions. */
     public static final double PIVOT_ENCODER_MAGNET_OFFSET_ROT = 0.0;
     public static final double PIVOT_ROTOR_TO_SENSOR_RATIO = 27.0;
 
-    public static final double STOWED_POSITION_ROT = 0.0;
-    public static final double OUT_POSITION_ROT = 0.3;
+    public static final double STOWED_POSITION_ROT = 0.15;
+    public static final double OUT_POSITION_ROT = 0.51;
     /** Wide on purpose: rollers start slightly before fully out and stop as soon as it leaves the zone. */
     public static final double OUT_TOLERANCE_ROT = 15.0 / 360.0;
 
-    public static final double REVERSE_SOFT_LIMIT_ROT = STOWED_POSITION_ROT - 0.01;
-    public static final double FORWARD_SOFT_LIMIT_ROT = OUT_POSITION_ROT + 0.005;
+    public static final double REVERSE_SOFT_LIMIT_ROT = 0.14;
+    public static final double FORWARD_SOFT_LIMIT_ROT = 0.515;
 
     public static final double ROLLER_SPEED_RPS = 40.0;
 
