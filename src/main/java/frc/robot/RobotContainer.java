@@ -17,6 +17,7 @@ import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Vision;;
 
 @Logged
 public class RobotContainer {
@@ -29,9 +30,10 @@ public class RobotContainer {
     public final Turret turret = new Turret();
     public final Hood hood = new Hood();
     public final Shooter shooter = new Shooter();
+    public final Vision vision = new Vision(drivetrain::addVisionMeasurement);
 
     public final StateMachine stateMachine = new StateMachine(
-            drivetrain, intake, indexer, turret, hood, shooter,
+            drivetrain, intake, indexer, turret, hood, shooter, vision,
             operator::getRightX,
             () -> -operator.getLeftY());
 

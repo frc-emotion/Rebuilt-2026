@@ -14,6 +14,7 @@ import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Vision;
 
 /**
  * Sole writer to the mechanism subsystems. Each loop: read requests and conditions,
@@ -35,6 +36,7 @@ public class StateMachine {
     private final Turret turret;
     private final Hood hood;
     private final Shooter shooter;
+    private final Vision vision;
     private final DoubleSupplier turretAxis;
     private final DoubleSupplier hoodAxis;
 
@@ -56,7 +58,7 @@ public class StateMachine {
     private double lastYawDeg = 0.0;
 
     public StateMachine(CommandSwerveDrivetrain drivetrain, Intake intake, Indexer indexer,
-            Turret turret, Hood hood, Shooter shooter,
+            Turret turret, Hood hood, Shooter shooter, Vision vision,
             DoubleSupplier turretAxis, DoubleSupplier hoodAxis) {
         this.drivetrain = drivetrain;
         this.intake = intake;
@@ -64,6 +66,7 @@ public class StateMachine {
         this.turret = turret;
         this.hood = hood;
         this.shooter = shooter;
+        this.vision = vision;
         this.turretAxis = turretAxis;
         this.hoodAxis = hoodAxis;
     }
@@ -97,6 +100,7 @@ public class StateMachine {
     }
 
     private void readInputs() {
+        vision.update();
         intakeOut = intake.isOut();
         atShooterSpeed = shootRequested && shooter.atSetpoint();
         isAligned = turret.atSetpoint() && hood.atSetpoint();
