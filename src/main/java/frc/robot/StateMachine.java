@@ -1,13 +1,21 @@
 package frc.robot;
 
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.NotLogged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
+import static edu.wpi.first.units.Units.Rotations;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.constants.IndexerConstants.Stage;
 import frc.robot.constants.OperatorConstants;
 import frc.robot.constants.RobotConstants;
 import frc.robot.constants.ShooterConstants;
+import frc.robot.constants.VisionConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Indexer;
@@ -40,6 +48,11 @@ public class StateMachine {
     private final DoubleSupplier turretAxis;
     private final DoubleSupplier hoodAxis;
 
+    // Initialized so nothing is null before the first enable
+    @NotLogged private Optional<Alliance> allianceColor = Optional.empty();
+    private Pose2d currentPose = new Pose2d();
+
+    @Logged(importance  = Logged.Importance.CRITICAL) private boolean toggleManualTurret = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean intakeRequested = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean shootRequested = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean clearRequested = false;
@@ -72,7 +85,7 @@ public class StateMachine {
     }
 
     // Requests
-
+    public void toggleManualTurret(){toggleManualTurret = !toggleManualTurret;}
     public void setIntake(boolean out) { intakeRequested = out; }
     public void toggleIntake() { intakeRequested = !intakeRequested; }
     public void setShoot(boolean shoot) { shootRequested = shoot; }
@@ -88,6 +101,7 @@ public class StateMachine {
         turretSetpointRot = turret.getPositionRot();
         hoodSetpointRot = hood.getPositionRot();
         lastYawDeg = getYawDeg();
+        allianceColor = DriverStation.getAlliance();
     }
 
     public void periodic() {
@@ -101,13 +115,32 @@ public class StateMachine {
 
     private void readInputs() {
         vision.update();
+
+        // Refresh alliance (can arrive late from the FMS) and pose every loop,
+        // and push them to vision BEFORE asking it for an aim angle
+        allianceColor = DriverStation.getAlliance();
+        currentPose = drivetrain.getState().Pose;
+        vision.setAllianceColor(allianceColor);
+        vision.setCurrentPose(currentPose);
+
         intakeOut = intake.isOut();
         atShooterSpeed = shootRequested && shooter.atSetpoint();
         isAligned = turret.atSetpoint() && hood.atSetpoint();
 
-        turretSetpointRot += shapeStick(turretAxis.getAsDouble())
+        if (toggleManualTurret) {
+            turretSetpointRot += shapeStick(turretAxis.getAsDouble())
                 * OperatorConstants.TURRET_JOYSTICK_RATE_ROT_PER_SEC * RobotConstants.LOOP_PERIOD_SECONDS;
-        turretSetpointRot += gyroCorrection();
+            turretSetpointRot += gyroCorrection();
+        } else {
+            // Auto aim: turret target comes from vision
+            Optional<Angle> turretToHub = vision.getTurretToHub();
+            if (turretToHub.isPresent()) {
+                double targetRot = turretToHub.get().in(Rotations);
+                if (Math.abs(targetRot - turret.getPositionRot()) > VisionConstants.turretDiffTolerance) {
+                    turretSetpointRot = targetRot + 0.25;
+                }
+            }
+        }
 
         hoodSetpointRot += shapeStick(hoodAxis.getAsDouble())
                 * OperatorConstants.HOOD_JOYSTICK_RATE_ROT_PER_SEC * RobotConstants.LOOP_PERIOD_SECONDS;
@@ -133,28 +166,31 @@ public class StateMachine {
 
     private void apply() {
         intake.setDeployed(intakeRequested);
-        if (intakeOut) {
-            intake.runRoller();
-        } else {
-            intake.stopRoller();
-        }
+        // if (intakeOut) {
+        //     intake.runRoller();
+        // } else {
+        //     intake.stopRoller();
+        // }        
+        // switch (indexerState) {
+        //     case CLEARING -> {
+        //         for (Stage stage : Stage.values()) indexer.reverse(stage);
+        //     }
+        //     case FEED_ALL -> {
+        //         for (Stage stage : Stage.values()) indexer.run(stage);
+        //     }
+        //     case FEED_VERTICAL -> {
+        //         indexer.run(Stage.VERTICAL);
+        //         indexer.stop(Stage.HORIZONTAL);
+        //         indexer.stop(Stage.UPWARD);
+        //     }
+        //     case STOPPED -> {
+        //         for (Stage stage : Stage.values()) indexer.stop(stage);
+        //     }
+        // }
 
-        switch (indexerState) {
-            case CLEARING -> {
-                for (Stage stage : Stage.values()) indexer.reverse(stage);
-            }
-            case FEED_ALL -> {
-                for (Stage stage : Stage.values()) indexer.run(stage);
-            }
-            case FEED_VERTICAL -> {
-                indexer.run(Stage.VERTICAL);
-                indexer.stop(Stage.HORIZONTAL);
-                indexer.stop(Stage.UPWARD);
-            }
-            case STOPPED -> {
-                for (Stage stage : Stage.values()) indexer.stop(stage);
-            }
-        }
+        indexer.stop(Stage.VERTICAL);
+        indexer.stop(Stage.HORIZONTAL);
+        indexer.stop(Stage.UPWARD);
 
         if (shooterState == ShooterState.IDLE) {
             shooter.coast();
@@ -183,5 +219,9 @@ public class StateMachine {
 
     private double getYawDeg() {
         return drivetrain.getPigeon2().getYaw().getValueAsDouble();
+    }
+
+    public Pose2d getPose2d(){
+        return currentPose;
     }
 }
