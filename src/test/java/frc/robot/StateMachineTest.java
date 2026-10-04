@@ -1,7 +1,6 @@
 package frc.robot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +11,7 @@ import frc.robot.StateMachine.IndexerState;
 import frc.robot.StateMachine.IntakeState;
 import frc.robot.StateMachine.Resolution;
 import frc.robot.StateMachine.ShooterState;
+import frc.robot.subsystems.Vision;
 
 class StateMachineTest {
     private static Resolution resolve(boolean intake, boolean shoot, boolean clear, boolean intakeOut, boolean atSpeed) {
@@ -48,16 +48,6 @@ class StateMachineTest {
                 resolve(false, false, true, false, false));
     }
 
-    @Test
-    void stickCurveIsDeadbandedAndMonotonic() {
-        assertEquals(0.0, StateMachine.shapeStick(0.05));
-        assertEquals(1.0, StateMachine.shapeStick(1.0), 1e-9);
-        assertEquals(-1.0, StateMachine.shapeStick(-1.0), 1e-9);
-        double small = StateMachine.shapeStick(0.3);
-        double large = StateMachine.shapeStick(0.6);
-        assertTrue(small > 0 && large > small);
-    }
-
     private static final Pose2d ORIGIN_FACING_POSITIVE_X = new Pose2d();
 
     /** Turret positions a full rotation apart point the same way. */
@@ -66,7 +56,7 @@ class StateMachineTest {
     }
 
     private static double turretRotToward(Pose2d robotPose, Translation2d target) {
-        return StateMachine.turretRotForBearing(StateMachine.bearingRot(robotPose, target));
+        return Vision.turretRotForBearing(Vision.bearingRot(robotPose, target));
     }
 
     @Test
@@ -94,14 +84,14 @@ class StateMachineTest {
         Pose2d robotFacingPositiveY = new Pose2d(2.0, 2.0, Rotation2d.fromRotations(0.25));
         Translation2d hub = new Translation2d(4.647, 4.035);
         double expectedBearingRot = Math.atan2(2.035, 2.647) / (2 * Math.PI) - 0.25;
-        assertEquals(expectedBearingRot, StateMachine.bearingRot(robotFacingPositiveY, hub), 1e-9);
+        assertEquals(expectedBearingRot, Vision.bearingRot(robotFacingPositiveY, hub), 1e-9);
         assertSameDirection(0.5 - expectedBearingRot, turretRotToward(robotFacingPositiveY, hub));
     }
 
     @Test
     void turretAtBootHeadingPointsOutTheBack() {
         Pose2d robotFacingPositiveY = new Pose2d(1.0, 1.0, Rotation2d.fromRotations(0.25));
-        assertSameDirection(0.75, StateMachine.turretFieldPose(robotFacingPositiveY, 0.0).getRotation().getRotations());
+        assertSameDirection(0.75, Vision.turretFieldPose(robotFacingPositiveY, 0.0).getRotation().getRotations());
     }
 
     @Test
@@ -111,6 +101,6 @@ class StateMachineTest {
         double aimedTurretRot = turretRotToward(robotPose, hub);
         Rotation2d fieldAngleToHub = hub.minus(robotPose.getTranslation()).getAngle();
         assertSameDirection(fieldAngleToHub.getRotations(),
-                StateMachine.turretFieldPose(robotPose, aimedTurretRot).getRotation().getRotations());
+                Vision.turretFieldPose(robotPose, aimedTurretRot).getRotation().getRotations());
     }
 }
