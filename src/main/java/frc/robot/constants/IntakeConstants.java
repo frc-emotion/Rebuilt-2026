@@ -42,7 +42,7 @@ public final class IntakeConstants {
         PIVOT_CONFIG.Slot0.kP = 19.0;
         PIVOT_CONFIG.Slot0.kD = 0.2;
         PIVOT_CONFIG.Voltage.PeakForwardVoltage = 5.0;
-        PIVOT_CONFIG.Voltage.PeakReverseVoltage = -55.0;
+        PIVOT_CONFIG.Voltage.PeakReverseVoltage = -5.0;
         PIVOT_CONFIG.MotionMagic.MotionMagicCruiseVelocity = 1.5;
         PIVOT_CONFIG.MotionMagic.MotionMagicAcceleration = 2.5;
         PIVOT_CONFIG.MotionMagic.MotionMagicJerk = 40.0;

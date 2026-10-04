@@ -4,18 +4,18 @@ import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.epilogue.NotLogged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import static edu.wpi.first.units.Units.Rotations;
-import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.robot.constants.FieldConstants;
 import frc.robot.constants.IndexerConstants.Stage;
 import frc.robot.constants.OperatorConstants;
 import frc.robot.constants.RobotConstants;
 import frc.robot.constants.ShooterConstants;
-import frc.robot.constants.VisionConstants;
+import frc.robot.constants.TurretConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Indexer;
@@ -48,10 +48,6 @@ public class StateMachine {
     private final DoubleSupplier turretAxis;
     private final DoubleSupplier hoodAxis;
 
-    // Initialized so nothing is null before the first enable
-    @NotLogged private Optional<Alliance> allianceColor = Optional.empty();
-    private Pose2d currentPose = new Pose2d();
-
     @Logged(importance  = Logged.Importance.CRITICAL) private boolean toggleManualTurret = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean intakeRequested = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean shootRequested = false;
@@ -67,6 +63,9 @@ public class StateMachine {
     @Logged(importance = Logged.Importance.CRITICAL) private IndexerState indexerState = IndexerState.STOPPED;
     @Logged(importance = Logged.Importance.CRITICAL) private ShooterState shooterState = ShooterState.IDLE;
 
+    @Logged(importance = Logged.Importance.DEBUG) private double hubBearingRot = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private Pose2d turretPose = new Pose2d();
+    @Logged(importance = Logged.Importance.DEBUG) private Pose2d turretTargetPose = new Pose2d();
     @Logged(importance = Logged.Importance.DEBUG) private double gyroCorrectionRot = 0.0;
     private double lastYawDeg = 0.0;
 
@@ -101,7 +100,6 @@ public class StateMachine {
         turretSetpointRot = turret.getPositionRot();
         hoodSetpointRot = hood.getPositionRot();
         lastYawDeg = getYawDeg();
-        allianceColor = DriverStation.getAlliance();
     }
 
     public void periodic() {
@@ -111,34 +109,28 @@ public class StateMachine {
         indexerState = resolution.indexer();
         shooterState = resolution.shooter();
         apply();
+        updateTurretPoses();
     }
 
     private void readInputs() {
         vision.update();
 
-        // Refresh alliance (can arrive late from the FMS) and pose every loop,
-        // and push them to vision BEFORE asking it for an aim angle
-        allianceColor = DriverStation.getAlliance();
-        currentPose = drivetrain.getState().Pose;
-        vision.setAllianceColor(allianceColor);
-        vision.setCurrentPose(currentPose);
-
         intakeOut = intake.isOut();
         atShooterSpeed = shootRequested && shooter.atSetpoint();
         isAligned = turret.atSetpoint() && hood.atSetpoint();
 
+        // Computed every loop so lastYawDeg stays current while auto aim is active
+        double yawDeltaRot = gyroCorrection();
         if (toggleManualTurret) {
             turretSetpointRot += shapeStick(turretAxis.getAsDouble())
                 * OperatorConstants.TURRET_JOYSTICK_RATE_ROT_PER_SEC * RobotConstants.LOOP_PERIOD_SECONDS;
-            turretSetpointRot += gyroCorrection();
+            turretSetpointRot += yawDeltaRot;
         } else {
-            // Auto aim: turret target comes from vision
-            Optional<Angle> turretToHub = vision.getTurretToHub();
-            if (turretToHub.isPresent()) {
-                double targetRot = turretToHub.get().in(Rotations);
-                if (Math.abs(targetRot - turret.getPositionRot()) > VisionConstants.turretDiffTolerance) {
-                    turretSetpointRot = targetRot + 0.25;
-                }
+            Optional<Alliance> alliance = DriverStation.getAlliance();
+            if (alliance.isPresent()) {
+                Translation2d hub = alliance.get() == Alliance.Blue ? FieldConstants.BLUE_HUB : FieldConstants.RED_HUB;
+                hubBearingRot = bearingRot(drivetrain.getState().Pose, hub);
+                turretSetpointRot = turretRotForBearing(hubBearingRot);
             }
         }
 
@@ -202,10 +194,38 @@ public class StateMachine {
         hoodSetpointRot = hood.setSetpoint(hoodSetpointRot);
     }
 
+    /** Field-relative turret arrows for AdvantageScope: where the turret points and where it is told to point. */
+    private void updateTurretPoses() {
+        Pose2d robotPose = drivetrain.getState().Pose;
+        turretPose = turretFieldPose(robotPose, turret.getPositionRot());
+        turretTargetPose = turretFieldPose(robotPose, turretSetpointRot);
+    }
+
     /** Deadband then a power curve, so small deflections give fine adjustment and full deflection gives full rate. */
     static double shapeStick(double raw) {
         double input = MathUtil.applyDeadband(raw, OperatorConstants.STICK_DEADBAND);
         return Math.copySign(Math.pow(Math.abs(input), OperatorConstants.STICK_CURVE_EXPONENT), input);
+    }
+
+    /** Angle from the intake to the target, counterclockwise-positive, in [-0.5, 0.5]. */
+    static double bearingRot(Pose2d robotPose, Translation2d target) {
+        Rotation2d fieldAngleToTarget = target.minus(robotPose.getTranslation()).getAngle();
+        return fieldAngleToTarget.minus(robotPose.getRotation()).getRotations();
+    }
+
+    /**
+     * Turret position that points along a bearing. The turret counts clockwise from its boot
+     * heading while bearings count counterclockwise, so the position is boot heading minus bearing.
+     * Turret.setSetpoint wraps the result into the travel limits.
+     */
+    static double turretRotForBearing(double bearingRot) {
+        return TurretConstants.BOOT_HEADING_ROT - bearingRot;
+    }
+
+    /** Pose at the robot center facing the field direction the turret points: robot heading plus boot heading minus turret position. */
+    static Pose2d turretFieldPose(Pose2d robotPose, double turretRot) {
+        Rotation2d turretRelativeToRobot = Rotation2d.fromRotations(TurretConstants.BOOT_HEADING_ROT - turretRot);
+        return new Pose2d(robotPose.getTranslation(), robotPose.getRotation().plus(turretRelativeToRobot));
     }
 
     /** Robot yaw change since last loop, in turret rotations, so the turret holds a field heading. */
@@ -219,9 +239,5 @@ public class StateMachine {
 
     private double getYawDeg() {
         return drivetrain.getPigeon2().getYaw().getValueAsDouble();
-    }
-
-    public Pose2d getPose2d(){
-        return currentPose;
     }
 }

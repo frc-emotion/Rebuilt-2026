@@ -12,9 +12,15 @@ public final class TurretConstants {
 
     public static final double GEAR_RATIO = 122.0 / 24.0;
 
-    /** Limits relative to the boot position (turret facing forward = 0). Span exceeds one rotation so wrapping always finds a reachable setpoint. */
+    /**
+     * Positive turret motion is clockwise viewed from above, and position 0 is wherever the turret sits at boot.
+     * The span exceeds one rotation so wrapping always finds a reachable setpoint.
+     */
     public static final double FORWARD_LIMIT_ROT = 0.39;
     public static final double REVERSE_LIMIT_ROT = -0.73;
+
+    /** Direction the turret points at position 0, counterclockwise from the intake. It must boot facing straight back. */
+    public static final double BOOT_HEADING_ROT = 0.5;
 
     public static final double TOLERANCE_ROT = 0.005;
 
