@@ -2,9 +2,12 @@ package frc.robot;
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.NotLogged;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.robot.constants.FieldConstants;
 import frc.robot.constants.IndexerConstants.Stage;
 import frc.robot.constants.ShooterConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -57,6 +60,8 @@ public class StateMachine {
     @Logged(importance = Logged.Importance.CRITICAL) private IndexerState indexerState = IndexerState.STOPPED;
     @Logged(importance = Logged.Importance.CRITICAL) private ShooterState shooterState = ShooterState.IDLE;
 
+    @NotLogged private Optional<Translation2d> hub = Optional.empty();
+    @Logged(importance = Logged.Importance.DEBUG) private double hubDistanceMeters = 0.0;
     @Logged(importance = Logged.Importance.DEBUG) private Pose2d turretPose = new Pose2d();
     @Logged(importance = Logged.Importance.DEBUG) private Pose2d turretTargetPose = new Pose2d();
 
@@ -110,6 +115,11 @@ public class StateMachine {
     private void readInputs() {
         vision.update();
 
+        Pose2d robotPose = drivetrain.getState().Pose;
+        hub = DriverStation.getAlliance()
+                .map(alliance -> alliance == Alliance.Blue ? FieldConstants.BLUE_HUB : FieldConstants.RED_HUB);
+        hubDistanceMeters = hub.map(target -> target.getDistance(robotPose.getTranslation())).orElse(0.0);
+
         intakeOut = intake.isOut();
         atShooterSpeed = shootRequested && shooter.atSetpoint();
         isAligned = turret.atSetpoint() && hood.atSetpoint();
@@ -121,22 +131,14 @@ public class StateMachine {
         if (toggleManualTurret) {
             turretSetpointRot += ControllerUtil.turretJoystickUpdate(turretAxis.getAsDouble());
             turretSetpointRot += yawDeltaRot;
-        } else {
-            Optional<Alliance> alliance = DriverStation.getAlliance();
-            if (alliance.isPresent()) {
-                turretSetpointRot = vision.updateTurretSetpoint(alliance.get(), drivetrain.getState().Pose);
-            }
+        } else if (hub.isPresent()) {
+            turretSetpointRot = vision.updateTurretSetpoint(robotPose, hub.get());
         }
 
-        if (toggleManualTurret){
-
+        if (toggleManualTurret) {
             hoodSetpointRot += ControllerUtil.hoodJoystickUpdate(hoodAxis.getAsDouble());
-        }
-        else{
-            Optional<Alliance> alliance = DriverStation.getAlliance();
-            if (alliance.isPresent()) {
-                hoodSetpointRot = shootingLookup.getHoodAngle(alliance.get(), drivetrain.getState().Pose);
-            }
+        } else if (hub.isPresent()) {
+            hoodSetpointRot = shootingLookup.getHoodAngle(hubDistanceMeters);
         }
     }
 
@@ -184,16 +186,10 @@ public class StateMachine {
 
         if (shooterState == ShooterState.IDLE) {
             shooter.coast();
-        } else {
-            if (toggleManualTurret){
-                shooter.setVelocity(ShooterConstants.SHOOT_RPS);
-            }
-            else{
-                Optional<Alliance> alliance = DriverStation.getAlliance();
-                if (alliance.isPresent()) {
-                    shooter.setVelocity(shootingLookup.getShooterSpeed(alliance.get(), drivetrain.getState().Pose));
-                }                
-            }
+        } else if (toggleManualTurret) {
+            shooter.setVelocity(ShooterConstants.SHOOT_RPS);
+        } else if (hub.isPresent()) {
+            shooter.setVelocity(shootingLookup.getShooterSpeed(hubDistanceMeters));
         }
 
         turretSetpointRot = turret.setSetpoint(turretSetpointRot);

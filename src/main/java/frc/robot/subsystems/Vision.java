@@ -11,9 +11,7 @@ import edu.wpi.first.epilogue.NotLogged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.constants.FieldConstants;
 import frc.robot.constants.TurretConstants;
 import frc.robot.constants.VisionConstants;
 
@@ -43,8 +41,7 @@ public class Vision extends SubsystemBase {
         }
     }
 
-    public final double updateTurretSetpoint(Alliance alliance, Pose2d drivetrainPose){
-        Translation2d hub = alliance == Alliance.Blue ? FieldConstants.BLUE_HUB : FieldConstants.RED_HUB;
+    public final double updateTurretSetpoint(Pose2d drivetrainPose, Translation2d hub){
         double hubBearingRot = bearingRot(drivetrainPose, hub);
         double turretSetpointRot = turretRotForBearing(hubBearingRot);
         return turretSetpointRot;

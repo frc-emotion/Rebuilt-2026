@@ -55,7 +55,8 @@ public class Shooter extends SubsystemBase {
         return setpointRps;
     }
 
+    /** A zero setpoint means coasting, which is never ready to shoot. */
     public boolean atSetpoint() {
-        return Math.abs(velocityRps - setpointRps) < ShooterConstants.TOLERANCE_RPS;
+        return setpointRps > 0.0 && Math.abs(velocityRps - setpointRps) < ShooterConstants.TOLERANCE_RPS;
     }
 }
