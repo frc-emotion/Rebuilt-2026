@@ -15,6 +15,7 @@ import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
 import frc.robot.util.ControllerUtil;
+import frc.robot.util.ShootingLookup;
 
 /**
  * Sole writer to the mechanism subsystems. Each loop: read requests and conditions,
@@ -39,6 +40,7 @@ public class StateMachine {
     private final Vision vision;
     private final DoubleSupplier turretAxis;
     private final DoubleSupplier hoodAxis;
+    private final ShootingLookup shootingLookup;
 
     @Logged(importance  = Logged.Importance.CRITICAL) private boolean toggleManualTurret = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean intakeRequested = false;
@@ -72,6 +74,8 @@ public class StateMachine {
         this.vision = vision;
         this.turretAxis = turretAxis;
         this.hoodAxis = hoodAxis;
+
+        shootingLookup = new ShootingLookup();
     }
 
     // Requests
@@ -124,7 +128,16 @@ public class StateMachine {
             }
         }
 
-        hoodSetpointRot += ControllerUtil.hoodJoystickUpdate(hoodAxis.getAsDouble());
+        if (toggleManualTurret){
+
+            hoodSetpointRot += ControllerUtil.hoodJoystickUpdate(hoodAxis.getAsDouble());
+        }
+        else{
+            Optional<Alliance> alliance = DriverStation.getAlliance();
+            if (alliance.isPresent()) {
+                hoodSetpointRot = shootingLookup.getHoodAngle(alliance.get(), drivetrain.getState().Pose);
+            }
+        }
     }
 
     public static Resolution resolve(boolean intakeRequested, boolean shootRequested, boolean clearRequested,
@@ -172,7 +185,15 @@ public class StateMachine {
         if (shooterState == ShooterState.IDLE) {
             shooter.coast();
         } else {
-            shooter.setVelocity(ShooterConstants.SHOOT_RPS);
+            if (toggleManualTurret){
+                shooter.setVelocity(ShooterConstants.SHOOT_RPS);
+            }
+            else{
+                Optional<Alliance> alliance = DriverStation.getAlliance();
+                if (alliance.isPresent()) {
+                    shooter.setVelocity(shootingLookup.getShooterSpeed(alliance.get(), drivetrain.getState().Pose));
+                }                
+            }
         }
 
         turretSetpointRot = turret.setSetpoint(turretSetpointRot);

@@ -4,7 +4,7 @@ import edu.wpi.first.math.MathUtil;
 import frc.robot.constants.OperatorConstants;
 import frc.robot.constants.RobotConstants;
 
-public class ControllerUtil {
+public final class ControllerUtil {
     
     private ControllerUtil () {}
     
