@@ -10,6 +10,7 @@ public final class ShooterConstants {
     public static final int MOTOR_ID = 50;
 
     public static final double SHOOT_RPS = 55.0;
+    public static final double PASSING_RPS = 60.0;
     public static final double MAX_RPS = 400.0;
     public static final double TOLERANCE_RPS = 1.67;
 

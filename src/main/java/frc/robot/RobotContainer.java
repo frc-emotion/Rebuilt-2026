@@ -70,6 +70,7 @@ public class RobotContainer {
         //operator.x.onTrue for allat runOnce and shi for toggleManualTurret
         operator.x().toggleOnTrue(Commands.runOnce(stateMachine::toggleManualTurret));
         operator.a().onTrue(Commands.runOnce(stateMachine::toggleIntake));
+        operator.y().onTrue(Commands.runOnce(stateMachine::togglePassing));
 
         operator.rightTrigger().whileTrue(Commands.startEnd(
                 () -> stateMachine.setShoot(true),

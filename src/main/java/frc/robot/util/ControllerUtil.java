@@ -1,6 +1,8 @@
 package frc.robot.util;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.robot.constants.FieldConstants;
 import frc.robot.constants.OperatorConstants;
 import frc.robot.constants.RobotConstants;
 
@@ -29,5 +31,15 @@ public final class ControllerUtil {
         double deltaDeg = yawDeg - lastYawDeg;
         double gyroCorrectionRot = deltaDeg / 360.0 * OperatorConstants.TURRET_GYRO_CORRECTION_GAIN;
         return gyroCorrectionRot;
+    }
+
+    /** Bumpers fully past our alliance zone line, so the robot cannot score into the hub. */
+    public static boolean beyondAllianceZone(double robotX, Alliance alliance, boolean wasPassing) {
+        double distancePastLine = alliance == Alliance.Blue
+                ? robotX - FieldConstants.BLUE_ZONE_LINE_X
+                : FieldConstants.RED_ZONE_LINE_X - robotX;
+        double threshold = RobotConstants.BUMPER_HALF_LENGTH_METERS
+                - (wasPassing ? RobotConstants.PASSING_HYSTERESIS_METERS : 0.0);
+        return distancePastLine > threshold;
     }
 }

@@ -18,6 +18,8 @@ public final class HoodConstants {
 
     public static final double TOLERANCE_ROT = 0.005;
 
+    public static final double PASSING_ROT = 0.067;
+
     public static final TalonFXConfiguration CONFIG = new TalonFXConfiguration();
 
     static {

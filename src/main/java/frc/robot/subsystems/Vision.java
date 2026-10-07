@@ -48,6 +48,11 @@ public class Vision extends SubsystemBase {
 
     }
 
+    public final double updateTurretPassingSetpoint(Pose2d drivetrainPose, Rotation2d fieldHeading){
+        double passingBearingRot = fieldHeading.minus(drivetrainPose.getRotation()).getRotations();
+        return turretRotForBearing(passingBearingRot);
+    }
+
         /** Angle from the intake to the target, counterclockwise-positive, in [-0.5, 0.5]. */
     public static double bearingRot(Pose2d robotPose, Translation2d target) {
         Rotation2d fieldAngleToTarget = target.minus(robotPose.getTranslation()).getAngle();

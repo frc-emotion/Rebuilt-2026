@@ -4,10 +4,12 @@ import java.util.function.DoubleSupplier;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.NotLogged;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.constants.FieldConstants;
+import frc.robot.constants.HoodConstants;
 import frc.robot.constants.IndexerConstants.Stage;
 import frc.robot.constants.ShooterConstants;
 import frc.robot.constants.TurretConstants;
@@ -50,12 +52,14 @@ public class StateMachine {
     @Logged(importance = Logged.Importance.CRITICAL) private boolean intakeRequested = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean shootRequested = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean clearRequested = false;
+    @Logged(importance = Logged.Importance.CRITICAL) private boolean passingRequested = false;
     @Logged(importance = Logged.Importance.CRITICAL) private double turretSetpointRot = 0.0;
     @Logged(importance = Logged.Importance.CRITICAL) private double hoodSetpointRot = 0.0;
 
     @Logged(importance = Logged.Importance.CRITICAL) private boolean atShooterSpeed = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean intakeOut = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean isAligned = false;
+    @Logged(importance = Logged.Importance.CRITICAL) private boolean isPassing = false;
 
     @Logged(importance = Logged.Importance.CRITICAL) private IntakeState intakeState = IntakeState.STOWED;
     @Logged(importance = Logged.Importance.CRITICAL) private IndexerState indexerState = IndexerState.STOPPED;
@@ -89,6 +93,7 @@ public class StateMachine {
     public void toggleManualTurret(){toggleManualTurret = !toggleManualTurret;}
     public void setIntake(boolean out) { intakeRequested = out; }
     public void toggleIntake() { intakeRequested = !intakeRequested; }
+    public void togglePassing() { passingRequested = !passingRequested; }
     public void setShoot(boolean shoot) { shootRequested = shoot; }
     public void setClear(boolean clear) { clearRequested = clear; }
     public void setTurretSetpoint(double rot) { turretSetpointRot = rot; }
@@ -99,6 +104,7 @@ public class StateMachine {
         intakeRequested = false;
         shootRequested = false;
         clearRequested = false;
+        passingRequested = false;
         turretSetpointRot = turret.getPositionRot();
         hoodSetpointRot = hood.getPositionRot();
         lastYawDeg = getYawDeg();
@@ -119,8 +125,10 @@ public class StateMachine {
 
         Pose2d robotPose = drivetrain.getState().Pose;
         turretPivotPose = robotPose.transformBy(TurretConstants.ROBOT_TO_PIVOT);
-        hub = DriverStation.getAlliance()
-                .map(alliance -> alliance == Alliance.Blue ? FieldConstants.BLUE_HUB : FieldConstants.RED_HUB);
+        Optional<Alliance> alliance = DriverStation.getAlliance();
+        hub = alliance.map(color -> color == Alliance.Blue ? FieldConstants.BLUE_HUB : FieldConstants.RED_HUB);
+        isPassing = passingRequested && alliance.isPresent()
+                && ControllerUtil.beyondAllianceZone(robotPose.getX(), alliance.get(), isPassing);
         hubDistanceMeters = hub.map(target -> target.getDistance(turretPivotPose.getTranslation())).orElse(0.0);
 
         intakeOut = intake.isOut();
@@ -134,12 +142,18 @@ public class StateMachine {
         if (toggleManualTurret) {
             turretSetpointRot += ControllerUtil.turretJoystickUpdate(turretAxis.getAsDouble());
             turretSetpointRot += yawDeltaRot;
+        } else if (isPassing) {
+            Rotation2d passingHeading = alliance.get() == Alliance.Blue
+                    ? FieldConstants.BLUE_PASSING_HEADING : FieldConstants.RED_PASSING_HEADING;
+            turretSetpointRot = vision.updateTurretPassingSetpoint(turretPivotPose, passingHeading);
         } else if (hub.isPresent()) {
             turretSetpointRot = vision.updateTurretSetpoint(turretPivotPose, hub.get());
         }
 
         if (toggleManualTurret) {
             hoodSetpointRot += ControllerUtil.hoodJoystickUpdate(hoodAxis.getAsDouble());
+        } else if (isPassing) {
+            hoodSetpointRot = HoodConstants.PASSING_ROT;
         } else if (hub.isPresent()) {
             hoodSetpointRot = shootingLookup.getHoodAngle(hubDistanceMeters);
         }
@@ -191,6 +205,8 @@ public class StateMachine {
             shooter.coast();
         } else if (toggleManualTurret) {
             shooter.setVelocity(ShooterConstants.SHOOT_RPS);
+        } else if (isPassing) {
+            shooter.setVelocity(ShooterConstants.PASSING_RPS);
         } else if (hub.isPresent()) {
             shooter.setVelocity(shootingLookup.getShooterSpeed(hubDistanceMeters));
         }

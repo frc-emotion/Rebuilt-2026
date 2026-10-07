@@ -29,6 +29,11 @@ public final class RobotConstants {
     public static final double DRIVE_TRANSLATION_DEADBAND_FRACTION = 0.05;
     public static final double DRIVE_ROTATION_DEADBAND_FRACTION = 0.1;
 
+    /** From the old PathPlanner robot size. Ignores the extra reach of a rotated robot's corners. */
+    public static final double BUMPER_HALF_LENGTH_METERS = 0.838 / 2.0;
+    /** Once passing, the robot must come back inside the zone by this much before it turns off, so it does not flicker at the line. */
+    public static final double PASSING_HYSTERESIS_METERS = 0.15;
+
     public record ShotPoint(double distanceMeters, double flywheelRps, double hoodRot) {}
 
     /** Calibrated 2026-03-17 with distance measured from the old turret camera, not the robot center. */
