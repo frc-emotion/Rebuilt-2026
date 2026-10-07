@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.constants.FieldConstants;
 import frc.robot.constants.IndexerConstants.Stage;
 import frc.robot.constants.ShooterConstants;
+import frc.robot.constants.TurretConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Indexer;
@@ -62,6 +63,7 @@ public class StateMachine {
 
     @NotLogged private Optional<Translation2d> hub = Optional.empty();
     @Logged(importance = Logged.Importance.DEBUG) private double hubDistanceMeters = 0.0;
+    @Logged(importance = Logged.Importance.DEBUG) private Pose2d turretPivotPose = new Pose2d();
     @Logged(importance = Logged.Importance.DEBUG) private Pose2d turretPose = new Pose2d();
     @Logged(importance = Logged.Importance.DEBUG) private Pose2d turretTargetPose = new Pose2d();
 
@@ -116,9 +118,10 @@ public class StateMachine {
         vision.update();
 
         Pose2d robotPose = drivetrain.getState().Pose;
+        turretPivotPose = robotPose.transformBy(TurretConstants.ROBOT_TO_PIVOT);
         hub = DriverStation.getAlliance()
                 .map(alliance -> alliance == Alliance.Blue ? FieldConstants.BLUE_HUB : FieldConstants.RED_HUB);
-        hubDistanceMeters = hub.map(target -> target.getDistance(robotPose.getTranslation())).orElse(0.0);
+        hubDistanceMeters = hub.map(target -> target.getDistance(turretPivotPose.getTranslation())).orElse(0.0);
 
         intakeOut = intake.isOut();
         atShooterSpeed = shootRequested && shooter.atSetpoint();
@@ -132,7 +135,7 @@ public class StateMachine {
             turretSetpointRot += ControllerUtil.turretJoystickUpdate(turretAxis.getAsDouble());
             turretSetpointRot += yawDeltaRot;
         } else if (hub.isPresent()) {
-            turretSetpointRot = vision.updateTurretSetpoint(robotPose, hub.get());
+            turretSetpointRot = vision.updateTurretSetpoint(turretPivotPose, hub.get());
         }
 
         if (toggleManualTurret) {
@@ -198,9 +201,8 @@ public class StateMachine {
 
     /** Field-relative turret arrows for AdvantageScope: where the turret points and where it is told to point. */
     private void updateTurretPoses() {
-        Pose2d robotPose = drivetrain.getState().Pose;
-        turretPose = Vision.turretFieldPose(robotPose, turret.getPositionRot());
-        turretTargetPose = Vision.turretFieldPose(robotPose, turretSetpointRot);
+        turretPose = Vision.turretFieldPose(turretPivotPose, turret.getPositionRot());
+        turretTargetPose = Vision.turretFieldPose(turretPivotPose, turretSetpointRot);
     }
 
     private double getYawDeg() {

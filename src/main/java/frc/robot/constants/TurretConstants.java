@@ -5,6 +5,10 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.util.Units;
+
 public final class TurretConstants {
     private TurretConstants() {}
 
@@ -21,6 +25,10 @@ public final class TurretConstants {
 
     /** Direction the turret points at position 0, counterclockwise from the intake. It must boot facing straight back. */
     public static final double BOOT_HEADING_ROT = 0.5;
+
+    /** Turret rotation axis from the robot center, +x toward the intake and +y left. Taken from the old robot docs; verify by measuring. */
+    public static final Transform2d ROBOT_TO_PIVOT =
+            new Transform2d(Units.inchesToMeters(-5.5), Units.inchesToMeters(6.5), Rotation2d.kZero);
 
     public static final double TOLERANCE_ROT = 0.005;
 

@@ -11,6 +11,7 @@ import frc.robot.StateMachine.IndexerState;
 import frc.robot.StateMachine.IntakeState;
 import frc.robot.StateMachine.Resolution;
 import frc.robot.StateMachine.ShooterState;
+import frc.robot.constants.TurretConstants;
 import frc.robot.subsystems.Vision;
 
 class StateMachineTest {
@@ -102,5 +103,16 @@ class StateMachineTest {
         Rotation2d fieldAngleToHub = hub.minus(robotPose.getTranslation()).getAngle();
         assertSameDirection(fieldAngleToHub.getRotations(),
                 Vision.turretFieldPose(robotPose, aimedTurretRot).getRotation().getRotations());
+    }
+
+    @Test
+    void pivotPoseKeepsRobotHeadingAndRotatesOffset() {
+        Pose2d robotFacingPositiveY = new Pose2d(1.0, 1.0, Rotation2d.fromRotations(0.25));
+        Pose2d pivot = robotFacingPositiveY.transformBy(TurretConstants.ROBOT_TO_PIVOT);
+        double offsetX = TurretConstants.ROBOT_TO_PIVOT.getX();
+        double offsetY = TurretConstants.ROBOT_TO_PIVOT.getY();
+        assertEquals(1.0 - offsetY, pivot.getX(), 1e-9);
+        assertEquals(1.0 + offsetX, pivot.getY(), 1e-9);
+        assertSameDirection(0.25, pivot.getRotation().getRotations());
     }
 }
