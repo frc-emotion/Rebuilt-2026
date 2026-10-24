@@ -19,19 +19,32 @@ import frc.robot.constants.VisionConstants;
 public class Vision extends SubsystemBase {
     @NotLogged private final PhotonCamera shootCam;
     @NotLogged private final PhotonPoseEstimator photonEstimator;
+    @NotLogged private final PhotonCamera leftCam;
+    @NotLogged private final PhotonPoseEstimator leftEstimator;
     @NotLogged private final EstimateConsumer estConsumer;
 
     public Vision(EstimateConsumer estConsumer) {
         shootCam = new PhotonCamera(VisionConstants.shootCam);
         photonEstimator = new PhotonPoseEstimator(VisionConstants.kTagLayout, VisionConstants.kRobotToCam);
+        
+        leftCam = new PhotonCamera(VisionConstants.leftCam);
+        leftEstimator = new PhotonPoseEstimator(VisionConstants.kTagLayout, VisionConstants.kRobotToLeftCam);
+
         this.estConsumer = estConsumer;
     }
 
     public final void update() {
-        for (var result : shootCam.getAllUnreadResults()) {
-            Optional<EstimatedRobotPose> visionEst = photonEstimator.estimateCoprocMultiTagPose(result);
+        processCamera(shootCam, photonEstimator);
+        processCamera(leftCam, leftEstimator);
+    }
+
+    public final void processCamera(PhotonCamera cam, PhotonPoseEstimator estimator){
+        for (var result : cam.getAllUnreadResults()) {
+            Optional<EstimatedRobotPose> visionEst = estimator.estimateCoprocMultiTagPose(result);
             if (visionEst.isEmpty()) {
-                visionEst = photonEstimator.estimateLowestAmbiguityPose(result);
+                if (!result.hasTargets() || result.getBestTarget().getPoseAmbiguity() > VisionConstants.maxAmbiguity){
+                    visionEst = estimator.estimateLowestAmbiguityPose(result);
+                }
             }
 
             // updateEstimationStdDevs(visionEst, result.getTargets());

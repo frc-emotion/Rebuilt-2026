@@ -211,8 +211,10 @@ public class StateMachine {
             shooter.setVelocity(shootingLookup.getShooterSpeed(hubDistanceMeters));
         }
 
-        turretSetpointRot = turret.setSetpoint(turretSetpointRot);
-        hoodSetpointRot = hood.setSetpoint(hoodSetpointRot);
+        if (shootRequested){
+            turretSetpointRot = turret.setSetpoint(turretSetpointRot);
+            hoodSetpointRot = hood.setSetpoint(hoodSetpointRot);
+        }
     }
 
     /** Field-relative turret arrows for AdvantageScope: where the turret points and where it is told to point. */
