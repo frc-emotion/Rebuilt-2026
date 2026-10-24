@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.8861,
-        "y": 5.6868
+        "x": 3.0217,
+        "y": 5.6501
       },
       "isLocked": false,
       "linkedName": "BlueLeftSweepShoot8Depot J1"
@@ -20,11 +20,11 @@
         "y": 5.9643
       },
       "prevControl": {
-        "x": 2.3144,
+        "x": 2.4618,
         "y": 5.9643
       },
       "nextControl": {
-        "x": 1.524,
+        "x": 1.3842,
         "y": 5.9643
       },
       "isLocked": false,
@@ -36,7 +36,7 @@
         "y": 5.9643
       },
       "prevControl": {
-        "x": 1.2445,
+        "x": 1.1746,
         "y": 5.9643
       },
       "nextControl": null,
@@ -52,11 +52,11 @@
   ],
   "constraintZones": [
     {
-      "name": "intake pivoting out before the FUEL + depot_blue intake speed",
+      "name": "intake pivoting out before the FUEL",
       "minWaypointRelativePos": 0.0,
-      "maxWaypointRelativePos": 1.2911,
+      "maxWaypointRelativePos": 1.1119,
       "constraints": {
-        "maxVelocity": 1.288,
+        "maxVelocity": 1.55,
         "maxAcceleration": 9.666,
         "maxAngularVelocity": 807.3,
         "maxAngularAcceleration": 1434.5,
@@ -65,8 +65,8 @@
       }
     },
     {
-      "name": "depot_blue intake speed",
-      "minWaypointRelativePos": 1.2911,
+      "name": "depot_blue intake speed + intake pivoting out before the FUEL",
+      "minWaypointRelativePos": 1.1119,
       "maxWaypointRelativePos": 2.0,
       "constraints": {
         "maxVelocity": 1.5,

@@ -1,0 +1,182 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 2.0549,
+        "y": 5.72
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 2.3049,
+        "y": 5.72
+      },
+      "isLocked": false,
+      "linkedName": "BlueLeftBumpPass J1"
+    },
+    {
+      "anchor": {
+        "x": 3.3681,
+        "y": 5.72
+      },
+      "prevControl": {
+        "x": 2.7509,
+        "y": 5.72
+      },
+      "nextControl": {
+        "x": 4.5492,
+        "y": 5.72
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 5.66,
+        "y": 5.72
+      },
+      "prevControl": {
+        "x": 5.059667100694446,
+        "y": 5.730244936342592
+      },
+      "nextControl": {
+        "x": 5.974954141488743,
+        "y": 5.714625173575993
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 5.76,
+        "y": 4.82
+      },
+      "prevControl": {
+        "x": 5.767679904513889,
+        "y": 5.27910691550926
+      },
+      "nextControl": {
+        "x": 5.748014448143475,
+        "y": 4.1035002396743625
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 5.76,
+        "y": 2.349
+      },
+      "prevControl": {
+        "x": 5.76,
+        "y": 2.6949
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.0,
+      "rotationDegrees": -45.0
+    },
+    {
+      "waypointRelativePos": 2.0,
+      "rotationDegrees": -45.0
+    },
+    {
+      "waypointRelativePos": 2.35,
+      "rotationDegrees": -90.0
+    },
+    {
+      "waypointRelativePos": 3.0,
+      "rotationDegrees": -90.0
+    }
+  ],
+  "constraintZones": [
+    {
+      "name": "bump_blue_depot speed limit",
+      "minWaypointRelativePos": 0.9696,
+      "maxWaypointRelativePos": 2.0,
+      "constraints": {
+        "maxVelocity": 3.0,
+        "maxAcceleration": 9.666,
+        "maxAngularVelocity": 807.3,
+        "maxAngularAcceleration": 1434.5,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    },
+    {
+      "name": "bump_blue_depot speed limit + fuel_hub_front_blue intake speed + loop",
+      "minWaypointRelativePos": 2.0,
+      "maxWaypointRelativePos": 3.0,
+      "constraints": {
+        "maxVelocity": 0.717,
+        "maxAcceleration": 9.666,
+        "maxAngularVelocity": 807.3,
+        "maxAngularAcceleration": 1434.5,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    },
+    {
+      "name": "fuel_hub_front_blue intake speed + sweep speed",
+      "minWaypointRelativePos": 3.0,
+      "maxWaypointRelativePos": 4.0,
+      "constraints": {
+        "maxVelocity": 1.5,
+        "maxAcceleration": 9.666,
+        "maxAngularVelocity": 807.3,
+        "maxAngularAcceleration": 1434.5,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
+  "pointTowardsZones": [],
+  "eventMarkers": [
+    {
+      "name": "TogglePassing",
+      "waypointRelativePos": 0.0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "TogglePassing"
+        }
+      }
+    },
+    {
+      "name": "Deploy intake",
+      "waypointRelativePos": 2.1598,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "ToggleIntake"
+        }
+      }
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 5.44,
+    "maxAcceleration": 9.666,
+    "maxAngularVelocity": 807.3,
+    "maxAngularAcceleration": 1434.5,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0.0,
+    "rotation": -90.0
+  },
+  "reversed": false,
+  "folder": null,
+  "idealStartingState": {
+    "velocity": 0.0,
+    "rotation": -45.0
+  },
+  "useDefaultConstraints": false
+}

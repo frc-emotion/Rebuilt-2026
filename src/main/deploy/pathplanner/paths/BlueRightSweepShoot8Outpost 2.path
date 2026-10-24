@@ -1,0 +1,87 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 3.3681,
+        "y": 2.5128
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 2.6638,
+        "y": 1.6448
+      },
+      "isLocked": false,
+      "linkedName": "BlueRightSweepShoot8Outpost J1"
+    },
+    {
+      "anchor": {
+        "x": 1.8695,
+        "y": 0.666
+      },
+      "prevControl": {
+        "x": 2.4695,
+        "y": 0.666
+      },
+      "nextControl": {
+        "x": 1.4618,
+        "y": 0.666
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 0.7047,
+        "y": 0.666
+      },
+      "prevControl": {
+        "x": 1.1124,
+        "y": 0.666
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.0,
+      "rotationDegrees": 180.0
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [
+    {
+      "name": "Deploy intake",
+      "waypointRelativePos": 0.0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "ToggleIntake"
+        }
+      }
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 5.44,
+    "maxAcceleration": 9.666,
+    "maxAngularVelocity": 807.3,
+    "maxAngularAcceleration": 1434.5,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0.0,
+    "rotation": 180.0
+  },
+  "reversed": false,
+  "folder": null,
+  "idealStartingState": {
+    "velocity": 0.0,
+    "rotation": 135.0
+  },
+  "useDefaultConstraints": false
+}
