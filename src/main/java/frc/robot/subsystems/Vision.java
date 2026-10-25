@@ -42,7 +42,7 @@ public class Vision extends SubsystemBase {
         for (var result : cam.getAllUnreadResults()) {
             Optional<EstimatedRobotPose> visionEst = estimator.estimateCoprocMultiTagPose(result);
             if (visionEst.isEmpty()) {
-                if (!result.hasTargets() || result.getBestTarget().getPoseAmbiguity() > VisionConstants.maxAmbiguity){
+                if (result.hasTargets() && result.getBestTarget().getPoseAmbiguity() < VisionConstants.maxAmbiguity){
                     visionEst = estimator.estimateLowestAmbiguityPose(result);
                 }
             }

@@ -18,13 +18,13 @@ public final class IntakeConstants {
     public static final double PIVOT_ENCODER_MAGNET_OFFSET_ROT = 0.0;
     public static final double PIVOT_ROTOR_TO_SENSOR_RATIO = 27.0;
 
-    public static final double STOWED_POSITION_ROT =-0.65;
-    public static final double OUT_POSITION_ROT = -0.38;
+    public static final double STOWED_POSITION_ROT =0;
+    public static final double OUT_POSITION_ROT = 0.32;
     /** Wide on purpose: rollers start slightly before fully out and stop as soon as it leaves the zone. */
     public static final double OUT_TOLERANCE_ROT = 15.0 / 360.0;
 
-    public static final double REVERSE_SOFT_LIMIT_ROT = -0.68;
-    public static final double FORWARD_SOFT_LIMIT_ROT = -0.36;
+    public static final double REVERSE_SOFT_LIMIT_ROT = -0.1;
+    public static final double FORWARD_SOFT_LIMIT_ROT = 0.4;
 
     public static final double ROLLER_SPEED_RPS = 40.0;
 

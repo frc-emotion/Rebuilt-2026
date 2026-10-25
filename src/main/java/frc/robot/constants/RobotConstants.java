@@ -20,7 +20,7 @@ public final class RobotConstants {
     public static final double LOOP_PERIOD_SECONDS = TimedRobot.kDefaultPeriod;
 
     /** True publishes only CRITICAL telemetry to NetworkTables; log files always get everything. */
-    public static final boolean MATCH_MODE = false;
+    public static final boolean MATCH_MODE = true;
     public static final Logged.Importance NT_MIN_IMPORTANCE =
             MATCH_MODE ? Logged.Importance.CRITICAL : Logged.Importance.DEBUG;
 
