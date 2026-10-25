@@ -28,7 +28,7 @@ public final class TurretConstants {
 
     /** Turret rotation axis from the robot center, +x toward the intake and +y left. Taken from the old robot docs; verify by measuring. */
     public static final Transform2d ROBOT_TO_PIVOT =
-            new Transform2d(Units.inchesToMeters(-5.5), Units.inchesToMeters(6.5), Rotation2d.kZero);
+            new Transform2d(Units.inchesToMeters(-5.5), Units.inchesToMeters(-6.5), Rotation2d.kZero);
 
     public static final double TOLERANCE_ROT = 0.005;
 

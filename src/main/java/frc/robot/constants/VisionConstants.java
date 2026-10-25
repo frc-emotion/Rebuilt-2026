@@ -22,8 +22,8 @@ public final class VisionConstants {
     public static final Transform3d kRobotToCam = 
                 new Transform3d(
                     new Translation3d(
-                        Units.inchesToMeters(-7.875),//-0.5, 
-                        Units.inchesToMeters(13.625),//0.0, 
+                        Units.inchesToMeters(-13.625),//-0.5
+                        Units.inchesToMeters(-7.875),//-0.5, //0.0, //before postiive see if fixes and allat
                         Units.inchesToMeters(14.52)),//0.5
                     new Rotation3d(0, 0, Math.PI));
 

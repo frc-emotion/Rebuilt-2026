@@ -80,7 +80,7 @@ public class RobotContainer {
         driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
         driver.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-        // drivetrain.registerTelemetry(telemetry::telemeterize);
+        drivetrain.registerTelemetry(telemetry::telemeterize);
     }
 
     private void configureOperatorBindings() {
