@@ -1,6 +1,7 @@
 package frc.robot;
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
+
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.NotLogged;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -31,7 +32,7 @@ import frc.robot.util.ShootingLookup;
 @Logged
 public class StateMachine {
     public enum IntakeState { STOWED, DEPLOYING, DEPLOYED }
-    public enum IndexerState { STOPPED, FEED_VERTICAL, FEED_ALL, CLEARING }
+    public enum IndexerState { STOPPED, FEED_VERTICAL, FEED_ALL, CLEARING, OUTAKE }
     public enum ShooterState { IDLE, SPINNING_UP, AT_SPEED }
 
     /** Pure decision output. Kept separate from the hardware so it can be unit tested. */
@@ -49,6 +50,7 @@ public class StateMachine {
     private final ShootingLookup shootingLookup;
 
     @Logged(importance  = Logged.Importance.CRITICAL) private boolean toggleManualTurret = false;
+    @Logged(importance = Logged.Importance.CRITICAL) private boolean outakeRequested = false; 
     @Logged(importance = Logged.Importance.CRITICAL) private boolean intakeRequested = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean shootRequested = false;
     @Logged(importance = Logged.Importance.CRITICAL) private boolean clearRequested = false;
@@ -92,6 +94,7 @@ public class StateMachine {
     // Requests
     public void toggleManualTurret(){toggleManualTurret = !toggleManualTurret;}
     public void setIntake(boolean out) { intakeRequested = out; }
+    public void setOutake (boolean outake) {outakeRequested = outake;}
     public void toggleIntake() { intakeRequested = !intakeRequested; }
     public void togglePassing() { passingRequested = !passingRequested; }
     public void setShoot(boolean shoot) { shootRequested = shoot; }
@@ -101,6 +104,7 @@ public class StateMachine {
 
     /** Call on every enable so nothing jumps if a mechanism was moved by hand while disabled. */
     public void onEnable() {
+        outakeRequested = false;
         intakeRequested = false;
         shootRequested = false;
         clearRequested = false;
@@ -112,7 +116,7 @@ public class StateMachine {
 
     public void periodic() {
         readInputs();
-        Resolution resolution = resolve(intakeRequested, shootRequested, clearRequested, intakeOut, atShooterSpeed);
+        Resolution resolution = resolve(intakeRequested, outakeRequested, shootRequested, clearRequested, intakeOut, atShooterSpeed);
         intakeState = resolution.intake();
         indexerState = resolution.indexer();
         shooterState = resolution.shooter();
@@ -159,13 +163,14 @@ public class StateMachine {
         }
     }
 
-    public static Resolution resolve(boolean intakeRequested, boolean shootRequested, boolean clearRequested,
-            boolean intakeOut, boolean atShooterSpeed) {
+    public static Resolution resolve(boolean intakeRequested, boolean outakeRequested, boolean shootRequested,
+            boolean clearRequested, boolean intakeOut, boolean atShooterSpeed) {
         IntakeState intakeState = !intakeRequested ? IntakeState.STOWED
                 : intakeOut ? IntakeState.DEPLOYED
                 : IntakeState.DEPLOYING;
 
-        IndexerState indexerState = clearRequested ? IndexerState.CLEARING
+        IndexerState indexerState = outakeRequested ? IndexerState.OUTAKE
+                : clearRequested ? IndexerState.CLEARING
                 : (shootRequested && atShooterSpeed) ? IndexerState.FEED_ALL
                 : (intakeOut || shootRequested) ? IndexerState.FEED_VERTICAL
                 : IndexerState.STOPPED;
@@ -185,6 +190,10 @@ public class StateMachine {
             intake.stopRoller();
         }        
         switch (indexerState) {
+            case OUTAKE -> {
+                indexer.reverse(Stage.VERTICAL);
+                intake.reverseRoller();
+            }
             case CLEARING -> {
                 for (Stage stage : Stage.values()) indexer.reverse(stage);
             }

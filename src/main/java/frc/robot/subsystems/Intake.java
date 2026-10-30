@@ -67,6 +67,10 @@ public class Intake extends SubsystemBase {
         rollerMotor.setControl(rollerRequest.withVelocity(IntakeConstants.ROLLER_SPEED_RPS));
     }
 
+    public void reverseRoller(){
+        rollerMotor.setControl(rollerRequest.withVelocity(-IntakeConstants.ROLLER_SPEED_RPS));
+    }
+
     public void stopRoller() {
         rollerMotor.setControl(rollerStopRequest);
     }

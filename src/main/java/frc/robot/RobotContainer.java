@@ -88,6 +88,9 @@ public class RobotContainer {
         operator.x().toggleOnTrue(Commands.runOnce(stateMachine::toggleManualTurret));
         operator.a().onTrue(Commands.runOnce(stateMachine::toggleIntake));
         operator.y().onTrue(Commands.runOnce(stateMachine::togglePassing));
+        operator.b().whileTrue(Commands.startEnd(
+            () -> stateMachine.setOutake(true), 
+            () -> stateMachine.setOutake(false)));
 
         operator.rightTrigger().whileTrue(Commands.startEnd(
                 () -> stateMachine.setShoot(true),
