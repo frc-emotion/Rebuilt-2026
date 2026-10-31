@@ -35,4 +35,9 @@ public final class VisionConstants {
                         Units.inchesToMeters(10)),
                     new Rotation3d(0,0, Math.PI/2));
 
+    public static final int SIM_RES_WIDTH_PX = 1280;
+    public static final int SIM_RES_HEIGHT_PX = 800;
+    /** Placeholder until checked against the PhotonVision calibration. */
+    public static final double SIM_DIAGONAL_FOV_DEG = 80.0;
+    public static final double SIM_FPS = 30.0;
 }

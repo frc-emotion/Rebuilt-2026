@@ -5,12 +5,17 @@ import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.simulation.VisionSystemSim;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.NotLogged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.TurretConstants;
 import frc.robot.constants.VisionConstants;
@@ -22,6 +27,7 @@ public class Vision extends SubsystemBase {
     @NotLogged private final PhotonCamera leftCam;
     @NotLogged private final PhotonPoseEstimator leftEstimator;
     @NotLogged private final EstimateConsumer estConsumer;
+    @NotLogged private VisionSystemSim visionSim;
 
     public Vision(EstimateConsumer estConsumer) {
         shootCam = new PhotonCamera(VisionConstants.shootCam);
@@ -31,6 +37,27 @@ public class Vision extends SubsystemBase {
         leftEstimator = new PhotonPoseEstimator(VisionConstants.kTagLayout, VisionConstants.kRobotToLeftCam);
 
         this.estConsumer = estConsumer;
+
+        if (RobotBase.isSimulation()) {
+            visionSim = new VisionSystemSim("main");
+            visionSim.addAprilTags(VisionConstants.kTagLayout);
+            addSimCamera(shootCam, VisionConstants.kRobotToCam);
+            addSimCamera(leftCam, VisionConstants.kRobotToLeftCam);
+        }
+    }
+
+    private void addSimCamera(PhotonCamera camera, Transform3d robotToCamera) {
+        SimCameraProperties properties = new SimCameraProperties()
+                .setCalibration(VisionConstants.SIM_RES_WIDTH_PX, VisionConstants.SIM_RES_HEIGHT_PX,
+                        Rotation2d.fromDegrees(VisionConstants.SIM_DIAGONAL_FOV_DEG))
+                .setFPS(VisionConstants.SIM_FPS);
+        PhotonCameraSim cameraSim = new PhotonCameraSim(camera, properties);
+        cameraSim.enableRawStream(false);
+        visionSim.addCamera(cameraSim, robotToCamera);
+    }
+
+    public void updateSimulation(Pose2d robotPose) {
+        visionSim.update(robotPose);
     }
 
     public final void update() {

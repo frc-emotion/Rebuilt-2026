@@ -1,5 +1,6 @@
 package frc.robot.constants;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
@@ -16,4 +17,7 @@ public final class FieldConstants {
     /** Passing aims straight down the field toward our own alliance wall. */
     public static final Rotation2d BLUE_PASSING_HEADING = Rotation2d.k180deg;
     public static final Rotation2d RED_PASSING_HEADING = Rotation2d.kZero;
+
+    public static final Pose2d BLUE_LEFT_RESET_POSE = new Pose2d(3.50, 6.64, Rotation2d.k180deg);
+    public static final Pose2d BLUE_RIGHT_RESET_POSE = new Pose2d(3.50, 1.44, Rotation2d.k180deg);
 }

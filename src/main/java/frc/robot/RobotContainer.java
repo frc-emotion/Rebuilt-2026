@@ -4,11 +4,14 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import frc.robot.constants.FieldConstants;
 import frc.robot.constants.OperatorConstants;
 import frc.robot.constants.RobotConstants;
 import frc.robot.constants.TunerConstants;
@@ -25,6 +28,7 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.util.FlippingUtil;
 
 
 
@@ -79,12 +83,13 @@ public class RobotContainer {
 
         driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
         driver.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+        driver.povLeft().onTrue(drivetrain.runOnce(() -> drivetrain.resetPose(forAlliance(FieldConstants.BLUE_LEFT_RESET_POSE))));
+        driver.povRight().onTrue(drivetrain.runOnce(() -> drivetrain.resetPose(forAlliance(FieldConstants.BLUE_RIGHT_RESET_POSE))));
 
         drivetrain.registerTelemetry(telemetry::telemeterize);
     }
 
     private void configureOperatorBindings() {
-        //operator.x.onTrue for allat runOnce and shi for toggleManualTurret
         operator.x().toggleOnTrue(Commands.runOnce(stateMachine::toggleManualTurret));
         operator.a().onTrue(Commands.runOnce(stateMachine::toggleIntake));
         operator.y().onTrue(Commands.runOnce(stateMachine::togglePassing));
@@ -123,4 +128,8 @@ public class RobotContainer {
             () -> stateMachine.setClear(false)));
     }
 
+    private static Pose2d forAlliance(Pose2d bluePose) {
+        return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+                ? FlippingUtil.flipFieldPose(bluePose) : bluePose;
+    }
 }

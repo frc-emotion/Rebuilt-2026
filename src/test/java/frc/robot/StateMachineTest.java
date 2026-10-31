@@ -16,7 +16,7 @@ import frc.robot.subsystems.Vision;
 
 class StateMachineTest {
     private static Resolution resolve(boolean intake, boolean shoot, boolean clear, boolean intakeOut, boolean atSpeed) {
-        return StateMachine.resolve(intake, shoot, clear, intakeOut, atSpeed);
+        return StateMachine.resolve(intake, false, shoot, clear, intakeOut, atSpeed);
     }
 
     @Test
@@ -47,6 +47,12 @@ class StateMachineTest {
                 resolve(true, true, true, true, true));
         assertEquals(new Resolution(IntakeState.STOWED, IndexerState.CLEARING, ShooterState.IDLE),
                 resolve(false, false, true, false, false));
+    }
+
+    @Test
+    void outakeOverridesClearAndShooting() {
+        assertEquals(new Resolution(IntakeState.DEPLOYED, IndexerState.OUTAKE, ShooterState.AT_SPEED),
+                StateMachine.resolve(true, true, true, true, true, true));
     }
 
     private static final Pose2d ORIGIN_FACING_POSITIVE_X = new Pose2d();
